@@ -4,290 +4,319 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Laxmi Academy — School of Knowledge</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#4f46e5',
+              600: '#4338ca',
+              700: '#3730a3',
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    :root{
-      --bg1:#101726;
-      --bg2:#1b2a52;
-      --glass:rgba(255,255,255,.10);
-      --glass-strong:rgba(255,255,255,.16);
-      --text:#ffffff;
-      --accent:#ff9800;
-      --accent-2:#ff5722;
-      --chip:rgba(255,255,255,.18);
-      --shadow:0 10px 40px rgba(0,0,0,.45);
-      --radius:16px;
-    }
+    /* Simple dropdown for desktop */
+    .nav-item:hover .dropdown { display:block }
 
-    *{ box-sizing:border-box; }
-    html,body{ margin:0; }
-    body{
-      font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      color:var(--text);
-      min-height:100svh;
-      /* premium gradient background */
-      background:
-        radial-gradient(1200px 600px at 10% -10%, #2b6cff22, transparent 60%),
-        radial-gradient(900px 500px at 110% 10%, #ff3f5a22, transparent 60%),
-        linear-gradient(135deg, var(--bg1), var(--bg2));
-      display:flex;
-      flex-direction:column;
+    /* Neon/glow enhancements */
+    .neon-text{
+      text-shadow:0 0 8px rgba(255,255,255,.35), 0 0 18px rgba(255,152,0,.45), 0 0 32px rgba(239,83,80,.35);
     }
-
-    /* --- Top ribbon (black, static) --- */
-    .subjects-marquee{
-      position:sticky; top:0; z-index:1000;
-      width:100%;
-      background:#000;
-      border-bottom:1px solid #ffffff2a;
-      box-shadow:0 6px 18px rgba(0,0,0,.55);
+    .neon-ring{
+      box-shadow:0 0 20px rgba(255,152,0,.45), 0 0 44px rgba(239,83,80,.35);
     }
-    .subjects-marquee p{
-      margin:0; padding:.65rem .75rem;
-      text-align:center; font-weight:700; font-size:1rem; letter-spacing:.25px;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    .glow-text{
+      background:linear-gradient(90deg,#ff9800,#ff5722);
+      -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+      text-shadow:0 0 15px rgba(255,152,0,.6), 0 0 30px rgba(255,87,34,.6);
     }
-    /* blinking+glow for subjects */
-    @keyframes blink {0%,49%{opacity:1} 50%,100%{opacity:.55}}
-    .subject{ margin:0 .6rem; text-shadow:0 0 12px #fff7,0 0 18px #fff5; animation:blink 1.5s infinite }
-    .physics{color:#00e5ff} .chemistry{color:#ffeb3b} .maths{color:#76ff03}
-    .iit{color:#ff4081} .neet{color:#ff9100} .olympiad{color:#40c4ff}
-
-    /* --- Header/logo --- */
-    .header{
-      display:flex; flex-direction:column; align-items:center; gap:.35rem;
-      padding:1.25rem .75rem .25rem;
-    }
-    .logo{
-      width:180px; height:180px; border-radius:50%;
-      background:#111 center/cover no-repeat;
-      box-shadow:0 10px 35px rgba(0,0,0,.6);
-      border:1px solid #ffffff1a;
-      overflow:hidden; display:grid; place-items:center;
-    }
-    .logo img{ width:100%; height:100%; object-fit:cover; display:block }
-    .brand{ font-size:1.9rem; font-weight:700; letter-spacing:.4px }
-    .tagline{ color:#d8d8d8; font-size:.95rem }
-
-    /* user counter chip */
-    .user-counter{
-      position:fixed; top:78px; right:18px; z-index:900;
-      background:var(--chip); backdrop-filter:blur(8px);
-      padding:.5rem .8rem; border-radius:10px; font-weight:700; box-shadow:var(--shadow);
-      border:1px solid #ffffff30;
-    }
-
-    /* --- Main layout --- */
-    .main{
-      width:min(1200px, 92%);
-      margin:1rem auto 2rem;
-      display:grid;
-      grid-template-columns: 1fr minmax(290px, 340px);
-      gap:28px;
-    }
-    @media (max-width: 980px){
-      .main{ grid-template-columns:1fr; }
-      .user-counter{ top:70px; }
-    }
-
-    /* left column: highlights */
-    .left{
-      display:grid; gap:18px;
-    }
-    .panel{
-      background:var(--glass);
-      border:1px solid #ffffff22;
-      backdrop-filter:blur(10px);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:1.1rem 1.1rem;
-    }
-
-    /* subjects list card */
-    .subjects-card h3{ margin:.1rem 0 .6rem; font-size:1.1rem; letter-spacing:.3px }
-    .subject-list{
-      display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
-      gap:.6rem;
-    }
-    .chip{
-      background:var(--glass-strong);
-      border:1px solid #ffffff22;
-      padding:.6rem .8rem; border-radius:12px; text-align:center; font-weight:700;
-      transition:transform .15s ease, box-shadow .15s ease;
-    }
-    .chip:hover{ transform:translateY(-2px); box-shadow:0 8px 22px rgba(0,0,0,.4) }
-
-    /* fees card */
-    .fees h3{ margin:0 0 .6rem }
-    .fees ul{ list-style:none; padding:0; margin:0; display:grid; gap:.45rem }
-    .fees li{ display:flex; align-items:center; justify-content:space-between;
-      background:var(--glass-strong); border:1px solid #ffffff22; border-radius:12px;
-      padding:.65rem .8rem; font-weight:600 }
-
-    /* --- Login card --- */
-    .login{
-      background:var(--glass);
-      border:1px solid #ffffff22;
-      backdrop-filter:blur(12px);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:1.2rem 1.2rem 1.3rem;
-      align-self:start;
-    }
-    .login h2{ margin:.1rem 0 1rem; font-size:1.15rem; letter-spacing:.3px }
-    .field{ display:grid; gap:.35rem; margin:.55rem 0 }
-    .label{ font-size:.86rem; font-weight:700; color:#f2f2f2 }
-    .control{
-      width:100%; padding:.75rem .85rem; border-radius:10px; border:1px solid #0000;
-      background:#ffffffee; color:#1c1c1c; font-size:.95rem; outline:none;
-      box-shadow: inset 0 0 0 1px #0000;
-      transition: box-shadow .15s ease, transform .06s ease;
-    }
-    .control:focus{ box-shadow: inset 0 0 0 2px #5b9dff }
-    select.control{
-      appearance:none;
-      background-image:
-        linear-gradient(45deg, transparent 50%, #777 50%),
-        linear-gradient(135deg, #777 50%, transparent 50%);
-      background-position: calc(100% - 22px) 52%, calc(100% - 14px) 52%;
-      background-size: 8px 8px, 8px 8px; background-repeat:no-repeat;
-    }
-    .btn{
-      width:100%; margin-top:.6rem; padding:.8rem .9rem; border:none; border-radius:12px;
-      font-weight:800; letter-spacing:.2px; color:#fff; cursor:pointer;
-      background:linear-gradient(135deg, var(--accent), var(--accent-2));
-      box-shadow:0 10px 20px rgba(255,120,0,.35);
-      transition:transform .08s ease, filter .2s ease, box-shadow .2s ease;
-    }
-    .btn:hover{ filter:saturate(1.05) brightness(1.03) }
-    .btn:active{ transform:translateY(1px) }
-
-    .signup{ margin:.8rem 0 0; font-size:.9rem; color:#eee }
-    .signup a{ color:#ffd54f; font-weight:700; text-decoration:none }
-    .signup a:hover{ text-decoration:underline }
-
-    /* accessibility preference */
-    @media (prefers-reduced-motion: reduce){
-      .subject{ animation:none }
-    }
-
-    /* small footer */
-    footer{ color:#d0d0d0; opacity:.8; text-align:center; padding:1rem 0 1.4rem; font-size:.85rem }
-  .signup-link a {
-      color: rgb(246, 6, 6);
-      text-decoration: none;
-      font-weight: bold; /* Makes the link bold */
-  }
-  .signup-link a:hover {
-      color: #f10404;
-      font-weight: bold; /* Makes the link bold */
-  }
   </style>
 </head>
-<body>
-
-  <!-- Black Ribbon with static, blinking neon subjects -->
-  <div class="subjects-marquee">
-    <p>
-      <span class="subject physics">📘 PHYSICS</span> |
-      <span class="subject chemistry">⚗️ CHEMISTRY</span> |
-      <span class="subject maths">📐 MATHS</span> |
-      <span class="subject iit">🎯 IIT JEE</span> |
-      <span class="subject neet">🧠 NEET</span> |
-      <span class="subject olympiad">🏆 OLYMPIADS</span>
-    </p>
+<body class="bg-white text-slate-900">
+  <!-- Top Bar -->
+  <div class="bg-brand-700 text-white text-sm">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+      <div>
+        <span class="font-semibold">Hyderabad, Telangana</span>
+        <span class="opacity-80 ml-3">Call: 00000 00369</span>
+      </div>
+      <div class="space-x-4 opacity-90 hidden sm:block">
+        <a href="#" class="hover:underline">Facebook</a>
+        <a href="#" class="hover:underline">Instagram</a>
+        <a href="#" class="hover:underline">YouTube</a>
+        <a href="#" class="hover:underline">Twitter</a>
+        <a href="#" class="hover:underline">WhatsApp</a>
+      </div>
+    </div>
   </div>
 
-  <!-- Header / Branding -->
-  <header class="header">
-    <div class="logo">
-      <!-- Replace with your logo file -->
-      <img src="logo.png.jpeg" alt="Laxmi Academy Logo" />
+  <!-- Navbar -->
+  <header class="sticky top-0 bg-white/80 backdrop-blur z-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center justify-between py-3">
+        <a class="flex items-center gap-4" href="#">
+          <div class="relative p-[3px] rounded-full bg-gradient-to-tr from-orange-400 via-rose-500 to-red-600 neon-ring">
+            <img src="logo.png.jpeg" alt="Laxmi Academy Logo" class="w-28 h-28 rounded-full object-cover border-4 border-black/20"/>
+          </div>
+          <div class="leading-tight">
+            <span class="block font-extrabold tracking-tight text-5xl glow-text">Laxmi Academy</span>
+            <span class="block text-slate-700 font-semibold -mt-1">School of Knowledge</span>
+          </div>
+        </a>
+
+        <nav class="hidden md:flex items-center gap-6 font-medium">
+          <a href="#home" class="hover:text-brand-600">Home</a>
+          <a href="#about" class="hover:text-brand-600">About</a>
+          <div class="relative nav-item">
+            <button class="hover:text-brand-600 flex items-center gap-2">Courses
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd" /></svg>
+            </button>
+            <div class="dropdown absolute mt-2 hidden w-56 rounded-xl border border-slate-200 bg-white shadow-lg p-2">
+              <a href="#jee" class="block px-3 py-2 rounded-lg hover:bg-slate-50">IIT‑JEE</a>
+              <a href="#neet" class="block px-3 py-2 rounded-lg hover:bg-slate-50">NEET</a>
+              <a href="#bitsat" class="block px-3 py-2 rounded-lg hover:bg-slate-50">BITSAT</a>
+              <a href="#basics" class="block px-3 py-2 rounded-lg hover:bg-slate-50">Physics Basics</a>
+            </div>
+          </div>
+          <a href="#contact" class="hover:text-brand-600">Contact</a>
+        </nav>
+
+        <a href="#join" class="hidden md:inline-flex items-center justify-center px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold shadow hover:bg-brand-700 transition">Join Us</a>
+        <button class="md:hidden inline-flex items-center p-2" aria-label="Open menu" onclick="document.getElementById('mnav').classList.toggle('hidden')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7"><path fill-rule="evenodd" d="M3.75 6.75A.75.75 0 014.5 6h15a.75.75 0 010 1.5h-15a.75.75 0 01-.75-.75zm0 5.25A.75.75 0 014.5 11h15a.75.75 0 010 1.5h-15a.75.75 0 01-.75-.75zm0 5.25A.75.75 0 014.5 16h15a.75.75 0 010 1.5h-15a.75.75 0 01-.75-.75z" clip-rule="evenodd" /></svg>
+        </button>
+      </div>
+      <div id="mnav" class="md:hidden hidden pb-3">
+        <nav class="grid gap-2 font-medium">
+          <a href="#home" class="px-3 py-2 rounded-lg hover:bg-slate-50">Home</a>
+          <a href="#about" class="px-3 py-2 rounded-lg hover:bg-slate-50">About</a>
+          <a href="#jee" class="px-3 py-2 rounded-lg hover:bg-slate-50">IIT‑JEE</a>
+          <a href="#neet" class="px-3 py-2 rounded-lg hover:bg-slate-50">NEET</a>
+          <a href="#bitsat" class="px-3 py-2 rounded-lg hover:bg-slate-50">BITSAT</a>
+          <a href="#basics" class="px-3 py-2 rounded-lg hover:bg-slate-50">Physics Basics</a>
+          <a href="#contact" class="px-3 py-2 rounded-lg hover:bg-slate-50">Contact</a>
+          <a href="#join" class="px-3 py-2 rounded-lg bg-brand-600 text-white">Join Us</a>
+        </nav>
+      </div>
     </div>
-    <div class="brand">Laxmi Academy</div>
-    <div class="tagline">Empowering Students with Knowledge</div>
-    <div class="user-counter">👥 Users Online: <span id="userCount">0</span></div>
   </header>
 
-  <!-- Main Content -->
-  <main class="main">
-    <!-- Left Column: Subjects & Fees -->
-    <section class="left">
-      <div class="panel subjects-card">
-        <h3>Coaching Subjects</h3>
-        <div class="subject-list">
-          <div class="chip">PHYSICS</div>
-          <div class="chip">CHEMISTRY</div>
-          <div class="chip">MATHS</div>
-          <div class="chip">IIT JEE</div>
-          <div class="chip">NEET</div>
-          <div class="chip">OLYMPIADS</div>
+  <!-- Hero -->
+  <section id="home" class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1509223197845-458d87318791?q=80&w=1600&auto=format&fit=crop')] bg-cover bg-center"></div>
+    <div class="absolute inset-0 bg-slate-900/70"></div>
+    <div class="relative max-w-7xl mx-auto px-4 py-24 sm:py-28">
+      <div class="max-w-3xl text-white">
+        <p class="uppercase tracking-widest text-brand-100/90 text-xs font-semibold">NEET & IIT‑JEE Coaching</p>
+        <h1 class="mt-3 text-6xl sm:text-7xl font-extrabold leading-tight glow-text">Laxmi Academy — School of Knowledge</h1>
+        <p class="mt-4 text-lg text-white/90">Expert Physics coaching with years of proven results. Long‑term, short‑term and crash courses tailored for your goals.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="#join" class="px-6 py-3 rounded-xl bg-white text-slate-900 font-semibold shadow hover:shadow-md">Join Us</a>
+          <a href="#courses" class="px-6 py-3 rounded-xl border border-white/60 text-white font-semibold hover:bg-white/10">View Courses</a>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div class="panel fees">
-        <h3>📌 Fee Structure</h3>
-        <ul>
-          <li><span>6 Months</span><strong>₹ 650</strong></li>
-          <li><span>Annual (per course)</span><strong>₹ 1,000</strong></li>
-          <li><span>2-Course Combo</span><strong>₹ 1,700</strong></li>
+  <!-- Courses Highlights -->
+  <section id="courses" class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4">
+      <h2 class="text-3xl font-bold">Courses</h2>
+      <p class="text-slate-600 mt-2">Focused programs designed for top results.</p>
+      <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div id="jee" class="rounded-2xl border p-6 hover:shadow">
+          <h3 class="font-semibold text-xl">IIT‑JEE</h3>
+          <p class="mt-2 text-slate-600">Comprehensive coverage for JEE Main & Advanced with problem‑solving drills.</p>
+          <a href="#join" class="mt-4 inline-block font-semibold text-brand-600">Know more →</a>
+        </div>
+        <div id="neet" class="rounded-2xl border p-6 hover:shadow">
+          <h3 class="font-semibold text-xl">NEET</h3>
+          <p class="mt-2 text-slate-600">Concept‑first approach to master Physics for medical entrance exams.</p>
+          <a href="#join" class="mt-4 inline-block font-semibold text-brand-600">Know more →</a>
+        </div>
+        <div id="bitsat" class="rounded-2xl border p-6 hover:shadow">
+          <h3 class="font-semibold text-xl">BITSAT</h3>
+          <p class="mt-2 text-slate-600">Targeted practice and mock tests aligned with BITSAT patterns.</p>
+          <a href="#join" class="mt-4 inline-block font-semibold text-brand-600">Know more →</a>
+        </div>
+        <div id="basics" class="rounded-2xl border p-6 hover:shadow">
+          <h3 class="font-semibold text-xl">Physics Basics</h3>
+          <p class="mt-2 text-slate-600">Foundation program for school students to build strong fundamentals.</p>
+          <a href="#join" class="mt-4 inline-block font-semibold text-brand-600">Know more →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Us -->
+  <section id="about" class="py-16 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-10 items-center">
+      <div>
+        <h2 class="text-3xl font-bold">Why Choose Us?</h2>
+        <p class="mt-3 text-slate-700">A reputable and trusted coaching center with a focus on Physics for IIT‑JEE & NEET. Courses crafted by experienced faculty, helping students consistently excel.</p>
+        <ul class="mt-6 space-y-3 text-slate-700">
+          <li>• Exam‑focused methods and structured programs</li>
+          <li>• Extra support for slow learners; individual attention</li>
+          <li>• Long‑term, short‑term & crash courses</li>
         </ul>
       </div>
-    </section>
-
-    <!-- Right Column: Login -->
-    <aside class="login">
-      <form id="loginForm" novalidate>
-        <h2>Login to Your Account</h2>
-
-        <div class="field">
-          <label class="label" for="subject">Subject</label>
-          <select id="subject" class="control" required>
-            <option value="" disabled selected>Select a subject</option>
-            <option>PHYSICS</option>
-            <option>CHEMISTRY</option>
-            <option>MATHS</option>
-            <option>IIT JEE</option>
-            <option>NEET</option>
-            <option>OLYMPIADS</option>
-          </select>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="rounded-2xl bg-white p-6 border text-center">
+          <div class="text-4xl font-extrabold" data-counter="2500">0</div>
+          <div class="mt-1 text-slate-600">Students Trained</div>
         </div>
-
-        <div class="field">
-          <label class="label" for="username">Username</label>
-          <input id="username" class="control" type="text" placeholder="Enter Username" required />
+        <div class="rounded-2xl bg-white p-6 border text-center">
+          <div class="text-4xl font-extrabold" data-counter="15">0</div>
+          <div class="mt-1 text-slate-600">Years Experience</div>
         </div>
-
-        <div class="field">
-          <label class="label" for="password">Password</label>
-          <input id="password" class="control" type="password" placeholder="Enter Password" required />
+        <div class="rounded-2xl bg-white p-6 border text-center">
+          <div class="text-4xl font-extrabold" data-counter="120">0</div>
+          <div class="mt-1 text-slate-600">Top Ranks</div>
         </div>
+        <div class="rounded-2xl bg-white p-6 border text-center">
+          <div class="text-4xl font-extrabold" data-counter="98">0</div>
+          <div class="mt-1 text-slate-600">% Success</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        <button type="submit" class="btn">Login</button>
-        <p class="signup-link"> Don't have an account? <a href="signup.html">Sign Up</a> </p>
-      </form>
-    </aside>
-  </main>
+  <!-- Testimonials -->
+  <section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4">
+      <h2 class="text-3xl font-bold">What Our Students Say</h2>
+      <div class="mt-8 grid md:grid-cols-3 gap-6">
+        <figure class="rounded-2xl border p-6 hover:shadow">
+          <blockquote class="text-slate-700">“Teaching made concepts crystal clear. I finally enjoy Physics.”</blockquote>
+          <figcaption class="mt-4 font-semibold">— ******, Student</figcaption>
+        </figure>
+        <figure class="rounded-2xl border p-6 hover:shadow">
+          <blockquote class="text-slate-700">“Patient guidance and strong problem‑solving drills boosted my score.”</blockquote>
+          <figcaption class="mt-4 font-semibold">— ******, Student</figcaption>
+        </figure>
+        <figure class="rounded-2xl border p-6 hover:shadow">
+          <blockquote class="text-slate-700">“From basics to advanced, I gained confidence within a week.”</blockquote>
+          <figcaption class="mt-4 font-semibold">— ******, Student</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
 
-  <footer>© 2025 Laxmi Academy — School of Knowledge</footer>
+  <!-- Rankers Gallery -->
+  <section class="py-16 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4">
+      <h2 class="text-3xl font-bold">Our Rankers</h2>
+      <div class="mt-8 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Repeat cards as needed; placeholders used here -->
+        <div class="rounded-2xl overflow-hidden border bg-white">
+          <img src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=800&auto=format&fit=crop" alt="Ranker" class="w-full h-40 object-cover">
+          <div class="p-4">
+            <h3 class="font-semibold">******</h3>
+            <p class="text-slate-600 text-sm">AIIMS, Delhi</p>
+          </div>
+        </div>
+        <div class="rounded-2xl overflow-hidden border bg-white">
+          <img src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?q=80&w=800&auto=format&fit=crop" alt="Ranker" class="w-full h-40 object-cover">
+          <div class="p-4">
+            <h3 class="font-semibold">******</h3>
+            <p class="text-slate-600 text-sm">MRIMS, Hyderabad</p>
+          </div>
+        </div>
+        <div class="rounded-2xl overflow-hidden border bg-white">
+          <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=800&auto=format&fit=crop" alt="Ranker" class="w-full h-40 object-cover">
+          <div class="p-4">
+            <h3 class="font-semibold">******</h3>
+            <p class="text-slate-600 text-sm">ASRAM Medical College</p>
+          </div>
+        </div>
+        <div class="rounded-2xl overflow-hidden border bg-white">
+          <img src="https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=800&auto=format&fit=crop" alt="Ranker" class="w-full h-40 object-cover">
+          <div class="p-4">
+            <h3 class="font-semibold">******</h3>
+            <p class="text-slate-600 text-sm">Osmania Medical College</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact & Join -->
+  <section id="contact" class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-10 items-start">
+      <div>
+        <h2 class="text-3xl font-bold">Contact</h2>
+        <p class="mt-2 text-slate-700">Hyderabad</p>
+        <div class="mt-4 space-y-2 text-slate-700">
+          <div>Phone: <a href="tel:+91000000369" class="font-semibold text-brand-600">00000 00369</a></div>
+          <div>Email: <a href="mailto:info@laxmiacademy.com" class="font-semibold text-brand-600">info@laxmiacademy.com</a></div>
+        </div>
+        <div class="mt-6 rounded-2xl overflow-hidden">
+          <iframe class="w-full h-64" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.974063622573!2d77.5946!3d12.9121!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTLCsDU0JzQzLjYiTiA3N8KwMzUnNDMuNiJF!5e0!3m2!1sen!2sin!4v1680000000000"></iframe>
+        </div>
+      </div>
+
+      <div id="join" class="bg-slate-50 rounded-2xl p-6 border">
+        <h2 class="text-2xl font-bold">Join Us</h2>
+        <p class="mt-1 text-slate-600">Send us your details and we will reach out.</p>
+        <form class="mt-6 grid gap-4">
+          <div>
+            <label class="block text-sm font-medium">Name</label>
+            <input type="text" class="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Your full name" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Email</label>
+            <input type="email" class="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="you@laxmiacademy.com" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Phone</label>
+            <input type="tel" class="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="+91" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Message</label>
+            <textarea rows="4" class="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Tell us your goal"></textarea>
+          </div>
+          <button type="submit" class="px-5 py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700">Send</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer class="border-t border-slate-200 py-10 bg-white">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p class="text-slate-600">© <span id="year"></span> Laxmi Academy — School of Knowledge. All rights reserved.</p>
+      <p class="text-slate-600">Best IIT‑JEE • NEET • EAMCET • BITSAT Coaching in Hyderabad</p>
+    </div>
+  </footer>
 
   <script>
-    // Simulate user count
-    function updateUserCount(){
-      const n = Math.floor(Math.random()*(250-50+1))+50;
-      document.getElementById("userCount").textContent = n;
-    }
-    updateUserCount(); setInterval(updateUserCount, 5000);
+    // Counters animation
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          const el = entry.target; const target = +el.getAttribute('data-counter');
+          let n = 0; const step = Math.ceil(target / 100);
+          const t = setInterval(()=>{ n+=step; if(n>=target){ n=target; clearInterval(t); } el.textContent = n; }, 20);
+          observer.unobserve(el);
+        }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('[data-counter]').forEach(el => observer.observe(el));
 
-    // Demo login handler
-    document.getElementById("loginForm").addEventListener("submit", (e)=>{
-      e.preventDefault();
-      const subject = document.getElementById("subject").value || "(none)";
-      const username = document.getElementById("username").value.trim();
-      if(!username || !subject) return alert("Please select subject and enter username.");
-      alert(`Subject: ${subject}\nUsername: ${username}\n(Login handling goes here)`);
-    });
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account - Laxmi Academy</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 80px;
+    }
+
+    .signup-container {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 30px 40px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0px 6px 25px rgba(0, 0, 0, 0.5);
+      width: 380px;
+      text-align: center;
+      color: white;
+    }
+
+    .signup-container h2 {
+      margin-bottom: 15px;
+      font-size: 22px;
+    }
+
+    .signup-container .field {
+      text-align: left;
+      margin-bottom: 15px;
+    }
+
+    .signup-container label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .signup-container input,
+    .signup-container select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .signup-container button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background-color: #ff9800;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0px 4px 10px rgba(255, 152, 0, 0.6);
+    }
+
+    .signup-container button:hover {
+      background-color: #ff5722;
+    }
+
+    .signup-container p {
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+   /* Signup link styling */
+.signup a {
+  color: #ffffff;            /* link color */
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.signup a:hover,
+.signup a:focus {
+  color: #ffd54f;            /* hover/focus color */
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+    .signup-container p a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="signup-container">
+    <h2>Create Your Account</h2>
+    <form id="signupForm">
+      <!-- Full Name -->
+      <div class="field">
+        <label for="fullname">Full Name</label>
+        <input type="text" id="fullname" placeholder="Enter your full name" required>
+      </div>
+
+      <!-- Email -->
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="Enter your email" required>
+      </div>
+
+      <!-- Phone -->
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" placeholder="Enter your phone number" required>
+      </div>
+
+      <!-- Subject Selection -->
+      <div class="field">
+        <label for="subject">Select Subject</label>
+        <select id="subject" required>
+          <option value="" disabled selected>Select a subject</option>
+          <option>PHYSICS</option>
+          <option>CHEMISTRY</option>
+          <option>MATHS</option>
+          <option>IIT JEE</option>
+          <option>NEET</option>
+          <option>OLYMPIADS</option>
+        </select>
+      </div>
+
+      <!-- Plan Selection -->
+      <div class="field">
+        <label for="plan">Select Plan</label>
+        <select id="plan" required>
+          <option value="" disabled selected>Select a plan</option>
+          <option>6 Months — ₹650</option>
+          <option>Annual (per course) — ₹1000</option>
+          <option>2-Course Combo — ₹1700</option>
+        </select>
+      </div>
+
+      <!-- Password -->
+      <div class="field">
+        <label for="password">Create Password</label>
+        <input type="password" id="password" placeholder="Enter password" required>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="field">
+        <label for="confirmPassword">Confirm Password</label>
+        <input type="password" id="confirmPassword" placeholder="Confirm password" required>
+      </div>
+
+      <!-- Signup Button -->
+      <button type="submit">Create Account</button>
+    </form>
+    <p>Already have an account? <a href="index.html">Login here</a></p>
+  </div>
+
+  <script>
+    document.getElementById("signupForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const name = document.getElementById("fullname").value;
+      const email = document.getElementById("email").value;
+      alert("Account created successfully for " + name + "!\nAn activation link has been sent to " + email);
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>

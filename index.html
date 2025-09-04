@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Laxmi Academy — School of Knowledge</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#101726;
+      --bg2:#1b2a52;
+      --glass:rgba(255,255,255,.10);
+      --glass-strong:rgba(255,255,255,.16);
+      --text:#ffffff;
+      --accent:#ff9800;
+      --accent-2:#ff5722;
+      --chip:rgba(255,255,255,.18);
+      --shadow:0 10px 40px rgba(0,0,0,.45);
+      --radius:16px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; }
+    body{
+      font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      min-height:100svh;
+      /* premium gradient background */
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #2b6cff22, transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, #ff3f5a22, transparent 60%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* --- Top ribbon (black, static) --- */
+    .subjects-marquee{
+      position:sticky; top:0; z-index:1000;
+      width:100%;
+      background:#000;
+      border-bottom:1px solid #ffffff2a;
+      box-shadow:0 6px 18px rgba(0,0,0,.55);
+    }
+    .subjects-marquee p{
+      margin:0; padding:.65rem .75rem;
+      text-align:center; font-weight:700; font-size:1rem; letter-spacing:.25px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    /* blinking+glow for subjects */
+    @keyframes blink {0%,49%{opacity:1} 50%,100%{opacity:.55}}
+    .subject{ margin:0 .6rem; text-shadow:0 0 12px #fff7,0 0 18px #fff5; animation:blink 1.5s infinite }
+    .physics{color:#00e5ff} .chemistry{color:#ffeb3b} .maths{color:#76ff03}
+    .iit{color:#ff4081} .neet{color:#ff9100} .olympiad{color:#40c4ff}
+
+    /* --- Header/logo --- */
+    .header{
+      display:flex; flex-direction:column; align-items:center; gap:.35rem;
+      padding:1.25rem .75rem .25rem;
+    }
+    .logo{
+      width:180px; height:180px; border-radius:50%;
+      background:#111 center/cover no-repeat;
+      box-shadow:0 10px 35px rgba(0,0,0,.6);
+      border:1px solid #ffffff1a;
+      overflow:hidden; display:grid; place-items:center;
+    }
+    .logo img{ width:100%; height:100%; object-fit:cover; display:block }
+    .brand{ font-size:1.9rem; font-weight:700; letter-spacing:.4px }
+    .tagline{ color:#d8d8d8; font-size:.95rem }
+
+    /* user counter chip */
+    .user-counter{
+      position:fixed; top:78px; right:18px; z-index:900;
+      background:var(--chip); backdrop-filter:blur(8px);
+      padding:.5rem .8rem; border-radius:10px; font-weight:700; box-shadow:var(--shadow);
+      border:1px solid #ffffff30;
+    }
+
+    /* --- Main layout --- */
+    .main{
+      width:min(1200px, 92%);
+      margin:1rem auto 2rem;
+      display:grid;
+      grid-template-columns: 1fr minmax(290px, 340px);
+      gap:28px;
+    }
+    @media (max-width: 980px){
+      .main{ grid-template-columns:1fr; }
+      .user-counter{ top:70px; }
+    }
+
+    /* left column: highlights */
+    .left{
+      display:grid; gap:18px;
+    }
+    .panel{
+      background:var(--glass);
+      border:1px solid #ffffff22;
+      backdrop-filter:blur(10px);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:1.1rem 1.1rem;
+    }
+
+    /* subjects list card */
+    .subjects-card h3{ margin:.1rem 0 .6rem; font-size:1.1rem; letter-spacing:.3px }
+    .subject-list{
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+      gap:.6rem;
+    }
+    .chip{
+      background:var(--glass-strong);
+      border:1px solid #ffffff22;
+      padding:.6rem .8rem; border-radius:12px; text-align:center; font-weight:700;
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .chip:hover{ transform:translateY(-2px); box-shadow:0 8px 22px rgba(0,0,0,.4) }
+
+    /* fees card */
+    .fees h3{ margin:0 0 .6rem }
+    .fees ul{ list-style:none; padding:0; margin:0; display:grid; gap:.45rem }
+    .fees li{ display:flex; align-items:center; justify-content:space-between;
+      background:var(--glass-strong); border:1px solid #ffffff22; border-radius:12px;
+      padding:.65rem .8rem; font-weight:600 }
+
+    /* --- Login card --- */
+    .login{
+      background:var(--glass);
+      border:1px solid #ffffff22;
+      backdrop-filter:blur(12px);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:1.2rem 1.2rem 1.3rem;
+      align-self:start;
+    }
+    .login h2{ margin:.1rem 0 1rem; font-size:1.15rem; letter-spacing:.3px }
+    .field{ display:grid; gap:.35rem; margin:.55rem 0 }
+    .label{ font-size:.86rem; font-weight:700; color:#f2f2f2 }
+    .control{
+      width:100%; padding:.75rem .85rem; border-radius:10px; border:1px solid #0000;
+      background:#ffffffee; color:#1c1c1c; font-size:.95rem; outline:none;
+      box-shadow: inset 0 0 0 1px #0000;
+      transition: box-shadow .15s ease, transform .06s ease;
+    }
+    .control:focus{ box-shadow: inset 0 0 0 2px #5b9dff }
+    select.control{
+      appearance:none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #777 50%),
+        linear-gradient(135deg, #777 50%, transparent 50%);
+      background-position: calc(100% - 22px) 52%, calc(100% - 14px) 52%;
+      background-size: 8px 8px, 8px 8px; background-repeat:no-repeat;
+    }
+    .btn{
+      width:100%; margin-top:.6rem; padding:.8rem .9rem; border:none; border-radius:12px;
+      font-weight:800; letter-spacing:.2px; color:#fff; cursor:pointer;
+      background:linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow:0 10px 20px rgba(255,120,0,.35);
+      transition:transform .08s ease, filter .2s ease, box-shadow .2s ease;
+    }
+    .btn:hover{ filter:saturate(1.05) brightness(1.03) }
+    .btn:active{ transform:translateY(1px) }
+
+    .signup{ margin:.8rem 0 0; font-size:.9rem; color:#eee }
+    .signup a{ color:#ffd54f; font-weight:700; text-decoration:none }
+    .signup a:hover{ text-decoration:underline }
+
+    /* accessibility preference */
+    @media (prefers-reduced-motion: reduce){
+      .subject{ animation:none }
+    }
+
+    /* small footer */
+    footer{ color:#d0d0d0; opacity:.8; text-align:center; padding:1rem 0 1.4rem; font-size:.85rem }
+  </style>
+</head>
+<body>
+
+  <!-- Black Ribbon with static, blinking neon subjects -->
+  <div class="subjects-marquee">
+    <p>
+      <span class="subject physics">📘 PHYSICS</span> |
+      <span class="subject chemistry">⚗️ CHEMISTRY</span> |
+      <span class="subject maths">📐 MATHS</span> |
+      <span class="subject iit">🎯 IIT JEE</span> |
+      <span class="subject neet">🧠 NEET</span> |
+      <span class="subject olympiad">🏆 OLYMPIADS</span>
+    </p>
+  </div>
+
+  <!-- Header / Branding -->
+  <header class="header">
+    <div class="logo">
+      <!-- Replace with your logo file -->
+      <img src="logo.png.jpeg" alt="Laxmi Academy Logo" />
+    </div>
+    <div class="brand">Laxmi Academy</div>
+    <div class="tagline">Empowering Students with Knowledge</div>
+    <div class="user-counter">👥 Users Online: <span id="userCount">0</span></div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Left Column: Subjects & Fees -->
+    <section class="left">
+      <div class="panel subjects-card">
+        <h3>Coaching Subjects</h3>
+        <div class="subject-list">
+          <div class="chip">PHYSICS</div>
+          <div class="chip">CHEMISTRY</div>
+          <div class="chip">MATHS</div>
+          <div class="chip">IIT JEE</div>
+          <div class="chip">NEET</div>
+          <div class="chip">OLYMPIADS</div>
+        </div>
+      </div>
+
+      <div class="panel fees">
+        <h3>📌 Fee Structure</h3>
+        <ul>
+          <li><span>6 Months</span><strong>₹ 650</strong></li>
+          <li><span>Annual (per course)</span><strong>₹ 1,000</strong></li>
+          <li><span>2-Course Combo</span><strong>₹ 1,700</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Right Column: Login -->
+    <aside class="login">
+      <form id="loginForm" novalidate>
+        <h2>Login to Your Account</h2>
+
+        <div class="field">
+          <label class="label" for="subject">Subject</label>
+          <select id="subject" class="control" required>
+            <option value="" disabled selected>Select a subject</option>
+            <option>PHYSICS</option>
+            <option>CHEMISTRY</option>
+            <option>MATHS</option>
+            <option>IIT JEE</option>
+            <option>NEET</option>
+            <option>OLYMPIADS</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label" for="username">Username</label>
+          <input id="username" class="control" type="text" placeholder="Enter Username" required />
+        </div>
+
+        <div class="field">
+          <label class="label" for="password">Password</label>
+          <input id="password" class="control" type="password" placeholder="Enter Password" required />
+        </div>
+
+        <button type="submit" class="btn">Login</button>
+        <p class="signup-link"> Don't have an account? <a href="signup.html">Sign Up</a> </p>
+      </form>
+    </aside>
+  </main>
+
+  <footer>© 2025 Laxmi Academy — School of Knowledge</footer>
+
+  <script>
+    // Simulate user count
+    function updateUserCount(){
+      const n = Math.floor(Math.random()*(250-50+1))+50;
+      document.getElementById("userCount").textContent = n;
+    }
+    updateUserCount(); setInterval(updateUserCount, 5000);
+
+    // Demo login handler
+    document.getElementById("loginForm").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const subject = document.getElementById("subject").value || "(none)";
+      const username = document.getElementById("username").value.trim();
+      if(!username || !subject) return alert("Please select subject and enter username.");
+      alert(`Subject: ${subject}\nUsername: ${username}\n(Login handling goes here)`);
+    });
+  </script>
+</body>
+</html>

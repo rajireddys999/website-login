@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Admin Panel — Laxmi Academy</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="theme.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -328,6 +330,89 @@
       background: rgba(0,0,0,.5); z-index: 99;
     }
     .overlay-bg.show { display: block; }
+
+    /* ══ Site-wide theme: light (default) / dark (html.dark) ══ */
+    :root {
+      --bg:      #ffffff;
+      --surface: #f8fafc;
+      --border:  #e2e8f0;
+      --text:    #111827;
+      --muted:   #6b7280;
+      --accent:  #6366f1;
+      --accent2: #818cf8;
+      --orange:  #f97316;
+      --green:   #22c55e;
+      --red:     #ef4444;
+    }
+    html.dark {
+      --bg:      #0a0a12;
+      --surface: rgba(255,255,255,.055);
+      --border:  rgba(255,255,255,.09);
+      --text:    #f0f0f5;
+      --muted:   rgba(255,255,255,.42);
+    }
+    body { background: var(--bg) !important; color: var(--text); }
+    html.dark body { background: #0a0a12 !important; }
+
+    .sidebar { background: var(--surface) !important; }
+    html.dark .sidebar { background: rgba(255,255,255,.03) !important; }
+
+    .sidebar-logo { border-bottom-color: var(--border) !important; }
+    .sidebar-bottom { border-top-color: var(--border) !important; }
+
+    .topbar {
+      background: rgba(255,255,255,.97) !important;
+      border-bottom: 1px solid var(--border) !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    html.dark .topbar {
+      background: rgba(10,10,18,.9) !important;
+      box-shadow: none;
+    }
+
+    .profile-menu {
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 16px 48px rgba(0,0,0,.12) !important;
+    }
+    html.dark .profile-menu {
+      background: #12121e !important;
+      border-color: rgba(255,255,255,.1) !important;
+      box-shadow: 0 16px 48px rgba(0,0,0,.55) !important;
+    }
+    .pm-header { border-bottom-color: #e2e8f0 !important; }
+    html.dark .pm-header { border-bottom-color: rgba(255,255,255,.08) !important; }
+    .pm-name  { color: #111827 !important; }
+    html.dark .pm-name  { color: #f0f0f5 !important; }
+    .pm-email { color: #6b7280 !important; }
+    html.dark .pm-email { color: rgba(255,255,255,.45) !important; }
+    .pm-row   { color: #6b7280 !important; }
+    html.dark .pm-row   { color: rgba(255,255,255,.5) !important; }
+    .pm-row strong { color: #111827 !important; }
+    html.dark .pm-row strong { color: var(--text) !important; }
+
+    .modal { background: #ffffff !important; border-color: #e2e8f0 !important; }
+    html.dark .modal { background: #13131f !important; border-color: var(--border) !important; }
+    .modal p { color: #6b7280 !important; }
+    html.dark .modal p { color: var(--muted) !important; }
+
+    .toast { background: #ffffff !important; color: #111827 !important; }
+    html.dark .toast { background: #1e1b4b !important; color: var(--text) !important; }
+
+    .course-bar-track { background: rgba(0,0,0,.07) !important; }
+    html.dark .course-bar-track { background: rgba(255,255,255,.07) !important; }
+
+    /* Topbar text in light mode */
+    html:not(.dark) .page-heading,
+    html:not(.dark) #topbar-name { color: #111827 !important; }
+    html:not(.dark) .hamburger { color: #374151 !important; }
+
+    thead th { background: rgba(0,0,0,.02) !important; }
+    html.dark thead th { background: rgba(255,255,255,.025) !important; }
+    tbody td { border-bottom-color: rgba(0,0,0,.05) !important; }
+    html.dark tbody td { border-bottom-color: rgba(255,255,255,.04) !important; }
+    tbody tr:hover td { background: rgba(0,0,0,.02) !important; }
+    html.dark tbody tr:hover td { background: rgba(255,255,255,.03) !important; }
   </style>
 </head>
 <body>
@@ -390,6 +475,7 @@
         <span class="page-heading" id="page-title">Dashboard</span>
       </div>
       <div class="topbar-right">
+        <button class="btn-theme" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button>
         <span class="admin-chip">Admin</span>
         <span id="topbar-name" style="font-size:.85rem;font-weight:600">...</span>
         <div class="profile-dropdown-wrapper">

@@ -4,11 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Laxmi Academy — Physics Student Portal</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="theme.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; }
+    /* Navbar theme button */
+    #navbar-theme-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid #e5e7eb; background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1rem; transition: all .2s;
+    }
+    #navbar-theme-btn:hover { border-color: #f97316; transform: rotate(15deg) scale(1.1); }
+    html.dark #navbar-theme-btn { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.06); }
     .glow-text { background: linear-gradient(90deg,#ff9800,#ff5722); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     .hero-bg { background: linear-gradient(135deg,#0f0c29 0%,#302b63 55%,#24243e 100%); }
     .particle { position: absolute; border-radius: 50%; opacity: .12; animation: float 7s ease-in-out infinite; }
@@ -67,6 +78,7 @@
       </nav>
 
       <div class="flex items-center gap-3">
+        <button id="navbar-theme-btn" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button>
         <a href="login.html" class="px-4 py-2 rounded-xl border border-orange-400 text-orange-500 font-bold text-sm hover:bg-orange-50 transition">Login</a>
         <a href="signup.html" class="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold text-sm shadow hover:shadow-md transition">Sign Up Free</a>
       </div>

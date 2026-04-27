@@ -1,0 +1,122 @@
+/* ═══════════════════════════════════════════════════
+   Site-wide theme — light (default) / dark (html.dark)
+   ═══════════════════════════════════════════════════ */
+
+/* ── Floating toggle button (auth pages: login, signup) ── */
+#theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.32);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 9999;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+#theme-toggle:hover {
+  transform: scale(1.1) rotate(15deg);
+  background: rgba(255,255,255,0.28);
+}
+html.dark #theme-toggle {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+}
+
+/* ── Inline toggle button (dashboard/navbar topbar) ── */
+.btn-theme {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.05);
+  border: 1.5px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+  font-family: inherit;
+}
+.btn-theme:hover { transform: scale(1.1) rotate(15deg); }
+html.dark .btn-theme {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+}
+
+/* ══════════════════════════════════════════════
+   Landing page (index.html) dark mode overrides
+   ══════════════════════════════════════════════ */
+html.dark body {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+/* Sticky navbar */
+html.dark header.sticky {
+  background: rgba(15,23,42,0.93) !important;
+  border-color: rgba(255,255,255,0.07) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.05) !important;
+}
+html.dark nav a { color: #94a3b8 !important; }
+
+/* Text utilities */
+html.dark .text-slate-900,
+html.dark .text-slate-800 { color: #f1f5f9 !important; }
+html.dark .text-slate-600,
+html.dark .text-slate-500 { color: #94a3b8 !important; }
+html.dark .text-slate-400 { color: #64748b !important; }
+
+/* Section backgrounds */
+html.dark #how    { background: #0f172a !important; }
+html.dark #contact { background: #0f172a !important; }
+html.dark #courses {
+  background: #0f172a !important;
+  background-image: none !important;
+}
+
+/* Cards inside sections */
+html.dark #how .card-hover,
+html.dark #courses .card-hover {
+  background: #1e293b !important;
+  background-image: none !important;
+}
+
+/* Generic white / slate-50 backgrounds */
+html.dark .bg-white    { background-color: #1e293b !important; }
+html.dark .bg-slate-50 { background-color: #1e293b !important; }
+
+/* Borders */
+html.dark .border-slate-100,
+html.dark .border-slate-200  { border-color: rgba(255,255,255,0.07) !important; }
+html.dark .border-indigo-100 { border-color: rgba(99,102,241,0.2) !important; }
+html.dark .border-purple-100 { border-color: rgba(168,85,247,0.2) !important; }
+html.dark .border-orange-100 { border-color: rgba(249,115,22,0.2) !important; }
+html.dark .border-emerald-100 { border-color: rgba(16,185,129,0.2) !important; }
+
+/* Small icon-container tints */
+html.dark .bg-indigo-100  { background-color: rgba(99,102,241,0.15) !important; }
+html.dark .bg-purple-100  { background-color: rgba(168,85,247,0.15) !important; }
+html.dark .bg-orange-100  { background-color: rgba(249,115,22,0.15) !important; }
+html.dark .bg-emerald-100 { background-color: rgba(16,185,129,0.15) !important; }
+html.dark .bg-green-100   { background-color: rgba(34,197,94,0.15) !important; }
+
+/* Badge text inside tinted containers */
+html.dark .text-indigo-700  { color: #a5b4fc !important; }
+html.dark .text-purple-700  { color: #d8b4fe !important; }
+html.dark .text-orange-700  { color: #fb923c !important; }
+html.dark .text-emerald-700 { color: #6ee7b7 !important; }
+
+/* Wave SVG at hero bottom — blend with dark section below */
+html.dark section.hero-bg svg.fill-white { fill: #0f172a !important; }

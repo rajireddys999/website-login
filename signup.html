@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Create Account — Laxmi Academy</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="theme.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -320,9 +322,78 @@
     @media (max-width: 400px) {
       .grid-2 { grid-template-columns: 1fr; }
     }
+
+    /* ─── Dark mode ─── */
+    html.dark body {
+      background: linear-gradient(135deg, #0a0818 0%, #1a1740 50%, #0a0818 100%);
+    }
+    html.dark .signup-card {
+      background: #1e293b;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+    html.dark .card-header h2 { color: #f1f5f9; }
+    html.dark .card-header p  { color: #94a3b8; }
+    html.dark .field label    { color: #cbd5e1; }
+    html.dark .input-wrap svg.icon { color: #64748b; }
+    html.dark .input-wrap input,
+    html.dark .input-wrap select {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f1f5f9;
+    }
+    html.dark .input-wrap input::placeholder { color: #64748b; }
+    html.dark .input-wrap input:focus,
+    html.dark .input-wrap select:focus {
+      border-color: #818cf8;
+      box-shadow: 0 0 0 3px rgba(129,140,248,.2);
+      background: #1e293b;
+    }
+    html.dark .eye-btn { color: #64748b; }
+    html.dark .eye-btn:hover { color: #818cf8; }
+    html.dark .check-option {
+      border-color: #334155;
+      background: #0f172a;
+      color: #cbd5e1;
+    }
+    html.dark .check-option:hover {
+      border-color: #818cf8;
+      background: #1e293b;
+    }
+    html.dark .check-option:has(input:checked) {
+      border-color: #818cf8;
+      background: rgba(129,140,248,.1);
+      color: #818cf8;
+    }
+    html.dark .price-box {
+      background: rgba(129,140,248,.08);
+      border-color: #334155;
+    }
+    html.dark .price-rate        { color: #94a3b8; }
+    html.dark .price-rate strong { color: #818cf8; }
+    html.dark .price-total-label  { color: #64748b; }
+    html.dark .price-total-amount { color: #818cf8; }
+    html.dark .error-msg {
+      background: #450a0a;
+      border-color: #b91c1c;
+      color: #fca5a5;
+    }
+    html.dark .strength-bar span { background: #334155; }
+    html.dark .divider { color: #4b5563; }
+    html.dark .divider::before,
+    html.dark .divider::after { background: #374151; }
+    html.dark .login-row   { color: #94a3b8; }
+    html.dark .login-row a { color: #818cf8; }
+    html.dark .back-link        { color: #475569; }
+    html.dark .back-link:hover  { color: #818cf8; }
+    html.dark .success-overlay h3 { color: #f1f5f9; }
+    html.dark .success-overlay p  { color: #94a3b8; }
   </style>
 </head>
 <body>
+
+<button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode">
+  <span class="theme-icon">🌙</span>
+</button>
 
 <div class="signup-card">
 

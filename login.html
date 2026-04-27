@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Login — Laxmi Academy</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="theme.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -293,58 +295,58 @@
     }
 
     /* ─── DARK MODE ─── */
-    body.dark {
+    html.dark {
       background: linear-gradient(135deg, #0a0818 0%, #1a1740 50%, #0a0818 100%);
     }
-    body.dark #theme-toggle {
+    html.dark #theme-toggle {
       background: rgba(255, 255, 255, 0.08);
       border-color: rgba(255, 255, 255, 0.15);
     }
-    body.dark .login-card {
+    html.dark .login-card {
       background: #1e293b;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     }
-    body.dark .card-header h2 { color: #f1f5f9; }
-    body.dark .card-header p { color: #94a3b8; }
-    body.dark .tabs { background: #0f172a; }
-    body.dark .tab { color: #94a3b8; }
-    body.dark .tab.active { background: #4f46e5; color: #fff; }
-    body.dark .field label { color: #cbd5e1; }
-    body.dark .input-wrap > svg { color: #64748b; }
-    body.dark .input-wrap input {
+    html.dark .card-header h2 { color: #f1f5f9; }
+    html.dark .card-header p { color: #94a3b8; }
+    html.dark .tabs { background: #0f172a; }
+    html.dark .tab { color: #94a3b8; }
+    html.dark .tab.active { background: #4f46e5; color: #fff; }
+    html.dark .field label { color: #cbd5e1; }
+    html.dark .input-wrap > svg { color: #64748b; }
+    html.dark .input-wrap input {
       background: #0f172a;
       border-color: #334155;
       color: #f1f5f9;
     }
-    body.dark .input-wrap input::placeholder { color: #64748b; }
-    body.dark .input-wrap input:focus {
+    html.dark .input-wrap input::placeholder { color: #64748b; }
+    html.dark .input-wrap input:focus {
       border-color: #818cf8;
       box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
       background: #1e293b;
     }
-    body.dark .eye-btn { color: #64748b; }
-    body.dark .eye-btn:hover { color: #818cf8; }
-    body.dark .forgot a { color: #818cf8; }
-    body.dark .error-msg {
+    html.dark .eye-btn { color: #64748b; }
+    html.dark .eye-btn:hover { color: #818cf8; }
+    html.dark .forgot a { color: #818cf8; }
+    html.dark .error-msg {
       background: #450a0a;
       border-color: #b91c1c;
       color: #fca5a5;
     }
-    body.dark .divider { color: #4b5563; }
-    body.dark .divider::before, body.dark .divider::after { background: #374151; }
-    body.dark .signup-row { color: #94a3b8; }
-    body.dark .signup-row a { color: #818cf8; }
-    body.dark .back-link { color: #475569; }
-    body.dark .back-link:hover { color: #818cf8; }
-    body.dark .success-overlay h3 { color: #f1f5f9; }
-    body.dark .success-overlay p { color: #94a3b8; }
+    html.dark .divider { color: #4b5563; }
+    html.dark .divider::before, html.dark .divider::after { background: #374151; }
+    html.dark .signup-row { color: #94a3b8; }
+    html.dark .signup-row a { color: #818cf8; }
+    html.dark .back-link { color: #475569; }
+    html.dark .back-link:hover { color: #818cf8; }
+    html.dark .success-overlay h3 { color: #f1f5f9; }
+    html.dark .success-overlay p { color: #94a3b8; }
   </style>
 </head>
 <body>
 
   <!-- Dark / Light mode toggle -->
   <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode">
-    <span id="theme-icon">🌙</span>
+    <span class="theme-icon">🌙</span>
   </button>
 
   <div class="login-card">
@@ -437,26 +439,6 @@
   </div>
 
   <script>
-    // Apply saved theme before first paint
-    (function () {
-      if (localStorage.getItem('la_theme') === 'dark') {
-        document.body.classList.add('dark');
-      }
-    })();
-
-    // Update icon after DOM is ready
-    document.addEventListener('DOMContentLoaded', function () {
-      if (document.body.classList.contains('dark')) {
-        document.getElementById('theme-icon').textContent = '☀️';
-      }
-    });
-
-    function toggleTheme() {
-      const isDark = document.body.classList.toggle('dark');
-      document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
-      localStorage.setItem('la_theme', isDark ? 'dark' : 'light');
-    }
-
     let activeRole = 'student';
 
     function switchTab(btn, role) {

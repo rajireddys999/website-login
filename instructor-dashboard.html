@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Instructor Portal — Laxmi Academy</title>
+  <title>Instructor Logged In — Laxmi Academy</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -303,8 +303,7 @@
         <span class="page-heading" id="page-title">Overview</span>
       </div>
       <div class="topbar-right">
-        <span class="instructor-chip">Instructor</span>
-        <span id="topbar-name" style="font-size:.85rem;font-weight:600">...</span>
+        <span id="topbar-name" style="font-size:.85rem;font-weight:600">Instructor : ...</span>
         <div class="profile-dropdown-wrapper">
           <div class="instructor-avatar" id="topbar-avatar" onclick="toggleProfileMenu(event)">I</div>
           <div class="profile-menu" id="profile-menu">
@@ -866,8 +865,10 @@
     const r = await api('/api/me');
     if (!r.ok) { logout(); return; }
     const u = r.data.user;
-    const initial = (u.name || 'I').charAt(0).toUpperCase();
-    document.getElementById('topbar-name').textContent   = (u.name || '').split(' ')[0];
+    const cleanName = (u.name || '').replace(/^(Dr|Mr|Mrs|Ms|Prof)\.\s*/i, '');
+    const firstName = cleanName.split(' ')[0];
+    const initial = (firstName || 'I').charAt(0).toUpperCase();
+    document.getElementById('topbar-name').textContent   = 'Instructor : ' + firstName;
     document.getElementById('topbar-avatar').textContent = initial;
     document.getElementById('p-name').value    = u.name    || '';
     document.getElementById('p-email').value   = u.email   || '';
@@ -877,7 +878,7 @@
 
     // Profile dropdown
     document.getElementById('pm-avatar-lg').textContent = initial;
-    document.getElementById('pm-name').textContent = u.name || '';
+    document.getElementById('pm-name').textContent = cleanName;
     document.getElementById('pm-email').textContent = u.email || '';
     document.getElementById('pm-subject').textContent = u.subject || '—';
   }

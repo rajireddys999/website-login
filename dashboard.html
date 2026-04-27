@@ -263,27 +263,44 @@
 <body>
 
 <!-- Video Modal -->
-<div id="video-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)closeVideoModal()">
-  <div style="background:#13131f;border:1px solid rgba(255,255,255,.1);border-radius:20px;width:100%;max-width:860px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7)">
+<div id="video-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto" onclick="if(event.target===this)closeVideoModal()">
+  <div style="background:#13131f;border:1px solid rgba(255,255,255,.1);border-radius:20px;width:100%;max-width:900px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7);margin:auto">
     <!-- Modal header -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.08)">
-      <span id="vm-title" style="font-weight:800;font-size:1.05rem;color:#f1f1f1"></span>
+      <div>
+        <span id="vm-title" style="font-weight:800;font-size:1.05rem;color:#f1f1f1"></span>
+        <span id="vm-count" style="margin-left:.6rem;font-size:.75rem;color:rgba(255,255,255,.35);font-weight:600"></span>
+      </div>
       <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#f1f1f1;border-radius:8px;padding:.4rem .9rem;cursor:pointer;font-size:.85rem;font-weight:700;font-family:Inter,sans-serif">Close ✕</button>
     </div>
-    <!-- Video -->
+    <!-- Video player -->
     <div style="position:relative;padding-bottom:56.25%;background:#000">
-      <iframe id="vm-frame" style="position:absolute;inset:0;width:100%;height:100%;border:none" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    </div>
-    <!-- Chapters + playlist link -->
-    <div style="padding:1.2rem 1.4rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
-        <span style="font-size:.78rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em">Chapters in this topic</span>
-        <a id="vm-playlist" href="#" target="_blank" style="font-size:.78rem;color:#ff9800;font-weight:700;text-decoration:none;border:1px solid rgba(255,152,0,.3);padding:.25rem .75rem;border-radius:99px;background:rgba(255,152,0,.08)">More Videos →</a>
+      <iframe id="vm-frame" style="position:absolute;inset:0;width:100%;height:100%;border:none;display:none" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      <video id="vm-video" style="position:absolute;inset:0;width:100%;height:100%;display:none" controls controlsList="nodownload"></video>
+      <div id="vm-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:.9rem;flex-direction:column;gap:.5rem">
+        <div style="width:32px;height:32px;border:3px solid rgba(255,152,0,.3);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
+        Loading lessons…
       </div>
-      <ul id="vm-chapters" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.4rem;list-style:none"></ul>
+    </div>
+    <!-- Current lesson info -->
+    <div id="vm-lesson-info" style="padding:.85rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.06);display:none">
+      <div id="vm-lesson-title" style="font-weight:700;font-size:.95rem;color:#f1f1f1"></div>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-top:.3rem">
+        <span id="vm-lesson-duration" style="font-size:.75rem;color:#ff9800;font-weight:600"></span>
+        <span id="vm-lesson-desc" style="font-size:.78rem;color:rgba(255,255,255,.45)"></span>
+      </div>
+    </div>
+    <!-- Lesson list -->
+    <div style="padding:1rem 1.4rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem">
+        <span style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em">All Lessons</span>
+        <a id="vm-playlist" href="#" target="_blank" style="font-size:.75rem;color:#ff9800;font-weight:700;text-decoration:none;border:1px solid rgba(255,152,0,.3);padding:.22rem .65rem;border-radius:99px;background:rgba(255,152,0,.08)">YouTube →</a>
+      </div>
+      <ul id="vm-lessons" style="list-style:none;display:grid;gap:.35rem;max-height:220px;overflow-y:auto;padding-right:.2rem"></ul>
     </div>
   </div>
 </div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
@@ -658,26 +675,109 @@
     closeSidebar();
   }
 
-  function openTopic(id) {
+  async function openTopic(id) {
     const topic = TOPICS.find(t => t.id === id);
     if (!topic) return;
-    const v = TOPIC_VIDEOS[id];
+
+    // Show modal in loading state
     document.getElementById('vm-title').textContent = topic.icon + ' ' + topic.title;
-    document.getElementById('vm-chapters').innerHTML = topic.chapters.map(ch =>
-      `<li style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:rgba(255,255,255,.04);border-radius:8px;font-size:.82rem;color:rgba(255,255,255,.7)">
-        <span style="width:6px;height:6px;border-radius:50%;background:#ff9800;flex-shrink:0"></span>${ch}
-      </li>`
-    ).join('');
-    const frame = document.getElementById('vm-frame');
-    frame.src = `https://www.youtube.com/embed/${v.vid}?rel=0&modestbranding=1`;
-    document.getElementById('vm-playlist').href = v.playlist;
+    document.getElementById('vm-count').textContent = '';
+    document.getElementById('vm-loading').style.display = 'flex';
+    document.getElementById('vm-frame').style.display = 'none';
+    document.getElementById('vm-video').style.display = 'none';
+    document.getElementById('vm-lesson-info').style.display = 'none';
+    document.getElementById('vm-lessons').innerHTML = '';
+    const fallback = TOPIC_VIDEOS[id];
+    document.getElementById('vm-playlist').href = fallback ? fallback.playlist : '#';
     document.getElementById('video-modal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
+
+    // Fetch lessons from API
+    let lessons = [];
+    try {
+      const res = await fetch('/api/lessons?topic=' + id, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (res.ok) {
+        const data = await res.json();
+        lessons = Array.isArray(data) ? data : (data.lessons || []);
+      }
+    } catch {}
+
+    // If no lessons from API, build a synthetic one from fallback
+    if (lessons.length === 0 && fallback) {
+      lessons = [{
+        id: 0, title: topic.title + ' — Intro Video', description: '',
+        video_type: 'youtube', video_url: 'https://www.youtube.com/watch?v=' + fallback.vid,
+        duration: '', _vid: fallback.vid
+      }];
+    }
+
+    document.getElementById('vm-count').textContent = lessons.length + ' lesson' + (lessons.length !== 1 ? 's' : '');
+    document.getElementById('vm-loading').style.display = 'none';
+
+    // Render lesson list
+    document.getElementById('vm-lessons').innerHTML = lessons.map((l, i) =>
+      `<li id="vl-${i}" onclick="playLesson(${i})" style="display:flex;align-items:center;gap:.7rem;padding:.55rem .7rem;border-radius:9px;cursor:pointer;transition:background .15s;border:1px solid transparent" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="if(currentLesson!==${i})this.style.background=''"  >
+        <span style="width:24px;height:24px;border-radius:6px;background:rgba(255,152,0,.15);color:#ff9800;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</span>
+        <span style="flex:1;font-size:.82rem;font-weight:600;color:rgba(255,255,255,.8);line-height:1.3">${l.title}</span>
+        ${l.duration ? `<span style="font-size:.72rem;color:rgba(255,255,255,.35);flex-shrink:0">${l.duration}</span>` : ''}
+        <span style="font-size:.8rem;flex-shrink:0">${l.video_type === 'youtube' ? '▶' : '🎬'}</span>
+      </li>`
+    ).join('');
+
+    window._vmLessons = lessons;
+    playLesson(0);
+  }
+
+  let currentLesson = -1;
+  function playLesson(idx) {
+    const lessons = window._vmLessons || [];
+    if (idx < 0 || idx >= lessons.length) return;
+    const l = lessons[idx];
+
+    // Highlight active lesson
+    if (currentLesson >= 0) {
+      const prev = document.getElementById('vl-' + currentLesson);
+      if (prev) { prev.style.background = ''; prev.style.borderColor = 'transparent'; }
+    }
+    currentLesson = idx;
+    const el = document.getElementById('vl-' + idx);
+    if (el) { el.style.background = 'rgba(255,152,0,.1)'; el.style.borderColor = 'rgba(255,152,0,.25)'; }
+
+    // Lesson info bar
+    document.getElementById('vm-lesson-title').textContent = l.title;
+    document.getElementById('vm-lesson-duration').textContent = l.duration || '';
+    document.getElementById('vm-lesson-desc').textContent = l.description || '';
+    document.getElementById('vm-lesson-info').style.display = 'block';
+
+    const frame = document.getElementById('vm-frame');
+    const vid   = document.getElementById('vm-video');
+
+    if (l.video_type === 'youtube') {
+      // Extract YouTube ID
+      let ytId = l._vid;
+      if (!ytId) {
+        const m = (l.video_url || '').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
+        ytId = m ? m[1] : '';
+      }
+      vid.style.display = 'none'; vid.src = '';
+      frame.src = ytId ? `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&autoplay=1` : '';
+      frame.style.display = 'block';
+    } else {
+      frame.style.display = 'none'; frame.src = '';
+      vid.src = l.video_url;
+      vid.style.display = 'block';
+      vid.load();
+    }
   }
 
   function closeVideoModal() {
     document.getElementById('video-modal').style.display = 'none';
     document.getElementById('vm-frame').src = '';
+    document.getElementById('vm-video').src = '';
+    document.getElementById('vm-video').style.display = 'none';
+    document.getElementById('vm-frame').style.display = 'none';
+    currentLesson = -1;
+    window._vmLessons = [];
     document.body.style.overflow = '';
   }
 

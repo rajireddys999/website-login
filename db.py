@@ -35,13 +35,31 @@ def init_db():
             created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
         );
 
-        CREATE TABLE IF NOT EXISTS sessions (
+        CREATE TABLE IF NOT EXISTS instructors (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            token       TEXT    UNIQUE NOT NULL,
-            user_id     INTEGER NOT NULL,
-            role        TEXT    NOT NULL CHECK(role IN ('student','admin')),
-            created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
-            expires_at  TEXT    NOT NULL
+            name        TEXT    NOT NULL,
+            email       TEXT    UNIQUE NOT NULL,
+            phone       TEXT,
+            password    TEXT    NOT NULL,
+            subject     TEXT    NOT NULL DEFAULT 'Physics',
+            bio         TEXT,
+            is_active   INTEGER NOT NULL DEFAULT 1,
+            created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS lessons (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            instructor_id   INTEGER NOT NULL,
+            topic           TEXT    NOT NULL,
+            title           TEXT    NOT NULL,
+            description     TEXT,
+            video_type      TEXT    NOT NULL DEFAULT 'youtube',
+            video_url       TEXT    NOT NULL,
+            duration        TEXT,
+            order_num       INTEGER NOT NULL DEFAULT 0,
+            is_published    INTEGER NOT NULL DEFAULT 1,
+            created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (instructor_id) REFERENCES instructors(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS enquiries (
@@ -55,11 +73,54 @@ def init_db():
             created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
         );
 
-        CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
-        CREATE INDEX IF NOT EXISTS idx_students_email ON students(email);
-        CREATE INDEX IF NOT EXISTS idx_students_phone ON students(phone);
+        CREATE INDEX IF NOT EXISTS idx_students_email    ON students(email);
+        CREATE INDEX IF NOT EXISTS idx_students_phone    ON students(phone);
+        CREATE INDEX IF NOT EXISTS idx_instructors_email ON instructors(email);
+        CREATE INDEX IF NOT EXISTS idx_lessons_topic     ON lessons(topic);
+        CREATE INDEX IF NOT EXISTS idx_lessons_instructor ON lessons(instructor_id);
     """)
+
+    # Migrate sessions table to support instructor role if needed
+    _migrate_sessions(conn)
 
     conn.commit()
     conn.close()
-    print("  [OK] Tables created: students, admins, sessions, enquiries")
+    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries")
+
+def _migrate_sessions(conn):
+    # Check if sessions table exists with old constraint (student|admin only)
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='sessions'"
+    ).fetchone()
+
+    if row is None:
+        # Create fresh with all 3 roles
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                token       TEXT    UNIQUE NOT NULL,
+                user_id     INTEGER NOT NULL,
+                role        TEXT    NOT NULL,
+                created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+                expires_at  TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+        """)
+    elif 'instructor' not in (row['sql'] or ''):
+        # Old table exists without instructor — recreate it
+        conn.executescript("""
+            CREATE TABLE sessions_new (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                token       TEXT    UNIQUE NOT NULL,
+                user_id     INTEGER NOT NULL,
+                role        TEXT    NOT NULL,
+                created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+                expires_at  TEXT    NOT NULL
+            );
+            INSERT OR IGNORE INTO sessions_new
+                SELECT id, token, user_id, role, created_at, expires_at FROM sessions;
+            DROP TABLE sessions;
+            ALTER TABLE sessions_new RENAME TO sessions;
+            CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+        """)
+        print("  [OK] Sessions table migrated to support instructor role")

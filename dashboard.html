@@ -262,6 +262,29 @@
 </head>
 <body>
 
+<!-- Video Modal -->
+<div id="video-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)closeVideoModal()">
+  <div style="background:#13131f;border:1px solid rgba(255,255,255,.1);border-radius:20px;width:100%;max-width:860px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7)">
+    <!-- Modal header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.08)">
+      <span id="vm-title" style="font-weight:800;font-size:1.05rem;color:#f1f1f1"></span>
+      <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#f1f1f1;border-radius:8px;padding:.4rem .9rem;cursor:pointer;font-size:.85rem;font-weight:700;font-family:Inter,sans-serif">Close ✕</button>
+    </div>
+    <!-- Video -->
+    <div style="position:relative;padding-bottom:56.25%;background:#000">
+      <iframe id="vm-frame" style="position:absolute;inset:0;width:100%;height:100%;border:none" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    </div>
+    <!-- Chapters + playlist link -->
+    <div style="padding:1.2rem 1.4rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <span style="font-size:.78rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em">Chapters in this topic</span>
+        <a id="vm-playlist" href="#" target="_blank" style="font-size:.78rem;color:#ff9800;font-weight:700;text-decoration:none;border:1px solid rgba(255,152,0,.3);padding:.25rem .75rem;border-radius:99px;background:rgba(255,152,0,.08)">More Videos →</a>
+      </div>
+      <ul id="vm-chapters" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.4rem;list-style:none"></ul>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
 <div class="layout">
@@ -424,6 +447,15 @@
 </div><!-- /layout -->
 
 <script>
+  // ── Video IDs per topic (YouTube) ─────────────────────────────
+  const TOPIC_VIDEOS = {
+    mechanics: { vid: 'ZM8ECpBuQYE', playlist: 'https://www.youtube.com/results?search_query=mechanics+physics+class+11' },
+    thermo:    { vid: 'vqDbMEdLiCs', playlist: 'https://www.youtube.com/results?search_query=thermodynamics+physics+class+11' },
+    electro:   { vid: 'mc979OhitAg', playlist: 'https://www.youtube.com/results?search_query=electromagnetism+physics+class+12' },
+    optics:    { vid: 'uhsL5VzGMSA', playlist: 'https://www.youtube.com/results?search_query=optics+waves+physics+class+12' },
+    modern:    { vid: 'FXfrncRey-4', playlist: 'https://www.youtube.com/results?search_query=modern+physics+class+12' },
+  };
+
   // ── Physics curriculum data ───────────────────────────────────
   const TOPICS = [
     {
@@ -550,7 +582,7 @@
       const unlocked = unlockedTopics.includes(t.id);
       const chapters = compact ? t.chapters.slice(0, 3) : t.chapters;
       return `
-        <div class="topic-card ${unlocked ? '' : 'locked'}" onclick="${unlocked ? `openTopic('${t.id}')` : ''}">
+        <div class="topic-card ${unlocked ? '' : 'locked'}">
           <div class="topic-header">
             <div class="topic-icon" style="background:${t.color}22;color:${t.color}">${t.icon}</div>
             <div>
@@ -571,7 +603,10 @@
             <div class="progress-bar-wrap">
               <div class="progress-label"><span>Progress</span><span>${t.progress}%</span></div>
               <div class="progress-track"><div class="progress-fill" style="width:${t.progress}%"></div></div>
-            </div>` : `
+            </div>
+            <button onclick="openTopic('${t.id}')" style="margin-top:.85rem;width:100%;padding:.6rem;border-radius:10px;background:linear-gradient(135deg,#ff9800,#ff5722);border:none;color:#fff;font-weight:700;font-size:.82rem;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:.4rem">
+              ▶ Watch Video Lessons
+            </button>` : `
             <div class="lock-overlay">
               <span style="font-size:1.5rem">🔒</span>
               <span>Upgrade plan to unlock</span>
@@ -624,11 +659,26 @@
   }
 
   function openTopic(id) {
-    showPage('courses');
-    setTimeout(() => {
-      const card = document.querySelector(`[onclick="openTopic('${id}')"]`);
-      card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+    const topic = TOPICS.find(t => t.id === id);
+    if (!topic) return;
+    const v = TOPIC_VIDEOS[id];
+    document.getElementById('vm-title').textContent = topic.icon + ' ' + topic.title;
+    document.getElementById('vm-chapters').innerHTML = topic.chapters.map(ch =>
+      `<li style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:rgba(255,255,255,.04);border-radius:8px;font-size:.82rem;color:rgba(255,255,255,.7)">
+        <span style="width:6px;height:6px;border-radius:50%;background:#ff9800;flex-shrink:0"></span>${ch}
+      </li>`
+    ).join('');
+    const frame = document.getElementById('vm-frame');
+    frame.src = `https://www.youtube.com/embed/${v.vid}?rel=0&modestbranding=1`;
+    document.getElementById('vm-playlist').href = v.playlist;
+    document.getElementById('video-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeVideoModal() {
+    document.getElementById('video-modal').style.display = 'none';
+    document.getElementById('vm-frame').src = '';
+    document.body.style.overflow = '';
   }
 
   // ── Sidebar toggle (mobile) ───────────────────────────────────

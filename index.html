@@ -3,844 +3,425 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Laxmi Academy — School of Knowledge</title>
+  <title>Laxmi Academy — Physics Student Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif'] },
-          colors: {
-            brand: { 50:'#eef2ff', 100:'#e0e7ff', 500:'#4f46e5', 600:'#4338ca', 700:'#3730a3' },
-            amber: { 400:'#fbbf24', 500:'#f59e0b' }
-          },
-          animation: {
-            'float': 'float 6s ease-in-out infinite',
-            'float-slow': 'float 9s ease-in-out infinite',
-            'fade-up': 'fadeUp .7s ease both',
-            'marquee': 'marquee 28s linear infinite',
-          },
-          keyframes: {
-            float: { '0%,100%':{ transform:'translateY(0)' }, '50%':{ transform:'translateY(-18px)' } },
-            fadeUp: { from:{ opacity:'0', transform:'translateY(28px)' }, to:{ opacity:'1', transform:'translateY(0)' } },
-            marquee: { '0%':{ transform:'translateX(0)' }, '100%':{ transform:'translateX(-50%)' } }
-          }
-        }
-      }
-    }
-  </script>
   <style>
-    /* Smooth scroll */
     html { scroll-behavior: smooth; }
-
-    /* Gradient text */
-    .glow-text {
-      background: linear-gradient(90deg,#ff9800,#ff5722);
-      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .glow-text-white {
-      background: linear-gradient(90deg,#fff 30%,#ffd580);
-      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-    }
-
-    /* Neon logo ring */
-    .neon-ring { box-shadow: 0 0 22px rgba(255,152,0,.55), 0 0 48px rgba(239,83,80,.35); }
-
-    /* Nav dropdown */
-    .nav-item:hover .dropdown { display: block; }
-
-    /* Hero background */
-    .hero-bg {
-      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-    }
-
-    /* Particle dots */
-    .particle {
-      position: absolute; border-radius: 50%; opacity: .18;
-      animation: float 7s ease-in-out infinite;
-    }
-
-    /* Section reveal */
-    .reveal { opacity: 0; transform: translateY(32px); transition: opacity .65s ease, transform .65s ease; }
-    .reveal.visible { opacity: 1; transform: none; }
-
-    /* Card hover lift */
-    .card-hover { transition: transform .25s ease, box-shadow .25s ease; }
-    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,.12); }
-
-    /* Gradient border card */
-    .grad-border {
-      border: 2px solid transparent;
-      background-clip: padding-box;
-      position: relative;
-    }
-    .grad-border::before {
-      content: ''; position: absolute; inset: -2px; border-radius: inherit;
-      background: linear-gradient(135deg,#ff9800,#4f46e5,#ff5722);
-      z-index: -1; opacity: 0; transition: opacity .3s;
-    }
-    .grad-border:hover::before { opacity: 1; }
-
-    /* Star rating */
-    .stars { color: #fbbf24; letter-spacing: 2px; }
-
-    /* Marquee strip */
-    .marquee-track { display: flex; width: max-content; animation: marquee 28s linear infinite; }
-    .marquee-track:hover { animation-play-state: paused; }
-
-    /* Floating WhatsApp */
-    .whatsapp-btn {
-      position: fixed; bottom: 28px; right: 28px; z-index: 1000;
-      background: linear-gradient(135deg,#25d366,#128c7e);
-      border-radius: 50%; width: 58px; height: 58px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 6px 24px rgba(37,211,102,.5);
-      transition: transform .2s;
-    }
-    .whatsapp-btn:hover { transform: scale(1.12); }
-
-    /* Back to top */
-    #back-top {
-      position: fixed; bottom: 100px; right: 30px; z-index: 999;
-      background: #4338ca; color: #fff; border: none; border-radius: 50%;
-      width: 42px; height: 42px; cursor: pointer; display: none;
-      align-items: center; justify-content: center;
-      box-shadow: 0 4px 14px rgba(67,56,202,.5); transition: background .2s;
-    }
-    #back-top.show { display: flex; }
-    #back-top:hover { background: #3730a3; }
-
-    /* Announcement ticker */
-    .ticker-bg { background: linear-gradient(90deg,#1e1b4b,#312e81); }
-
-    /* Batch badge */
-    .batch-badge {
-      display: inline-block; padding: .2rem .7rem; border-radius: 99px;
-      font-size: .75rem; font-weight: 700; letter-spacing: .04em;
-    }
-
-    /* Timeline dot */
-    .timeline-dot {
-      width: 14px; height: 14px; border-radius: 50%;
-      background: linear-gradient(135deg,#ff9800,#ff5722);
-      flex-shrink: 0; margin-top: 4px;
-      box-shadow: 0 0 0 4px rgba(255,152,0,.2);
-    }
-
-    /* Scroll progress bar */
-    #progress-bar {
-      position: fixed; top: 0; left: 0; height: 3px; z-index: 9999;
-      background: linear-gradient(90deg,#ff9800,#ff5722,#4f46e5);
-      width: 0%; transition: width .1s;
-    }
+    body { font-family: 'Inter', sans-serif; }
+    .glow-text { background: linear-gradient(90deg,#ff9800,#ff5722); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-bg { background: linear-gradient(135deg,#0f0c29 0%,#302b63 55%,#24243e 100%); }
+    .particle { position: absolute; border-radius: 50%; opacity: .12; animation: float 7s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+    .card-hover { transition: transform .22s, box-shadow .22s; }
+    .card-hover:hover { transform: translateY(-5px); box-shadow: 0 16px 36px rgba(0,0,0,.13); }
+    .reveal { opacity:0; transform:translateY(28px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity:1; transform:none; }
+    .step-line::after { content:''; position:absolute; top:50%; left:100%; width:100%; height:2px; background:linear-gradient(90deg,#ff9800,transparent); }
+    .whatsapp-btn { position:fixed; bottom:24px; right:24px; z-index:1000; width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,#25d366,#128c7e); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 22px rgba(37,211,102,.5); transition:transform .2s; }
+    .whatsapp-btn:hover { transform:scale(1.1); }
+    .marquee-track { display:flex; width:max-content; animation:marquee 30s linear infinite; }
+    .marquee-track:hover { animation-play-state:paused; }
+    @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
   </style>
 </head>
-<body class="bg-white text-slate-900 font-sans antialiased">
+<body class="bg-white text-slate-900 antialiased">
 
-<!-- Scroll progress bar -->
-<div id="progress-bar"></div>
-
-<!-- ── TOP ANNOUNCEMENT TICKER ─────────────────────────────────── -->
-<div class="ticker-bg text-white text-sm overflow-hidden py-2 relative">
+<!-- ANNOUNCEMENT TICKER -->
+<div style="background:linear-gradient(90deg,#1e1b4b,#312e81)" class="text-white text-sm overflow-hidden py-2">
   <div class="flex items-center gap-3 px-4">
     <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded shrink-0">LIVE</span>
     <div class="overflow-hidden flex-1">
       <div class="marquee-track whitespace-nowrap gap-12 flex">
-        <span class="mx-8">🎉 New Batch Starting 1st May 2025 — IIT-JEE &amp; NEET Physics</span>
-        <span class="mx-8">📞 Call Now: 00000 00369 for Free Demo Class</span>
-        <span class="mx-8">🏆 98% Success Rate — Join Laxmi Academy Today</span>
-        <span class="mx-8">📚 Crash Course available for May exam batch</span>
-        <span class="mx-8">🎉 New Batch Starting 1st May 2025 — IIT-JEE &amp; NEET Physics</span>
-        <span class="mx-8">📞 Call Now: 00000 00369 for Free Demo Class</span>
-        <span class="mx-8">🏆 98% Success Rate — Join Laxmi Academy Today</span>
-        <span class="mx-8">📚 Crash Course available for May exam batch</span>
+        <span class="mx-8">New Batch Starting 1st May 2025 — IIT-JEE &amp; NEET Physics</span>
+        <span class="mx-8">Call Now: 00000 00369 for Free Demo Class</span>
+        <span class="mx-8">98% Success Rate — Join Laxmi Academy Today</span>
+        <span class="mx-8">Online Course Access — Login to Your Portal Now</span>
+        <span class="mx-8">New Batch Starting 1st May 2025 — IIT-JEE &amp; NEET Physics</span>
+        <span class="mx-8">Call Now: 00000 00369 for Free Demo Class</span>
+        <span class="mx-8">98% Success Rate — Join Laxmi Academy Today</span>
+        <span class="mx-8">Online Course Access — Login to Your Portal Now</span>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ── TOP BAR ──────────────────────────────────────────────────── -->
-<div class="bg-brand-700 text-white text-sm hidden sm:block">
-  <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <span>📍 Hyderabad, Telangana</span>
-      <span class="opacity-70">|</span>
-      <span>📞 00000 00369</span>
-    </div>
-    <div class="flex items-center gap-4 opacity-90">
-      <a href="#" aria-label="Facebook" class="hover:text-orange-300 transition">
-        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.56 9.87v-6.99h-2.54V12h2.54v-2.2c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.88h-2.33v6.99A10 10 0 0 0 22 12z"/></svg>
-      </a>
-      <a href="#" aria-label="Instagram" class="hover:text-orange-300 transition">
-        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.334 3.608 1.308.975.975 1.246 2.242 1.308 3.608.058 1.265.069 1.645.069 4.849s-.012 3.584-.07 4.85c-.062 1.366-.334 2.633-1.308 3.608-.975.975-2.242 1.246-3.608 1.308-1.265.058-1.645.069-4.849.069s-3.584-.012-4.85-.07c-1.366-.062-2.633-.334-3.608-1.308C2.497 19.483 2.226 18.216 2.164 16.85 2.106 15.585 2.095 15.205 2.095 12s.012-3.584.07-4.85C2.227 5.784 2.499 4.517 3.473 3.542 4.448 2.567 5.715 2.296 7.081 2.234 8.346 2.176 8.726 2.163 12 2.163zm0-2.163C8.741 0 8.332.014 7.052.072 5.197.157 3.355.673 2.014 2.014.673 3.355.157 5.197.072 7.052.014 8.332 0 8.741 0 12c0 3.259.014 3.668.072 4.948.085 1.855.601 3.697 1.942 5.038 1.341 1.341 3.183 1.857 5.038 1.942C8.332 23.986 8.741 24 12 24s3.668-.014 4.948-.072c1.855-.085 3.697-.601 5.038-1.942 1.341-1.341 1.857-3.183 1.942-5.038C23.986 15.668 24 15.259 24 12s-.014-3.668-.072-4.948c-.085-1.855-.601-3.697-1.942-5.038C20.645.673 18.803.157 16.948.072 15.668.014 15.259 0 12 0zm0 5.838A6.162 6.162 0 1 0 12 18.162 6.162 6.162 0 0 0 12 5.838zm0 10.162a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
-      </a>
-      <a href="#" aria-label="YouTube" class="hover:text-orange-300 transition">
-        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
-      </a>
-      <a href="#" class="hover:text-orange-300 transition text-xs font-medium">WhatsApp</a>
-    </div>
-  </div>
-</div>
-
-<!-- ── NAVBAR ───────────────────────────────────────────────────── -->
+<!-- NAVBAR -->
 <header class="sticky top-0 bg-white/90 backdrop-blur-md z-50 shadow-sm border-b border-slate-100">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="flex items-center justify-between py-2">
-      <!-- Logo -->
-      <a class="flex items-center gap-3" href="#">
-        <div class="relative p-[3px] rounded-full bg-gradient-to-tr from-orange-400 via-rose-500 to-red-600 neon-ring">
-          <img src="logo.png.jpeg" alt="Laxmi Academy" class="w-16 h-16 rounded-full object-cover border-2 border-white"/>
+  <div class="max-w-6xl mx-auto px-5">
+    <div class="flex items-center justify-between py-3">
+      <a href="#" class="flex items-center gap-3">
+        <div class="relative p-[3px] rounded-full bg-gradient-to-tr from-orange-400 to-rose-600" style="box-shadow:0 0 18px rgba(255,152,0,.4)">
+          <img src="logo.png.jpeg" alt="Laxmi Academy" class="w-12 h-12 rounded-full object-cover border-2 border-white"/>
         </div>
         <div class="leading-tight">
-          <span class="block font-extrabold tracking-tight text-2xl sm:text-3xl glow-text">Laxmi Academy</span>
+          <span class="block font-extrabold text-xl glow-text">Laxmi Academy</span>
           <span class="block text-slate-500 text-xs font-semibold uppercase tracking-wider">School of Knowledge</span>
         </div>
       </a>
 
-      <!-- Desktop nav -->
-      <nav class="hidden md:flex items-center gap-7 font-medium text-slate-700">
-        <a href="#home"    class="hover:text-brand-600 transition">Home</a>
-        <a href="#about"   class="hover:text-brand-600 transition">About</a>
-        <div class="relative nav-item">
-          <button class="hover:text-brand-600 flex items-center gap-1 transition">Physics Topics
-            <svg class="w-4 h-4 opacity-60" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/></svg>
-          </button>
-          <div class="dropdown absolute mt-2 hidden w-56 rounded-2xl border border-slate-100 bg-white shadow-xl p-2 z-50">
-            <a href="#mechanics"   class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-indigo-50 text-sm">⚙️ Mechanics</a>
-            <a href="#thermo"      class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-indigo-50 text-sm">🔥 Thermodynamics</a>
-            <a href="#electro"     class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-indigo-50 text-sm">⚡ Electromagnetism</a>
-            <a href="#optics"      class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-indigo-50 text-sm">🔭 Optics &amp; Waves</a>
-            <a href="#modern"      class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-indigo-50 text-sm">⚛️ Modern Physics</a>
-          </div>
-        </div>
-        <a href="#batches"  class="hover:text-brand-600 transition">Batches</a>
-        <a href="#contact"  class="hover:text-brand-600 transition">Contact</a>
+      <nav class="hidden md:flex items-center gap-7 font-medium text-slate-600 text-sm">
+        <a href="#how" class="hover:text-orange-500 transition">How It Works</a>
+        <a href="#courses" class="hover:text-orange-500 transition">Courses</a>
+        <a href="#contact" class="hover:text-orange-500 transition">Contact</a>
       </nav>
 
-      <div class="hidden md:flex items-center gap-3">
-        <a href="login.html" class="text-sm font-semibold text-brand-600 hover:underline">Student Login</a>
-        <a href="#join" class="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold shadow hover:shadow-md transition text-sm">Join Free Demo</a>
+      <div class="flex items-center gap-3">
+        <a href="login.html" class="px-4 py-2 rounded-xl border border-orange-400 text-orange-500 font-bold text-sm hover:bg-orange-50 transition">Login</a>
+        <a href="signup.html" class="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold text-sm shadow hover:shadow-md transition">Sign Up Free</a>
       </div>
-
-      <!-- Mobile hamburger -->
-      <button class="md:hidden p-2" onclick="document.getElementById('mnav').classList.toggle('hidden')">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-      </button>
-    </div>
-
-    <!-- Mobile menu -->
-    <div id="mnav" class="md:hidden hidden pb-4 border-t border-slate-100 mt-1">
-      <nav class="grid gap-1 pt-3 font-medium text-slate-700">
-        <a href="#home"      class="px-3 py-2 rounded-xl hover:bg-slate-50">Home</a>
-        <a href="#about"     class="px-3 py-2 rounded-xl hover:bg-slate-50">About</a>
-        <a href="#mechanics" class="px-3 py-2 rounded-xl hover:bg-slate-50 pl-6 text-sm">⚙️ Mechanics</a>
-        <a href="#thermo"    class="px-3 py-2 rounded-xl hover:bg-slate-50 pl-6 text-sm">🔥 Thermodynamics</a>
-        <a href="#electro"   class="px-3 py-2 rounded-xl hover:bg-slate-50 pl-6 text-sm">⚡ Electromagnetism</a>
-        <a href="#optics"    class="px-3 py-2 rounded-xl hover:bg-slate-50 pl-6 text-sm">🔭 Optics &amp; Waves</a>
-        <a href="#modern"    class="px-3 py-2 rounded-xl hover:bg-slate-50 pl-6 text-sm">⚛️ Modern Physics</a>
-        <a href="#batches"   class="px-3 py-2 rounded-xl hover:bg-slate-50">Batches</a>
-        <a href="#contact"   class="px-3 py-2 rounded-xl hover:bg-slate-50">Contact</a>
-        <a href="login.html" class="px-3 py-2 rounded-xl hover:bg-slate-50 font-semibold text-brand-600">Student Login</a>
-        <a href="#join"      class="mt-2 px-3 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold text-center">Join Free Demo</a>
-      </nav>
     </div>
   </div>
 </header>
 
-<!-- ── HERO ─────────────────────────────────────────────────────── -->
-<section id="home" class="hero-bg relative overflow-hidden min-h-[92vh] flex items-center">
-  <!-- Decorative particles -->
-  <div class="particle w-64 h-64 bg-indigo-500 -top-16 -left-16" style="animation-delay:0s"></div>
-  <div class="particle w-48 h-48 bg-orange-500 top-1/3 right-8" style="animation-delay:2s"></div>
-  <div class="particle w-32 h-32 bg-rose-500 bottom-16 left-1/4" style="animation-delay:4s"></div>
-  <div class="particle w-20 h-20 bg-purple-400 top-10 right-1/3" style="animation-delay:1s"></div>
+<!-- HERO -->
+<section class="hero-bg relative overflow-hidden min-h-screen flex items-center">
+  <div class="particle w-72 h-72 bg-indigo-500 -top-20 -left-20" style="animation-delay:0s"></div>
+  <div class="particle w-52 h-52 bg-orange-400 top-1/3 right-10" style="animation-delay:2s"></div>
+  <div class="particle w-36 h-36 bg-rose-500 bottom-20 left-1/4" style="animation-delay:4s"></div>
 
-  <!-- Grid overlay -->
-  <div class="absolute inset-0 opacity-5" style="background-image:linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px);background-size:40px 40px"></div>
+  <div class="absolute inset-0 opacity-[.04]" style="background-image:linear-gradient(rgba(255,255,255,.2) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.2) 1px,transparent 1px);background-size:44px 44px"></div>
 
-  <div class="relative max-w-7xl mx-auto px-4 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
+  <div class="relative max-w-6xl mx-auto px-5 py-24 grid lg:grid-cols-2 gap-14 items-center w-full">
     <!-- Left -->
     <div class="text-white">
-      <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-3 py-1.5 rounded-full border border-white/20 text-sm mb-5">
+      <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-3 py-1.5 rounded-full border border-white/20 text-sm mb-6">
         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-        Admissions Open · Physics Batch Starts 1 May
+        Student Portal — Online Learning
       </div>
-      <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight glow-text-white">
-        Master Physics<br>from Basics to<br>Advanced
+      <h1 class="text-5xl sm:text-6xl font-black leading-tight" style="background:linear-gradient(90deg,#fff 30%,#ffd580);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">
+        Learn Physics<br/>Anytime,<br/>Anywhere
       </h1>
-      <p class="mt-5 text-lg text-white/80 max-w-xl leading-relaxed">
-        Specialised Physics coaching covering Mechanics, Thermodynamics, Electromagnetism, Optics and Modern Physics — taught by expert faculty with 15+ years of experience.
+      <p class="mt-5 text-lg text-white/75 max-w-lg leading-relaxed">
+        Login to your student portal to access your enrolled Physics course, watch video lessons, and track your progress — all in one place.
       </p>
       <div class="mt-8 flex flex-wrap gap-3">
-        <a href="#join" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold shadow-lg hover:shadow-orange-500/30 hover:scale-105 transition">
-          Book Free Demo →
+        <a href="login.html" class="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold shadow-lg hover:shadow-orange-500/30 hover:scale-105 transition text-base">
+          Login to Portal →
         </a>
-        <a href="#courses" class="px-6 py-3 rounded-2xl border border-white/30 text-white font-semibold hover:bg-white/10 transition backdrop-blur">
-          Explore Courses
+        <a href="signup.html" class="px-7 py-3.5 rounded-2xl border border-white/30 text-white font-semibold hover:bg-white/10 transition backdrop-blur text-base">
+          Create Account
         </a>
       </div>
 
-      <!-- Quick trust badges -->
-      <div class="mt-10 flex flex-wrap gap-6 text-white/70 text-sm">
-        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>2500+ Students</span>
-        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>98% Success Rate</span>
-        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/></svg>15+ Years Experience</span>
+      <div class="mt-10 flex flex-wrap gap-6 text-white/65 text-sm">
+        <span class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+          2500+ Students
+        </span>
+        <span class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          98% Success Rate
+        </span>
+        <span class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/></svg>
+          5 Physics Topics
+        </span>
       </div>
     </div>
 
-    <!-- Right — floating card -->
+    <!-- Right — login CTA card -->
     <div class="relative flex justify-center">
-      <div class="animate-float relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 w-full max-w-sm text-white shadow-2xl">
-        <div class="flex items-center gap-3 mb-5">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-rose-600 flex items-center justify-center text-2xl">🎓</div>
-          <div>
-            <p class="font-bold text-lg">Quick Enquiry</p>
-            <p class="text-white/60 text-sm">We reply within 1 hour</p>
+      <div class="relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 w-full max-w-sm text-white shadow-2xl" style="animation:float 6s ease-in-out infinite">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-rose-600 flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg">🎓</div>
+          <h2 class="text-xl font-black">Student Portal Access</h2>
+          <p class="text-white/55 text-sm mt-1">Sign in to watch your Physics courses</p>
+        </div>
+
+        <div class="space-y-3 mb-6">
+          <div class="flex items-center gap-3 bg-white/8 rounded-xl p-3 border border-white/10">
+            <span class="w-8 h-8 rounded-lg bg-indigo-500/30 flex items-center justify-center text-sm flex-shrink-0">1</span>
+            <div>
+              <p class="text-sm font-semibold">Enter Email or Phone</p>
+              <p class="text-xs text-white/45">Your registered credentials</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 bg-white/8 rounded-xl p-3 border border-white/10">
+            <span class="w-8 h-8 rounded-lg bg-orange-500/30 flex items-center justify-center text-sm flex-shrink-0">2</span>
+            <div>
+              <p class="text-sm font-semibold">Enter Password</p>
+              <p class="text-xs text-white/45">Provided at enrollment</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 bg-white/8 rounded-xl p-3 border border-white/10">
+            <span class="w-8 h-8 rounded-lg bg-green-500/30 flex items-center justify-center text-sm flex-shrink-0">3</span>
+            <div>
+              <p class="text-sm font-semibold">Watch Course Videos</p>
+              <p class="text-xs text-white/45">Access your Physics topics</p>
+            </div>
           </div>
         </div>
-        <form class="grid gap-3" onsubmit="return false">
-          <input type="text" placeholder="Your Name" class="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 placeholder-white/50 text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"/>
-          <input type="tel"  placeholder="Phone Number" class="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 placeholder-white/50 text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"/>
-          <select class="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" style="background-color:rgba(30,27,75,.9)">
-            <option value="">Select Course</option>
-            <option>IIT-JEE</option>
-            <option>NEET</option>
-            <option>BITSAT</option>
-            <option>Physics Basics</option>
-          </select>
-          <button class="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 font-bold text-white hover:shadow-lg transition">Request Demo Class</button>
-        </form>
+
+        <a href="login.html" class="block w-full text-center py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 font-bold hover:shadow-lg transition text-white">
+          Go to Login Page
+        </a>
+        <p class="text-center text-white/35 text-xs mt-3">New student? <a href="signup.html" class="text-orange-300 font-semibold hover:underline">Register here</a></p>
       </div>
-      <!-- Glow blob behind card -->
-      <div class="absolute inset-0 bg-indigo-600/20 rounded-full blur-3xl -z-0"></div>
+      <div class="absolute inset-0 bg-indigo-600/15 rounded-full blur-3xl -z-0"></div>
     </div>
   </div>
 
-  <!-- Wave divider -->
+  <!-- Wave -->
   <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
     <svg viewBox="0 0 1440 60" preserveAspectRatio="none" class="w-full h-12 fill-white"><path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z"/></svg>
   </div>
 </section>
 
-<!-- ── STATS ────────────────────────────────────────────────────── -->
-<section class="py-14 bg-white reveal">
-  <div class="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-    <div class="p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100">
-      <div class="text-4xl font-black text-brand-600" data-counter="2500">0</div>
-      <div class="mt-1 text-slate-600 text-sm font-medium">Students Trained</div>
-    </div>
-    <div class="p-6 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100">
-      <div class="text-4xl font-black text-orange-500" data-counter="15">0</div>
-      <div class="mt-1 text-slate-600 text-sm font-medium">Years Experience</div>
-    </div>
-    <div class="p-6 rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100">
-      <div class="text-4xl font-black text-rose-500" data-counter="120">0</div>
-      <div class="mt-1 text-slate-600 text-sm font-medium">Top Ranks</div>
-    </div>
-    <div class="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
-      <div class="text-4xl font-black text-emerald-600" data-counter="98">0</div>
-      <div class="mt-1 text-slate-600 text-sm font-medium">% Success Rate</div>
-    </div>
-  </div>
-</section>
-
-<!-- ── COURSES ──────────────────────────────────────────────────── -->
-<section id="courses" class="py-20 bg-gradient-to-b from-slate-50 to-white reveal">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="text-center mb-12">
-      <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">What We Teach</span>
-      <h2 class="mt-2 text-4xl font-black text-slate-900">Physics Topics</h2>
-      <p class="mt-3 text-slate-500 max-w-xl mx-auto">Complete Physics curriculum — from foundation to advanced — taught systematically with deep concept clarity.</p>
+<!-- HOW IT WORKS -->
+<section id="how" class="py-20 bg-white reveal">
+  <div class="max-w-5xl mx-auto px-5">
+    <div class="text-center mb-14">
+      <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Simple Process</span>
+      <h2 class="mt-2 text-4xl font-black text-slate-900">How to Access Your Courses</h2>
+      <p class="mt-3 text-slate-500 max-w-lg mx-auto">Get started in 3 simple steps — register, login, and start learning Physics online.</p>
     </div>
 
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Mechanics -->
-      <div id="mechanics" class="grad-border card-hover rounded-2xl bg-white p-6 border border-slate-200">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl mb-4">⚙️</div>
-        <h3 class="font-bold text-xl text-slate-800">Mechanics</h3>
-        <p class="mt-2 text-slate-500 text-sm leading-relaxed">Newton's laws, kinematics, work-energy theorem, rotational motion, gravitation and fluid mechanics.</p>
-        <div class="mt-4 flex items-center justify-between">
-          <span class="batch-badge bg-indigo-100 text-indigo-700">Foundation → Advanced</span>
-          <a href="#join" class="text-brand-600 font-bold text-sm hover:underline">Enroll →</a>
-        </div>
-      </div>
-
-      <!-- Thermodynamics -->
-      <div id="thermo" class="grad-border card-hover rounded-2xl bg-white p-6 border border-slate-200">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center text-2xl mb-4">🔥</div>
-        <h3 class="font-bold text-xl text-slate-800">Thermodynamics</h3>
-        <p class="mt-2 text-slate-500 text-sm leading-relaxed">Heat, temperature, laws of thermodynamics, kinetic theory of gases and thermodynamic processes.</p>
-        <div class="mt-4 flex items-center justify-between">
-          <span class="batch-badge bg-orange-100 text-orange-700">Foundation → Advanced</span>
-          <a href="#join" class="text-brand-600 font-bold text-sm hover:underline">Enroll →</a>
-        </div>
-      </div>
-
-      <!-- Electromagnetism -->
-      <div id="electro" class="grad-border card-hover rounded-2xl bg-white p-6 border border-slate-200">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center text-2xl mb-4">⚡</div>
-        <h3 class="font-bold text-xl text-slate-800">Electromagnetism</h3>
-        <p class="mt-2 text-slate-500 text-sm leading-relaxed">Electrostatics, current electricity, magnetic effects, electromagnetic induction and AC circuits.</p>
-        <div class="mt-4 flex items-center justify-between">
-          <span class="batch-badge bg-yellow-100 text-yellow-700">Foundation → Advanced</span>
-          <a href="#join" class="text-brand-600 font-bold text-sm hover:underline">Enroll →</a>
-        </div>
-      </div>
-
-      <!-- Optics & Waves -->
-      <div id="optics" class="grad-border card-hover rounded-2xl bg-white p-6 border border-slate-200">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-2xl mb-4">🔭</div>
-        <h3 class="font-bold text-xl text-slate-800">Optics &amp; Waves</h3>
-        <p class="mt-2 text-slate-500 text-sm leading-relaxed">Ray optics, wave optics, interference, diffraction, polarisation and sound waves.</p>
-        <div class="mt-4 flex items-center justify-between">
-          <span class="batch-badge bg-sky-100 text-sky-700">Foundation → Advanced</span>
-          <a href="#join" class="text-brand-600 font-bold text-sm hover:underline">Enroll →</a>
-        </div>
-      </div>
-
-      <!-- Modern Physics -->
-      <div id="modern" class="grad-border card-hover rounded-2xl bg-white p-6 border border-slate-200">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-2xl mb-4">⚛️</div>
-        <h3 class="font-bold text-xl text-slate-800">Modern Physics</h3>
-        <p class="mt-2 text-slate-500 text-sm leading-relaxed">Photoelectric effect, atomic models, nuclear physics, radioactivity and semiconductor devices.</p>
-        <div class="mt-4 flex items-center justify-between">
-          <span class="batch-badge bg-emerald-100 text-emerald-700">Foundation → Advanced</span>
-          <a href="#join" class="text-brand-600 font-bold text-sm hover:underline">Enroll →</a>
-        </div>
-      </div>
-
-      <!-- Crash / Full Package -->
-      <div class="grad-border card-hover rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 p-6 border border-indigo-800">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-2xl mb-4">🚀</div>
-        <h3 class="font-bold text-xl text-white">Full Physics Package</h3>
-        <p class="mt-2 text-white/60 text-sm leading-relaxed">All 5 topics in one complete program. Best value — includes notes, weekly tests, doubt sessions and mock exams.</p>
-        <div class="mt-4 flex items-center justify-between">
-          <span class="batch-badge bg-pink-900/60 text-pink-300">Best Value</span>
-          <a href="#join" class="text-orange-400 font-bold text-sm hover:underline">Enroll →</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── WHY US ────────────────────────────────────────────────────── -->
-<section id="about" class="py-20 bg-gradient-to-br from-slate-900 to-indigo-950 text-white reveal">
-  <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-14 items-center">
-    <div>
-      <span class="text-orange-400 font-bold uppercase tracking-widest text-xs">Why Choose Us</span>
-      <h2 class="mt-2 text-4xl font-black leading-tight">The Laxmi Academy<br>Difference</h2>
-      <p class="mt-4 text-white/70 leading-relaxed">A trusted coaching center with a single-minded focus: turning Physics from a fear into a superpower. Our faculty combine deep subject mastery with exam strategy.</p>
-
-      <div class="mt-8 space-y-4">
-        <div class="flex gap-4 items-start">
-          <div class="timeline-dot mt-1"></div>
-          <div>
-            <p class="font-semibold">Exam‑Focused Methodology</p>
-            <p class="text-white/60 text-sm mt-0.5">Structured programs built around actual exam patterns, with weekly tests and detailed analysis.</p>
-          </div>
-        </div>
-        <div class="flex gap-4 items-start">
-          <div class="timeline-dot mt-1"></div>
-          <div>
-            <p class="font-semibold">Personalised Attention</p>
-            <p class="text-white/60 text-sm mt-0.5">Small batches ensure every student gets individual guidance and doubt-clearing sessions.</p>
-          </div>
-        </div>
-        <div class="flex gap-4 items-start">
-          <div class="timeline-dot mt-1"></div>
-          <div>
-            <p class="font-semibold">Flexible Course Options</p>
-            <p class="text-white/60 text-sm mt-0.5">Long‑term, short‑term and crash courses to match any preparation timeline.</p>
-          </div>
-        </div>
-        <div class="flex gap-4 items-start">
-          <div class="timeline-dot mt-1"></div>
-          <div>
-            <p class="font-semibold">Doubt Sessions &amp; Study Material</p>
-            <p class="text-white/60 text-sm mt-0.5">Comprehensive notes, formula sheets, and dedicated doubt-clearing hours every week.</p>
-          </div>
-        </div>
-      </div>
-
-      <a href="#join" class="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold hover:shadow-lg transition">
-        Start Your Journey →
-      </a>
-    </div>
-
-    <!-- Feature icons grid -->
-    <div class="grid grid-cols-2 gap-4">
-      <div class="card-hover rounded-2xl bg-white/8 border border-white/10 p-5 backdrop-blur">
-        <div class="text-3xl mb-3">🏆</div>
-        <p class="font-bold">120+ Top Ranks</p>
-        <p class="text-white/50 text-sm mt-1">IIT, AIIMS &amp; top NIT selections</p>
-      </div>
-      <div class="card-hover rounded-2xl bg-white/8 border border-white/10 p-5 backdrop-blur">
-        <div class="text-3xl mb-3">👨‍🏫</div>
-        <p class="font-bold">Expert Faculty</p>
-        <p class="text-white/50 text-sm mt-1">15+ years of teaching experience</p>
-      </div>
-      <div class="card-hover rounded-2xl bg-white/8 border border-white/10 p-5 backdrop-blur">
-        <div class="text-3xl mb-3">📊</div>
-        <p class="font-bold">Regular Tests</p>
-        <p class="text-white/50 text-sm mt-1">Weekly &amp; full-length mock exams</p>
-      </div>
-      <div class="card-hover rounded-2xl bg-white/8 border border-white/10 p-5 backdrop-blur">
-        <div class="text-3xl mb-3">💬</div>
-        <p class="font-bold">24/7 Doubt Support</p>
-        <p class="text-white/50 text-sm mt-1">WhatsApp &amp; in-person doubt clearing</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── BATCH SCHEDULE ────────────────────────────────────────────── -->
-<section id="batches" class="py-20 bg-white reveal">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="text-center mb-12">
-      <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Upcoming Batches</span>
-      <h2 class="mt-2 text-4xl font-black text-slate-900">Physics Batch Schedule</h2>
-      <p class="mt-3 text-slate-500">Limited seats per batch for focused attention. Reserve yours today.</p>
-    </div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div class="card-hover rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-6">
-        <div class="flex items-center justify-between mb-3">
-          <span class="font-bold text-indigo-700 text-lg">Physics Foundation</span>
-          <span class="batch-badge bg-green-100 text-green-700">Open</span>
-        </div>
-        <p class="text-slate-500 text-xs mb-3">Mechanics · Thermodynamics · Basics</p>
-        <p class="text-slate-600 text-sm">Starts: <strong>1 May 2025</strong></p>
-        <p class="text-slate-600 text-sm mt-1">Timing: <strong>7:00 AM – 9:00 AM</strong></p>
-        <p class="text-slate-600 text-sm mt-1">Seats left: <strong class="text-rose-600">10</strong></p>
-        <a href="#join" class="mt-4 block text-center py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">Reserve Seat</a>
-      </div>
-      <div class="card-hover rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6">
-        <div class="flex items-center justify-between mb-3">
-          <span class="font-bold text-emerald-700 text-lg">Physics Advanced</span>
-          <span class="batch-badge bg-green-100 text-green-700">Open</span>
-        </div>
-        <p class="text-slate-500 text-xs mb-3">Electromagnetism · Optics · Modern Physics</p>
-        <p class="text-slate-600 text-sm">Starts: <strong>1 May 2025</strong></p>
-        <p class="text-slate-600 text-sm mt-1">Timing: <strong>5:00 PM – 7:00 PM</strong></p>
-        <p class="text-slate-600 text-sm mt-1">Seats left: <strong class="text-rose-600">8</strong></p>
-        <a href="#join" class="mt-4 block text-center py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition">Reserve Seat</a>
-      </div>
-      <div class="card-hover rounded-2xl border-2 border-orange-200 bg-orange-50 p-6">
-        <div class="flex items-center justify-between mb-3">
-          <span class="font-bold text-orange-700 text-lg">Physics Crash Course</span>
-          <span class="batch-badge bg-yellow-100 text-yellow-700">Filling Fast</span>
-        </div>
-        <p class="text-slate-500 text-xs mb-3">All Topics — Intensive Revision</p>
-        <p class="text-slate-600 text-sm">Starts: <strong>5 May 2025</strong></p>
-        <p class="text-slate-600 text-sm mt-1">Timing: <strong>8:00 AM – 12:00 PM</strong></p>
-        <p class="text-slate-600 text-sm mt-1">Seats left: <strong class="text-rose-600">5</strong></p>
-        <a href="#join" class="mt-4 block text-center py-2 rounded-xl bg-orange-500 text-white text-sm font-bold hover:bg-orange-600 transition">Reserve Seat</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── TESTIMONIALS ──────────────────────────────────────────────── -->
-<section class="py-20 bg-gradient-to-b from-slate-50 to-white reveal">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="text-center mb-12">
-      <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Student Stories</span>
-      <h2 class="mt-2 text-4xl font-black text-slate-900">What Our Students Say</h2>
-    </div>
     <div class="grid md:grid-cols-3 gap-6">
-      <figure class="card-hover rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
-        <div class="stars text-lg">★★★★★</div>
-        <blockquote class="mt-3 text-slate-700 leading-relaxed">"Teaching made concepts crystal clear. I finally enjoy Physics — and I scored 98 in NEET Physics!"</blockquote>
-        <figcaption class="mt-4 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm">A</div>
-          <div>
-            <p class="font-semibold text-sm">Arjun K.</p>
-            <p class="text-xs text-slate-400">NEET 2024</p>
-          </div>
-        </figcaption>
-      </figure>
-      <figure class="card-hover rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
-        <div class="stars text-lg">★★★★★</div>
-        <blockquote class="mt-3 text-slate-700 leading-relaxed">"Patient guidance and structured problem-solving drills boosted my JEE Advanced rank significantly."</blockquote>
-        <figcaption class="mt-4 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-sm">P</div>
-          <div>
-            <p class="font-semibold text-sm">Priya M.</p>
-            <p class="text-xs text-slate-400">IIT-JEE 2024</p>
-          </div>
-        </figcaption>
-      </figure>
-      <figure class="card-hover rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
-        <div class="stars text-lg">★★★★★</div>
-        <blockquote class="mt-3 text-slate-700 leading-relaxed">"From basics to advanced, I gained real confidence within a month. Best coaching in Hyderabad!"</blockquote>
-        <figcaption class="mt-4 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-rose-600 flex items-center justify-center text-white font-bold text-sm">R</div>
-          <div>
-            <p class="font-semibold text-sm">Rohit S.</p>
-            <p class="text-xs text-slate-400">BITSAT 2024</p>
-          </div>
-        </figcaption>
-      </figure>
+      <div class="card-hover text-center p-8 rounded-2xl bg-gradient-to-b from-indigo-50 to-white border border-indigo-100">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-2xl text-white font-black mx-auto mb-5 shadow-lg shadow-indigo-200">1</div>
+        <h3 class="font-bold text-lg text-slate-800 mb-2">Register Your Account</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Sign up with your name, email, and phone. Choose your Physics course and plan.</p>
+        <a href="signup.html" class="mt-5 inline-block px-5 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">Register Free →</a>
+      </div>
+
+      <div class="card-hover text-center p-8 rounded-2xl bg-gradient-to-b from-orange-50 to-white border border-orange-100">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-2xl text-white font-black mx-auto mb-5 shadow-lg shadow-orange-200">2</div>
+        <h3 class="font-bold text-lg text-slate-800 mb-2">Login to Portal</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Use your email/phone and password to sign in. Students and admins have separate logins.</p>
+        <a href="login.html" class="mt-5 inline-block px-5 py-2 rounded-xl bg-orange-500 text-white text-sm font-bold hover:bg-orange-600 transition">Login Now →</a>
+      </div>
+
+      <div class="card-hover text-center p-8 rounded-2xl bg-gradient-to-b from-emerald-50 to-white border border-emerald-100">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-2xl text-white font-black mx-auto mb-5 shadow-lg shadow-emerald-200">3</div>
+        <h3 class="font-bold text-lg text-slate-800 mb-2">Watch Course Videos</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Access your enrolled Physics topics, watch video lessons, and track your progress.</p>
+        <span class="mt-5 inline-block px-5 py-2 rounded-xl bg-emerald-500 text-white text-sm font-bold">Start Learning</span>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ── RANKERS GALLERY ───────────────────────────────────────────── -->
-<section class="py-20 bg-white reveal">
-  <div class="max-w-7xl mx-auto px-4">
+<!-- COURSES -->
+<section id="courses" class="py-20 bg-gradient-to-b from-slate-50 to-white reveal">
+  <div class="max-w-6xl mx-auto px-5">
     <div class="text-center mb-12">
-      <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Hall of Fame</span>
-      <h2 class="mt-2 text-4xl font-black text-slate-900">Our Star Rankers</h2>
-      <p class="mt-3 text-slate-500">Proud to have mentored students at India's top institutions.</p>
+      <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">What You Learn</span>
+      <h2 class="mt-2 text-4xl font-black text-slate-900">Physics Courses Available</h2>
+      <p class="mt-3 text-slate-500 max-w-lg mx-auto">Choose the course that matches your preparation level. Each course unlocks specific Physics topics.</p>
     </div>
-    <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
-      <div class="card-hover rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-        <div class="relative">
-          <img src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=800&auto=format&fit=crop" alt="Ranker" class="w-full h-44 object-cover"/>
-          <div class="absolute top-2 right-2 bg-yellow-400 text-slate-900 text-xs font-black px-2 py-0.5 rounded-full">🏅 AIIMS</div>
-        </div>
-        <div class="p-4">
-          <h3 class="font-bold text-slate-800">Student Name</h3>
-          <p class="text-slate-500 text-sm">AIIMS, New Delhi</p>
-          <p class="text-orange-500 text-xs font-semibold mt-1">NEET 2023 · Rank 42</p>
-        </div>
-      </div>
-      <div class="card-hover rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-        <div class="relative">
-          <img src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?q=80&w=800&auto=format&fit=crop" alt="Ranker" class="w-full h-44 object-cover"/>
-          <div class="absolute top-2 right-2 bg-blue-400 text-white text-xs font-black px-2 py-0.5 rounded-full">🎓 IIT</div>
-        </div>
-        <div class="p-4">
-          <h3 class="font-bold text-slate-800">Student Name</h3>
-          <p class="text-slate-500 text-sm">IIT Bombay, CSE</p>
-          <p class="text-orange-500 text-xs font-semibold mt-1">JEE Advanced 2023 · Rank 89</p>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+      <div class="card-hover rounded-2xl bg-white p-6 border-2 border-indigo-100 hover:border-indigo-400">
+        <div class="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center text-xl mb-4">🌱</div>
+        <h3 class="font-bold text-slate-800 mb-2">Physics Foundation</h3>
+        <p class="text-slate-500 text-xs leading-relaxed mb-3">Mechanics &amp; Thermodynamics — build strong basics from the ground up.</p>
+        <div class="flex flex-wrap gap-1">
+          <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">Mechanics</span>
+          <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">Thermodynamics</span>
         </div>
       </div>
-      <div class="card-hover rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-        <div class="relative">
-          <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=800&auto=format&fit=crop" alt="Ranker" class="w-full h-44 object-cover"/>
-          <div class="absolute top-2 right-2 bg-emerald-400 text-white text-xs font-black px-2 py-0.5 rounded-full">🩺 NEET</div>
-        </div>
-        <div class="p-4">
-          <h3 class="font-bold text-slate-800">Student Name</h3>
-          <p class="text-slate-500 text-sm">ASRAM Medical College</p>
-          <p class="text-orange-500 text-xs font-semibold mt-1">NEET 2023 · Top 200</p>
+
+      <div class="card-hover rounded-2xl bg-white p-6 border-2 border-purple-100 hover:border-purple-400">
+        <div class="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center text-xl mb-4">🚀</div>
+        <h3 class="font-bold text-slate-800 mb-2">Physics Advanced</h3>
+        <p class="text-slate-500 text-xs leading-relaxed mb-3">Electromagnetism, Optics &amp; Modern Physics for JEE/NEET.</p>
+        <div class="flex flex-wrap gap-1">
+          <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">Electromagnetism</span>
+          <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">Optics</span>
+          <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">Modern</span>
         </div>
       </div>
-      <div class="card-hover rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-        <div class="relative">
-          <img src="https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=800&auto=format&fit=crop" alt="Ranker" class="w-full h-44 object-cover"/>
-          <div class="absolute top-2 right-2 bg-purple-400 text-white text-xs font-black px-2 py-0.5 rounded-full">🎯 BITS</div>
+
+      <div class="card-hover rounded-2xl bg-white p-6 border-2 border-orange-100 hover:border-orange-400">
+        <div class="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center text-xl mb-4">⚡</div>
+        <h3 class="font-bold text-slate-800 mb-2">Physics Crash Course</h3>
+        <p class="text-slate-500 text-xs leading-relaxed mb-3">All 5 topics in an intensive revision program for exam preparation.</p>
+        <div class="flex flex-wrap gap-1">
+          <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">All 5 Topics</span>
+          <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">Intensive</span>
         </div>
-        <div class="p-4">
-          <h3 class="font-bold text-slate-800">Student Name</h3>
-          <p class="text-slate-500 text-sm">BITS Pilani, ECE</p>
-          <p class="text-orange-500 text-xs font-semibold mt-1">BITSAT 2023 · Score 390</p>
+      </div>
+
+      <div class="card-hover rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 p-6 border-2 border-indigo-800">
+        <div class="w-11 h-11 rounded-xl bg-yellow-400/20 flex items-center justify-center text-xl mb-4">🏆</div>
+        <h3 class="font-bold text-white mb-2">Full Physics Package</h3>
+        <p class="text-white/55 text-xs leading-relaxed mb-3">Complete access to all topics — best value for comprehensive preparation.</p>
+        <div class="flex flex-wrap gap-1">
+          <span class="text-xs bg-yellow-400/20 text-yellow-300 px-2 py-0.5 rounded-full font-semibold">All Topics</span>
+          <span class="text-xs bg-yellow-400/20 text-yellow-300 px-2 py-0.5 rounded-full font-semibold">Best Value</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topics overview -->
+    <div class="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-3xl p-8 text-white">
+      <h3 class="font-bold text-lg mb-6 text-center">5 Physics Topics Covered</h3>
+      <div class="grid sm:grid-cols-5 gap-4">
+        <div class="text-center p-4 bg-white/8 rounded-2xl border border-white/10">
+          <div class="text-2xl mb-2">⚙️</div>
+          <p class="font-bold text-sm">Mechanics</p>
+          <p class="text-white/45 text-xs mt-1">6 chapters</p>
+        </div>
+        <div class="text-center p-4 bg-white/8 rounded-2xl border border-white/10">
+          <div class="text-2xl mb-2">🔥</div>
+          <p class="font-bold text-sm">Thermodynamics</p>
+          <p class="text-white/45 text-xs mt-1">5 chapters</p>
+        </div>
+        <div class="text-center p-4 bg-white/8 rounded-2xl border border-white/10">
+          <div class="text-2xl mb-2">⚡</div>
+          <p class="font-bold text-sm">Electromagnetism</p>
+          <p class="text-white/45 text-xs mt-1">6 chapters</p>
+        </div>
+        <div class="text-center p-4 bg-white/8 rounded-2xl border border-white/10">
+          <div class="text-2xl mb-2">🔭</div>
+          <p class="font-bold text-sm">Optics &amp; Waves</p>
+          <p class="text-white/45 text-xs mt-1">5 chapters</p>
+        </div>
+        <div class="text-center p-4 bg-white/8 rounded-2xl border border-white/10">
+          <div class="text-2xl mb-2">⚛️</div>
+          <p class="font-bold text-sm">Modern Physics</p>
+          <p class="text-white/45 text-xs mt-1">5 chapters</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── CONTACT & JOIN ────────────────────────────────────────────── -->
-<section id="contact" class="py-20 bg-gradient-to-b from-slate-50 to-white reveal">
-  <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-start">
-    <!-- Contact info -->
+<!-- CONTACT / ENQUIRY -->
+<section id="contact" class="py-20 bg-white reveal">
+  <div class="max-w-5xl mx-auto px-5 grid md:grid-cols-2 gap-12 items-center">
     <div>
       <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Get In Touch</span>
-      <h2 class="mt-2 text-4xl font-black text-slate-900">Contact Us</h2>
-      <p class="mt-3 text-slate-600">We'd love to hear from you. Call, email or visit us in Hyderabad.</p>
+      <h2 class="mt-2 text-4xl font-black text-slate-900">Have Questions?</h2>
+      <p class="mt-3 text-slate-600">Contact us and we'll help you choose the right course and get your account set up.</p>
 
-      <div class="mt-8 space-y-5">
-        <a href="tel:+910000000369" class="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 card-hover">
-          <div class="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center text-xl">📞</div>
+      <div class="mt-8 space-y-4">
+        <a href="tel:+910000000369" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-indigo-300 card-hover">
+          <div class="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center text-xl flex-shrink-0">📞</div>
           <div>
-            <p class="text-xs text-slate-400 font-medium">Phone</p>
+            <p class="text-xs text-slate-400 font-medium">Call Us</p>
             <p class="font-bold text-slate-800">00000 00369</p>
           </div>
         </a>
-        <a href="mailto:info@laxmiacademy.com" class="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 card-hover">
-          <div class="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center text-xl">✉️</div>
+        <a href="https://wa.me/910000000369" target="_blank" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-green-300 card-hover">
+          <div class="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center text-xl flex-shrink-0">💬</div>
           <div>
-            <p class="text-xs text-slate-400 font-medium">Email</p>
-            <p class="font-bold text-slate-800">info@laxmiacademy.com</p>
+            <p class="text-xs text-slate-400 font-medium">WhatsApp</p>
+            <p class="font-bold text-slate-800">Chat with Us</p>
           </div>
         </a>
-        <div class="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-200">
-          <div class="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center text-xl">📍</div>
+        <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center text-xl flex-shrink-0">📍</div>
           <div>
             <p class="text-xs text-slate-400 font-medium">Location</p>
             <p class="font-bold text-slate-800">Hyderabad, Telangana</p>
           </div>
         </div>
       </div>
-
-      <div class="mt-6 rounded-2xl overflow-hidden border border-slate-200">
-        <iframe class="w-full h-56" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.006834836702!2d78.48615!3d17.38505!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTfCsDIzJzA2LjIiTiA3OMKwMjknMTAuMSJF!5e0!3m2!1sen!2sin!4v1680000000000"></iframe>
-      </div>
     </div>
 
-    <!-- Join form -->
-    <div id="join" class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-3xl p-8 text-white shadow-2xl">
-      <h2 class="text-2xl font-black">Join Laxmi Academy</h2>
-      <p class="mt-1 text-white/60 text-sm">Fill the form and we'll call you back within 1 hour.</p>
+    <!-- Enquiry form -->
+    <div class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-3xl p-8 text-white shadow-2xl">
+      <h2 class="text-xl font-black mb-1">Send an Enquiry</h2>
+      <p class="text-white/50 text-sm mb-6">We'll call you back within 1 hour.</p>
 
-      <form class="mt-6 grid gap-4" onsubmit="handleJoin(event)">
+      <form class="grid gap-4" onsubmit="handleEnquiry(event)">
         <div>
-          <label class="block text-xs font-semibold text-white/70 mb-1">Full Name *</label>
-          <input type="text" required class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/30 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" placeholder="Your full name"/>
+          <label class="block text-xs font-semibold text-white/60 mb-1">Full Name *</label>
+          <input id="eq-name" type="text" required placeholder="Your full name" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"/>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-white/70 mb-1">Email *</label>
-            <input type="email" required class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/30 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" placeholder="you@email.com"/>
+            <label class="block text-xs font-semibold text-white/60 mb-1">Phone *</label>
+            <input id="eq-phone" type="tel" required placeholder="+91" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"/>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-white/70 mb-1">Phone *</label>
-            <input type="tel" required class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/30 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" placeholder="+91"/>
+            <label class="block text-xs font-semibold text-white/60 mb-1">Email</label>
+            <input id="eq-email" type="email" placeholder="you@email.com" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"/>
           </div>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-white/70 mb-1">Course Interested In</label>
-          <select class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" style="background-color:rgba(15,12,41,.7)">
-            <option value="">Select a course</option>
-            <option>IIT-JEE (2-year)</option>
-            <option>IIT-JEE (1-year)</option>
-            <option>NEET (2-year)</option>
-            <option>NEET (1-year)</option>
-            <option>BITSAT</option>
-            <option>Physics Basics</option>
-            <option>Crash Course</option>
+          <label class="block text-xs font-semibold text-white/60 mb-1">Course Interested In</label>
+          <select id="eq-course" class="w-full px-4 py-3 rounded-xl border border-white/15 text-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" style="background-color:rgba(15,12,41,.8)">
+            <option value="">Select course</option>
+            <option>Physics Foundation</option>
+            <option>Physics Advanced</option>
+            <option>Physics Crash Course</option>
+            <option>Full Physics Package</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-white/70 mb-1">Message</label>
-          <textarea rows="3" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/30 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm resize-none" placeholder="Any questions or specific requirements?"></textarea>
+          <label class="block text-xs font-semibold text-white/60 mb-1">Message</label>
+          <textarea id="eq-message" rows="2" placeholder="Any questions?" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
         </div>
-        <button type="submit" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold text-base hover:shadow-lg hover:shadow-orange-500/30 transition">
+        <button type="submit" id="eq-btn" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold hover:shadow-lg transition">
           Submit Enquiry
         </button>
-        <p class="text-center text-white/40 text-xs">We respect your privacy. No spam ever.</p>
       </form>
     </div>
   </div>
 </section>
 
-<!-- ── FOOTER ──────────────────────────────────────────────────── -->
+<!-- FOOTER -->
 <footer class="bg-slate-900 text-white">
-  <div class="max-w-7xl mx-auto px-4 py-14 grid md:grid-cols-4 gap-10">
-    <!-- Brand -->
-    <div class="md:col-span-1">
-      <div class="flex items-center gap-2 mb-4">
-        <img src="logo.png.jpeg" alt="Logo" class="w-10 h-10 rounded-full object-cover border-2 border-orange-400"/>
-        <span class="font-extrabold text-lg glow-text">Laxmi Academy</span>
-      </div>
-      <p class="text-white/50 text-sm leading-relaxed">School of Knowledge — Expert Physics coaching for IIT-JEE, NEET &amp; BITSAT in Hyderabad.</p>
-      <div class="mt-4 flex gap-3">
-        <a href="#" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-orange-500 transition" aria-label="Facebook">f</a>
-        <a href="#" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-orange-500 transition" aria-label="Instagram">ig</a>
-        <a href="#" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-orange-500 transition" aria-label="YouTube">yt</a>
-        <a href="#" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-green-500 transition text-xs" aria-label="WhatsApp">wa</a>
+  <div class="max-w-6xl mx-auto px-5 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <img src="logo.png.jpeg" alt="Logo" class="w-10 h-10 rounded-full object-cover border-2 border-orange-400"/>
+      <div>
+        <div class="font-extrabold glow-text">Laxmi Academy</div>
+        <div class="text-white/40 text-xs">School of Knowledge · Hyderabad</div>
       </div>
     </div>
-
-    <!-- Quick Links -->
-    <div>
-      <h4 class="font-bold mb-4 text-sm uppercase tracking-wider text-white/60">Quick Links</h4>
-      <ul class="space-y-2 text-white/70 text-sm">
-        <li><a href="#home" class="hover:text-orange-400 transition">Home</a></li>
-        <li><a href="#about" class="hover:text-orange-400 transition">About Us</a></li>
-        <li><a href="#courses" class="hover:text-orange-400 transition">Courses</a></li>
-        <li><a href="#batches" class="hover:text-orange-400 transition">Batch Schedule</a></li>
-        <li><a href="#contact" class="hover:text-orange-400 transition">Contact</a></li>
-      </ul>
+    <div class="flex items-center gap-6 text-sm text-white/50">
+      <a href="#how" class="hover:text-orange-400 transition">How It Works</a>
+      <a href="#courses" class="hover:text-orange-400 transition">Courses</a>
+      <a href="login.html" class="hover:text-orange-400 transition">Student Login</a>
+      <a href="signup.html" class="hover:text-orange-400 transition">Sign Up</a>
     </div>
-
-    <!-- Physics Topics -->
-    <div>
-      <h4 class="font-bold mb-4 text-sm uppercase tracking-wider text-white/60">Physics Topics</h4>
-      <ul class="space-y-2 text-white/70 text-sm">
-        <li><a href="#mechanics" class="hover:text-orange-400 transition">⚙️ Mechanics</a></li>
-        <li><a href="#thermo"    class="hover:text-orange-400 transition">🔥 Thermodynamics</a></li>
-        <li><a href="#electro"   class="hover:text-orange-400 transition">⚡ Electromagnetism</a></li>
-        <li><a href="#optics"    class="hover:text-orange-400 transition">🔭 Optics &amp; Waves</a></li>
-        <li><a href="#modern"    class="hover:text-orange-400 transition">⚛️ Modern Physics</a></li>
-      </ul>
-    </div>
-
-    <!-- Contact -->
-    <div>
-      <h4 class="font-bold mb-4 text-sm uppercase tracking-wider text-white/60">Contact</h4>
-      <ul class="space-y-3 text-white/70 text-sm">
-        <li class="flex gap-2">📍 Hyderabad, Telangana</li>
-        <li class="flex gap-2"><a href="tel:+910000000369" class="hover:text-orange-400 transition">📞 00000 00369</a></li>
-        <li class="flex gap-2"><a href="mailto:info@laxmiacademy.com" class="hover:text-orange-400 transition">✉️ info@laxmiacademy.com</a></li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="border-t border-white/10">
-    <div class="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-white/40 text-xs">
-      <p>© <span id="year"></span> Laxmi Academy — School of Knowledge. All rights reserved.</p>
-      <p>Best IIT‑JEE · NEET · BITSAT · EAMCET Coaching in Hyderabad</p>
-    </div>
+    <p class="text-white/35 text-xs">© <span id="year"></span> Laxmi Academy. All rights reserved.</p>
   </div>
 </footer>
 
-<!-- ── FLOATING WHATSAPP ─────────────────────────────────────────── -->
-<a href="https://wa.me/910000000369" target="_blank" class="whatsapp-btn" aria-label="Chat on WhatsApp">
-  <svg class="w-7 h-7 fill-white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+<!-- WhatsApp -->
+<a href="https://wa.me/910000000369" target="_blank" class="whatsapp-btn" aria-label="WhatsApp">
+  <svg class="w-6 h-6 fill-white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
 </a>
 
-<!-- Back to top -->
-<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
-  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
-</button>
-
 <script>
-  // ── Year ───────────────────────────────────────────────
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  // ── Counter animation ──────────────────────────────────
-  const counterObserver = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      const el = e.target, target = +el.getAttribute('data-counter');
-      let n = 0;
-      const step = Math.max(1, Math.ceil(target / 80));
-      const t = setInterval(() => {
-        n = Math.min(n + step, target);
-        el.textContent = n;
-        if (n >= target) clearInterval(t);
-      }, 18);
-      counterObserver.unobserve(el);
-    });
-  }, { threshold: 0.5 });
-  document.querySelectorAll('[data-counter]').forEach(el => counterObserver.observe(el));
-
-  // ── Scroll reveal ──────────────────────────────────────
-  const revealObserver = new IntersectionObserver((entries) => {
+  const revealObserver = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.12 });
+  }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-  // ── Scroll progress bar ────────────────────────────────
-  window.addEventListener('scroll', () => {
-    const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
-    document.getElementById('progress-bar').style.width = scrolled + '%';
-    const btn = document.getElementById('back-top');
-    window.scrollY > 400 ? btn.classList.add('show') : btn.classList.remove('show');
-  });
-
-  // ── Join form feedback ─────────────────────────────────
-  function handleJoin(e) {
+  async function handleEnquiry(e) {
     e.preventDefault();
-    const btn = e.target.querySelector('button[type=submit]');
-    btn.textContent = '✅ Submitted! We\'ll call you soon.';
-    btn.disabled = true;
-    btn.classList.remove('from-orange-500','to-rose-600');
-    btn.classList.add('from-green-500','to-emerald-600');
+    const btn = document.getElementById('eq-btn');
+    btn.disabled = true; btn.textContent = 'Sending...';
+    try {
+      const res = await fetch('/api/enquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: document.getElementById('eq-name').value,
+          phone:     document.getElementById('eq-phone').value,
+          email:     document.getElementById('eq-email').value,
+          course:    document.getElementById('eq-course').value,
+          message:   document.getElementById('eq-message').value,
+        })
+      });
+      if (res.ok) {
+        btn.textContent = 'Submitted! We will call you soon.';
+        btn.classList.remove('from-orange-500','to-rose-600');
+        btn.classList.add('from-green-500','to-emerald-600');
+      } else {
+        btn.disabled = false; btn.textContent = 'Submit Enquiry';
+      }
+    } catch {
+      btn.disabled = false; btn.textContent = 'Submit Enquiry';
+    }
   }
 </script>
 </body>

@@ -410,7 +410,9 @@
         document.getElementById('success-name').textContent = name;
         document.getElementById('form-view').style.display = 'none';
         document.getElementById('success-view').classList.add('show');
-        setTimeout(() => { window.location.href = 'index.html'; }, 2500);
+        setTimeout(() => {
+          window.location.href = data.role === 'admin' ? 'index.html' : 'dashboard.html';
+        }, 2000);
 
       } catch (err) {
         showError('Server not reachable. Please make sure the server is running.');

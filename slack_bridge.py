@@ -40,10 +40,10 @@ ALLOWED_USERS: set[str] = set(
 
 PROJECT_DIR = str(Path(__file__).parent.resolve())
 
-# Claude CLI path — resolved at startup so subprocess inherits it correctly
+# Call the .exe directly — avoids cmd.exe shell interpretation of < > & | in prompts
 CLAUDE_CMD = os.environ.get(
     "CLAUDE_CMD",
-    r"C:\Users\rajir\AppData\Roaming\npm\claude.cmd"
+    r"C:\Users\rajir\AppData\Roaming\npm\node_modules\@anthropic-ai\claude-code\bin\claude.exe"
 )
 
 # Maximum characters to send back to Slack (hard limit is ~4000 per block)
@@ -72,9 +72,8 @@ def is_allowed(user_id: str) -> bool:
 def run_claude(prompt: str) -> str:
     """Run `claude -p <prompt>` in the project directory and return output."""
     try:
-        # On Windows, .cmd files must be invoked via cmd.exe
         result = subprocess.run(
-            ["cmd", "/c", CLAUDE_CMD,
+            [CLAUDE_CMD,
              "--print",
              "--dangerously-skip-permissions",
              "--output-format", "text",

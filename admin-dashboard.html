@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin Panel — Laxmi Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #0a0a12;
+      --surface: rgba(255,255,255,.055);
+      --border:  rgba(255,255,255,.09);
+      --text:    #f0f0f5;
+      --muted:   rgba(255,255,255,.42);
+      --accent:  #6366f1;
+      --accent2: #818cf8;
+      --orange:  #f97316;
+      --green:   #22c55e;
+      --red:     #ef4444;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: #0a0a12; min-height: 100vh; color: var(--text); }
+
+    /* ── Layout ─────────────────────────────── */
+    .layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 230px; flex-shrink: 0;
+      background: rgba(255,255,255,.03);
+      border-right: 1px solid var(--border);
+      position: fixed; top: 0; left: 0; height: 100vh;
+      display: flex; flex-direction: column; z-index: 100;
+      transition: transform .3s;
+    }
+    .sidebar.hidden { transform: translateX(-100%); }
+
+    .sidebar-logo {
+      padding: 1.1rem 1.1rem .9rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .7rem;
+    }
+    .sidebar-logo img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+    .logo-text { font-weight: 900; font-size: .88rem; background: linear-gradient(90deg,#6366f1,#818cf8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-sub { font-size: .65rem; color: var(--muted); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+
+    .nav-group { padding: .7rem .7rem 0; font-size: .65rem; font-weight: 700; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-top: .4rem; }
+
+    .nav-btn {
+      display: flex; align-items: center; gap: .7rem;
+      padding: .6rem .9rem; margin: .1rem .5rem;
+      border-radius: 10px; font-size: .84rem; font-weight: 500;
+      color: var(--muted); background: none; border: none;
+      cursor: pointer; width: calc(100% - 1rem); text-align: left;
+      transition: all .18s; text-decoration: none;
+    }
+    .nav-btn:hover  { background: var(--surface); color: var(--text); }
+    .nav-btn.active { background: rgba(99,102,241,.15); color: var(--accent2); border: 1px solid rgba(99,102,241,.2); }
+    .nav-icon { font-size: 1rem; flex-shrink: 0; }
+
+    .badge-nav {
+      margin-left: auto; font-size: .65rem; font-weight: 800;
+      background: var(--orange); color: #fff;
+      padding: .1rem .45rem; border-radius: 99px;
+    }
+
+    .sidebar-bottom { margin-top: auto; padding: .9rem .7rem; border-top: 1px solid var(--border); }
+
+    /* ── Main ────────────────────────────────── */
+    .main { margin-left: 230px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(10,10,18,.9); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: .7rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-left { display: flex; align-items: center; gap: .8rem; }
+    .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; }
+    .page-heading { font-weight: 800; font-size: .95rem; }
+
+    .topbar-right { display: flex; align-items: center; gap: .75rem; }
+    .admin-chip {
+      font-size: .72rem; font-weight: 700; padding: .25rem .65rem;
+      border-radius: 99px; background: rgba(99,102,241,.15);
+      color: var(--accent2); border: 1px solid rgba(99,102,241,.25);
+    }
+    .admin-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg,#6366f1,#818cf8);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: .85rem;
+    }
+
+    .content { padding: 1.6rem 1.5rem; flex: 1; }
+
+    /* ── Pages ───────────────────────────────── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Stat cards ──────────────────────────── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.1rem 1.2rem; position: relative; overflow: hidden;
+    }
+    .stat-card::before { content: ''; position: absolute; right: -10px; top: -10px; width: 70px; height: 70px; border-radius: 50%; opacity: .12; }
+    .stat-card.indigo::before { background: #6366f1; }
+    .stat-card.green::before  { background: #22c55e; }
+    .stat-card.orange::before { background: #f97316; }
+    .stat-card.red::before    { background: #ef4444; }
+    .stat-card.blue::before   { background: #06b6d4; }
+    .stat-card.purple::before { background: #a855f7; }
+    .stat-label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .stat-value { font-size: 2rem; font-weight: 900; margin-top: .3rem; line-height: 1; }
+    .stat-sub   { font-size: .72rem; color: var(--muted); margin-top: .3rem; }
+    .stat-icon  { position: absolute; right: 1rem; top: 1rem; font-size: 1.4rem; opacity: .5; }
+
+    /* ── Section title ───────────────────────── */
+    .sec-title {
+      font-size: 1rem; font-weight: 800; margin-bottom: 1rem;
+      display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    }
+    .sec-title-left { display: flex; align-items: center; gap: .5rem; }
+
+    /* ── Search / filter bar ─────────────────── */
+    .toolbar {
+      display: flex; align-items: center; gap: .75rem;
+      margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap svg { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); color: var(--muted); width: 15px; height: 15px; }
+    .search-wrap input {
+      width: 100%; padding: .6rem .75rem .6rem 2.2rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: 'Inter',sans-serif;
+      font-size: .85rem; outline: none; transition: border-color .2s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap input::placeholder { color: var(--muted); }
+
+    .filter-select {
+      padding: .6rem .85rem; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: 'Inter',sans-serif;
+      font-size: .83rem; outline: none; cursor: pointer; min-width: 140px;
+    }
+
+    /* ── Table ────────────────────────────────── */
+    .table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    thead th {
+      padding: .75rem 1rem; text-align: left;
+      font-size: .68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.025); white-space: nowrap;
+    }
+    tbody td { padding: .8rem 1rem; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,.025); }
+
+    .cell-name { font-weight: 700; font-size: .86rem; }
+    .cell-sub  { font-size: .74rem; color: var(--muted); margin-top: .15rem; }
+
+    /* ── Badges ──────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .22rem .65rem; border-radius: 99px;
+      font-size: .7rem; font-weight: 700; white-space: nowrap;
+    }
+    .badge-green  { background: rgba(34,197,94,.12);  color: #4ade80; border: 1px solid rgba(34,197,94,.2);  }
+    .badge-red    { background: rgba(239,68,68,.12);   color: #f87171; border: 1px solid rgba(239,68,68,.2);  }
+    .badge-orange { background: rgba(249,115,22,.12);  color: #fb923c; border: 1px solid rgba(249,115,22,.2); }
+    .badge-indigo { background: rgba(99,102,241,.12);  color: #a5b4fc; border: 1px solid rgba(99,102,241,.2); }
+    .badge-blue   { background: rgba(6,182,212,.12);   color: #67e8f9; border: 1px solid rgba(6,182,212,.2);  }
+    .badge-purple { background: rgba(168,85,247,.12);  color: #d8b4fe; border: 1px solid rgba(168,85,247,.2); }
+    .badge-gray   { background: rgba(255,255,255,.08); color: var(--muted); border: 1px solid var(--border);  }
+
+    /* ── Action buttons ──────────────────────── */
+    .action-group { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .action-btn {
+      padding: .3rem .75rem; border-radius: 8px; font-size: .75rem; font-weight: 700;
+      border: 1px solid transparent; cursor: pointer; font-family: 'Inter',sans-serif;
+      transition: all .18s; white-space: nowrap;
+    }
+    .btn-revoke  { background: rgba(239,68,68,.12);  color: #f87171; border-color: rgba(239,68,68,.2);  }
+    .btn-revoke:hover  { background: rgba(239,68,68,.25); }
+    .btn-restore { background: rgba(34,197,94,.12);  color: #4ade80; border-color: rgba(34,197,94,.2);  }
+    .btn-restore:hover { background: rgba(34,197,94,.25); }
+    .btn-delete  { background: rgba(239,68,68,.06);  color: #fca5a5; border-color: rgba(239,68,68,.12); }
+    .btn-delete:hover  { background: rgba(239,68,68,.18); }
+    .btn-view    { background: rgba(99,102,241,.12); color: #a5b4fc; border-color: rgba(99,102,241,.2); }
+    .btn-view:hover    { background: rgba(99,102,241,.25); }
+    .btn-mark    { background: rgba(249,115,22,.1);  color: #fb923c; border-color: rgba(249,115,22,.18); }
+    .btn-mark:hover    { background: rgba(249,115,22,.22); }
+
+    /* ── Confirm modal ────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.65); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #13131f; border: 1px solid var(--border);
+      border-radius: 20px; padding: 2rem; width: min(400px, 92%);
+      box-shadow: 0 24px 60px rgba(0,0,0,.6);
+    }
+    .modal h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: .5rem; }
+    .modal p  { color: var(--muted); font-size: .88rem; margin-bottom: 1.4rem; line-height: 1.5; }
+    .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; }
+    .modal-actions button {
+      padding: .65rem 1.2rem; border-radius: 10px; font-size: .85rem; font-weight: 700;
+      border: none; cursor: pointer; font-family: 'Inter',sans-serif;
+    }
+    .btn-cancel  { background: var(--surface); color: var(--text); border: 1px solid var(--border) !important; }
+    .btn-confirm-red    { background: #ef4444; color: #fff; }
+    .btn-confirm-orange { background: #f97316; color: #fff; }
+
+    /* ── Toast ───────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999;
+      background: #1e1b4b; border: 1px solid rgba(99,102,241,.3);
+      border-radius: 12px; padding: .8rem 1.2rem;
+      display: flex; align-items: center; gap: .7rem;
+      font-size: .85rem; font-weight: 600;
+      box-shadow: 0 8px 28px rgba(0,0,0,.4);
+      transform: translateY(80px); opacity: 0;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(34,197,94,.3); }
+    .toast.error   { border-color: rgba(239,68,68,.3); }
+
+    /* ── Empty state ─────────────────────────── */
+    .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+
+    /* ── Course pill ─────────────────────────── */
+    .course-pill {
+      display: inline-block; padding: .18rem .55rem;
+      border-radius: 6px; font-size: .7rem; font-weight: 700;
+    }
+
+    /* ── Recent students mini-list ───────────── */
+    .recent-list { display: grid; gap: .6rem; }
+    .recent-row {
+      display: flex; align-items: center; gap: .85rem;
+      padding: .65rem .9rem; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .recent-avatar {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg,#6366f1,#818cf8);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .85rem;
+    }
+
+    /* ── Overview 2-col ──────────────────────── */
+    .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1.2rem; }
+    @media (max-width: 900px) { .overview-grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.2rem; }
+    .card-title { font-size: .82rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .9rem; }
+
+    /* ── Course breakdown bars ───────────────── */
+    .course-bar-row { margin-bottom: .65rem; }
+    .course-bar-label { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: .3rem; }
+    .course-bar-track { height: 6px; background: rgba(255,255,255,.07); border-radius: 99px; }
+    .course-bar-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#6366f1,#818cf8); }
+
+    /* ── Responsive ──────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: none; }
+      .main { margin-left: 0; }
+      .hamburger { display: flex; }
+    }
+
+    .overlay-bg {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 99;
+    }
+    .overlay-bg.show { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="overlay-bg" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Confirm Action</h3>
+    <p  id="modal-body">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button id="modal-confirm" class="btn-confirm-red">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span id="toast-icon">✓</span><span id="toast-msg"></span></div>
+
+<div class="layout">
+  <!-- ── Sidebar ──────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="logo.png.jpeg" alt="Logo"/>
+      <div>
+        <div class="logo-text">Laxmi Academy</div>
+        <div class="logo-sub">Admin Panel</div>
+      </div>
+    </div>
+
+    <div class="nav-group" style="margin-top:.6rem">Overview</div>
+    <button class="nav-btn active" id="nav-overview"  onclick="showPage('overview')"> <span class="nav-icon">📊</span> Dashboard</button>
+
+    <div class="nav-group">Manage</div>
+    <button class="nav-btn" id="nav-students"  onclick="showPage('students')">  <span class="nav-icon">👥</span> Students <span class="badge-nav" id="badge-students">0</span></button>
+    <button class="nav-btn" id="nav-enquiries" onclick="showPage('enquiries')"> <span class="nav-icon">📩</span> Enquiries <span class="badge-nav" id="badge-enq">0</span></button>
+    <button class="nav-btn" id="nav-sessions"  onclick="showPage('sessions')">  <span class="nav-icon">🔑</span> Sessions</button>
+
+    <div class="nav-group">Site</div>
+    <a href="index.html"  class="nav-btn"><span class="nav-icon">🌐</span> Main Website</a>
+    <a href="login.html"  class="nav-btn"><span class="nav-icon">🔐</span> Login Page</a>
+
+    <div class="sidebar-bottom">
+      <button class="nav-btn" onclick="logout()" style="color:#f87171;">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ─────────────────────────────────────────────────── -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" onclick="openSidebar()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span class="page-heading" id="page-title">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <span class="admin-chip">Admin</span>
+        <span id="topbar-name" style="font-size:.85rem;font-weight:600">...</span>
+        <div class="admin-avatar" id="topbar-avatar">A</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── OVERVIEW PAGE ──────────────────────────────────────── -->
+      <div class="page active" id="page-overview">
+        <div class="stats-grid">
+          <div class="stat-card indigo">
+            <div class="stat-label">Total Students</div>
+            <div class="stat-value" id="s-total">—</div>
+            <div class="stat-sub">All enrolled</div>
+            <div class="stat-icon">👥</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Active Students</div>
+            <div class="stat-value" id="s-active">—</div>
+            <div class="stat-sub">Access granted</div>
+            <div class="stat-icon">✅</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Revoked</div>
+            <div class="stat-value" id="s-revoked">—</div>
+            <div class="stat-sub">Access removed</div>
+            <div class="stat-icon">🚫</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-label">New Enquiries</div>
+            <div class="stat-value" id="s-enq">—</div>
+            <div class="stat-sub">Awaiting follow-up</div>
+            <div class="stat-icon">📩</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Active Sessions</div>
+            <div class="stat-value" id="s-sessions">—</div>
+            <div class="stat-sub">Live logins</div>
+            <div class="stat-icon">🔑</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-label">Total Enquiries</div>
+            <div class="stat-value" id="s-enq-total">—</div>
+            <div class="stat-sub">All time</div>
+            <div class="stat-icon">📋</div>
+          </div>
+        </div>
+
+        <div class="overview-grid">
+          <!-- Recent signups -->
+          <div class="card">
+            <div class="card-title">Recent Signups</div>
+            <div class="recent-list" id="recent-students"></div>
+          </div>
+
+          <!-- Course breakdown -->
+          <div class="card">
+            <div class="card-title">Course Enrollment Breakdown</div>
+            <div id="course-breakdown"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STUDENTS PAGE ──────────────────────────────────────── -->
+      <div class="page" id="page-students">
+        <div class="sec-title">
+          <div class="sec-title-left">👥 All Students</div>
+          <button class="action-btn btn-view" onclick="loadStudents()">↻ Refresh</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="student-search" placeholder="Search by name, email or phone..." oninput="filterStudents()"/>
+          </div>
+          <select class="filter-select" id="course-filter" onchange="filterStudents()">
+            <option value="">All Courses</option>
+            <option>Physics Foundation</option>
+            <option>Physics Advanced</option>
+            <option>Physics Crash Course</option>
+            <option>Full Physics Package</option>
+          </select>
+          <select class="filter-select" id="status-filter" onchange="filterStudents()">
+            <option value="">All Status</option>
+            <option value="1">Active</option>
+            <option value="0">Revoked</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>Phone</th>
+                <th>Course</th>
+                <th>Plan</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="students-tbody"></tbody>
+          </table>
+        </div>
+        <div id="students-empty" class="empty" style="display:none">
+          <div class="empty-icon">👥</div>
+          <p>No students found.</p>
+        </div>
+        <div style="margin-top:.75rem;font-size:.78rem;color:var(--muted)" id="students-count"></div>
+      </div>
+
+      <!-- ── ENQUIRIES PAGE ─────────────────────────────────────── -->
+      <div class="page" id="page-enquiries">
+        <div class="sec-title">
+          <div class="sec-title-left">📩 Enquiries</div>
+          <button class="action-btn btn-view" onclick="loadEnquiries()">↻ Refresh</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="enq-search" placeholder="Search enquiries..." oninput="filterEnquiries()"/>
+          </div>
+          <select class="filter-select" id="enq-filter" onchange="filterEnquiries()">
+            <option value="">All Status</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="enrolled">Enrolled</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Course Interest</th>
+                <th>Message</th>
+                <th>Received</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="enq-tbody"></tbody>
+          </table>
+        </div>
+        <div id="enq-empty" class="empty" style="display:none">
+          <div class="empty-icon">📩</div>
+          <p>No enquiries found.</p>
+        </div>
+      </div>
+
+      <!-- ── SESSIONS PAGE ──────────────────────────────────────── -->
+      <div class="page" id="page-sessions">
+        <div class="sec-title">
+          <div class="sec-title-left">🔑 Active Sessions</div>
+          <button class="action-btn btn-view" onclick="loadSessions()">↻ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>User</th><th>Role</th><th>Token (partial)</th><th>Login Time</th><th>Expires</th></tr>
+            </thead>
+            <tbody id="sessions-tbody"></tbody>
+          </table>
+        </div>
+        <div id="sessions-empty" class="empty" style="display:none">
+          <div class="empty-icon">🔑</div><p>No active sessions.</p>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+  // ── Auth guard ────────────────────────────────────────────────
+  const token = localStorage.getItem('la_token');
+  const role  = localStorage.getItem('la_role');
+  if (!token || role !== 'admin') window.location.href = 'login.html';
+
+  const pageTitles = { overview:'Dashboard', students:'All Students', enquiries:'Enquiries', sessions:'Active Sessions' };
+  let allStudents  = [];
+  let allEnquiries = [];
+
+  // ── Helpers ────────────────────────────────────────────────────
+  const api = (url, opts = {}) =>
+    fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, ...opts })
+    .then(r => r.json().then(d => ({ ok: r.ok, status: r.status, data: d })));
+
+  function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    document.getElementById('toast-icon').textContent = type === 'success' ? '✓' : '✕';
+    el.className = `toast ${type} show`;
+    setTimeout(() => el.classList.remove('show'), 3200);
+  }
+
+  let modalCallback = null;
+  function showModal(title, body, btnLabel, btnClass, cb) {
+    document.getElementById('modal-title').textContent   = title;
+    document.getElementById('modal-body').textContent    = body;
+    document.getElementById('modal-confirm').textContent = btnLabel;
+    document.getElementById('modal-confirm').className   = btnClass;
+    document.getElementById('modal-confirm').onclick = () => { closeModal(); cb(); };
+    document.getElementById('modal').classList.add('show');
+  }
+  function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+  // ── Page navigation ────────────────────────────────────────────
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('nav-' + name)?.classList.add('active');
+    document.getElementById('page-title').textContent = pageTitles[name] || name;
+    closeSidebar();
+    if (name === 'students')  loadStudents();
+    if (name === 'enquiries') loadEnquiries();
+    if (name === 'sessions')  loadSessions();
+  }
+
+  function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+  function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+  // ── Load overview ──────────────────────────────────────────────
+  async function loadOverview() {
+    const r = await api('/api/admin/stats');
+    if (!r.ok) { logout(); return; }
+    const d = r.data;
+
+    document.getElementById('s-total').textContent     = d.total_students;
+    document.getElementById('s-active').textContent    = d.active_students;
+    document.getElementById('s-revoked').textContent   = d.revoked_students;
+    document.getElementById('s-enq').textContent       = d.new_enquiries;
+    document.getElementById('s-enq-total').textContent = d.total_enquiries;
+    document.getElementById('s-sessions').textContent  = d.active_sessions;
+
+    // Nav badges
+    document.getElementById('badge-students').textContent = d.total_students;
+    document.getElementById('badge-enq').textContent      = d.new_enquiries;
+
+    // Admin info
+    const me = await api('/api/me');
+    if (me.ok) {
+      const name = me.data.user.name || 'Admin';
+      document.getElementById('topbar-name').textContent   = name.split(' ')[0];
+      document.getElementById('topbar-avatar').textContent = name.charAt(0).toUpperCase();
+    }
+
+    // Recent students
+    document.getElementById('recent-students').innerHTML = d.recent_students.map(s => `
+      <div class="recent-row">
+        <div class="recent-avatar">${s.full_name.charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.full_name}</div>
+          <div style="font-size:.73rem;color:var(--muted)">${s.email}</div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);flex-shrink:0">${(s.created_at||'').slice(0,10)}</div>
+      </div>`).join('');
+
+    // Course breakdown
+    const total = d.total_students || 1;
+    document.getElementById('course-breakdown').innerHTML = d.courses.map(c => `
+      <div class="course-bar-row">
+        <div class="course-bar-label">
+          <span style="font-size:.82rem">${c.course}</span>
+          <span style="font-weight:700;color:var(--accent2)">${c.count}</span>
+        </div>
+        <div class="course-bar-track">
+          <div class="course-bar-fill" style="width:${Math.round(c.count/total*100)}%"></div>
+        </div>
+      </div>`).join('') || '<p style="color:var(--muted);font-size:.85rem">No data yet.</p>';
+  }
+
+  // ── Load students ──────────────────────────────────────────────
+  const COURSE_COLORS = {
+    'Physics Foundation':   'badge-indigo',
+    'Physics Advanced':     'badge-purple',
+    'Physics Crash Course': 'badge-orange',
+    'Full Physics Package': 'badge-blue',
+  };
+
+  async function loadStudents() {
+    const r = await api('/api/admin/students');
+    if (!r.ok) return;
+    allStudents = r.data;
+    renderStudents(allStudents);
+  }
+
+  function renderStudents(list) {
+    const tbody = document.getElementById('students-tbody');
+    const empty = document.getElementById('students-empty');
+    document.getElementById('students-count').textContent =
+      `Showing ${list.length} of ${allStudents.length} student${allStudents.length !== 1 ? 's' : ''}`;
+
+    if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = list.map((s, i) => {
+      const active     = s.is_active === 1;
+      const statusBadge = active
+        ? '<span class="badge badge-green">Active</span>'
+        : '<span class="badge badge-red">Revoked</span>';
+      const courseBadge = `<span class="badge ${COURSE_COLORS[s.course] || 'badge-gray'}">${s.course}</span>`;
+      const toggleBtn  = active
+        ? `<button class="action-btn btn-revoke"  onclick="confirmRevoke(${s.id},'${escHtml(s.full_name)}')">Revoke</button>`
+        : `<button class="action-btn btn-restore" onclick="confirmRestore(${s.id},'${escHtml(s.full_name)}')">Restore</button>`;
+
+      return `<tr id="student-row-${s.id}">
+        <td style="color:var(--muted)">${i + 1}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:.65rem">
+            <div class="recent-avatar" style="width:30px;height:30px;font-size:.75rem;flex-shrink:0">${s.full_name.charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="cell-name">${escHtml(s.full_name)}</div>
+              <div class="cell-sub">${escHtml(s.email)}</div>
+            </div>
+          </div>
+        </td>
+        <td style="color:var(--muted)">${escHtml(s.phone)}</td>
+        <td>${courseBadge}</td>
+        <td style="color:var(--muted);font-size:.8rem">${escHtml(s.plan)}</td>
+        <td style="color:var(--muted);font-size:.78rem">${(s.created_at||'').slice(0,10)}</td>
+        <td>${statusBadge}</td>
+        <td>
+          <div class="action-group">
+            ${toggleBtn}
+            <button class="action-btn btn-delete" onclick="confirmDelete(${s.id},'${escHtml(s.full_name)}')">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterStudents() {
+    const q       = document.getElementById('student-search').value.toLowerCase();
+    const course  = document.getElementById('course-filter').value;
+    const status  = document.getElementById('status-filter').value;
+    const filtered = allStudents.filter(s => {
+      const matchQ = !q || s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.phone.includes(q);
+      const matchC = !course || s.course === course;
+      const matchS = status === '' || String(s.is_active) === status;
+      return matchQ && matchC && matchS;
+    });
+    renderStudents(filtered);
+  }
+
+  // ── Revoke / Restore / Delete ──────────────────────────────────
+  function confirmRevoke(id, name) {
+    showModal('Revoke Access', `Remove login access for "${name}"? They won't be able to sign in.`, 'Revoke', 'btn-confirm-orange', () => toggleStudent(id));
+  }
+  function confirmRestore(id, name) {
+    showModal('Restore Access', `Restore login access for "${name}"?`, 'Restore', 'btn-confirm-orange btn-restore', () => toggleStudent(id));
+  }
+  function confirmDelete(id, name) {
+    showModal('Delete Student', `Permanently delete "${name}"? This cannot be undone.`, 'Delete', 'btn-confirm-red', () => deleteStudent(id, name));
+  }
+
+  async function toggleStudent(id) {
+    const r = await api(`/api/admin/students/${id}/toggle`, { method: 'PATCH' });
+    if (r.ok) {
+      toast(r.data.message);
+      await loadStudents();
+      loadOverview();
+    } else {
+      toast(r.data.error || 'Failed.', 'error');
+    }
+  }
+
+  async function deleteStudent(id, name) {
+    const r = await api(`/api/admin/students/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+      toast(`${name} deleted.`);
+      await loadStudents();
+      loadOverview();
+    } else {
+      toast(r.data.error || 'Failed.', 'error');
+    }
+  }
+
+  // ── Load enquiries ─────────────────────────────────────────────
+  const ENQ_BADGES = {
+    new:       'badge-orange',
+    contacted: 'badge-blue',
+    enrolled:  'badge-green',
+  };
+
+  async function loadEnquiries() {
+    const r = await api('/api/admin/enquiries');
+    if (!r.ok) return;
+    allEnquiries = r.data;
+    renderEnquiries(allEnquiries);
+  }
+
+  function renderEnquiries(list) {
+    const tbody = document.getElementById('enq-tbody');
+    const empty = document.getElementById('enq-empty');
+    if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = list.map((e, i) => `
+      <tr id="enq-row-${e.id}">
+        <td style="color:var(--muted)">${i + 1}</td>
+        <td><div class="cell-name">${escHtml(e.full_name)}</div></td>
+        <td style="color:var(--muted)">${escHtml(e.phone || '—')}</td>
+        <td style="color:var(--muted);font-size:.8rem">${escHtml(e.email || '—')}</td>
+        <td><span class="badge ${COURSE_COLORS[e.course] || 'badge-gray'}">${escHtml(e.course || '—')}</span></td>
+        <td style="color:var(--muted);font-size:.8rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(e.message)}">${escHtml(e.message || '—')}</td>
+        <td style="color:var(--muted);font-size:.78rem">${(e.created_at||'').slice(0,10)}</td>
+        <td><span class="badge ${ENQ_BADGES[e.status] || 'badge-gray'}">${e.status}</span></td>
+        <td>
+          <div class="action-group">
+            ${e.status !== 'contacted' ? `<button class="action-btn btn-mark"   onclick="updateEnquiry(${e.id},'contacted')">Contacted</button>` : ''}
+            ${e.status !== 'enrolled'  ? `<button class="action-btn btn-restore" onclick="updateEnquiry(${e.id},'enrolled')">Enrolled</button>` : ''}
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  function filterEnquiries() {
+    const q = document.getElementById('enq-search').value.toLowerCase();
+    const s = document.getElementById('enq-filter').value;
+    const filtered = allEnquiries.filter(e => {
+      const matchQ = !q || e.full_name.toLowerCase().includes(q) || (e.phone||'').includes(q) || (e.email||'').toLowerCase().includes(q);
+      const matchS = !s || e.status === s;
+      return matchQ && matchS;
+    });
+    renderEnquiries(filtered);
+  }
+
+  async function updateEnquiry(id, status) {
+    const r = await api(`/api/admin/enquiries/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    if (r.ok) { toast(`Marked as ${status}.`); loadEnquiries(); loadOverview(); }
+    else toast(r.data.error || 'Failed.', 'error');
+  }
+
+  // ── Load sessions ──────────────────────────────────────────────
+  async function loadSessions() {
+    const r = await api('/api/admin/sessions');
+    if (!r.ok) return;
+    const tbody = document.getElementById('sessions-tbody');
+    const empty = document.getElementById('sessions-empty');
+    if (!r.data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    tbody.innerHTML = r.data.map((s, i) => `
+      <tr>
+        <td style="color:var(--muted)">${i + 1}</td>
+        <td><div class="cell-name">${escHtml(s.user_name || '—')}</div></td>
+        <td><span class="badge ${s.role === 'admin' ? 'badge-purple' : 'badge-indigo'}">${s.role}</span></td>
+        <td style="color:var(--muted);font-family:monospace;font-size:.78rem">${s.token.slice(0, 18)}…</td>
+        <td style="color:var(--muted);font-size:.78rem">${(s.created_at||'').slice(0,16)}</td>
+        <td style="color:var(--muted);font-size:.78rem">${(s.expires_at||'').slice(0,16)}</td>
+      </tr>`).join('');
+  }
+
+  // ── Logout ─────────────────────────────────────────────────────
+  async function logout() {
+    try { await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); } catch {}
+    localStorage.clear();
+    window.location.href = 'login.html';
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Init ───────────────────────────────────────────────────────
+  loadOverview();
+</script>
+</body>
+</html>

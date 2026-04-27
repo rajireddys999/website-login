@@ -210,6 +210,125 @@ def admin_enquiries():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+# ── GET /api/admin/stats ─────────────────────────────────────────
+
+@app.route('/api/admin/stats', methods=['GET'])
+def admin_stats():
+    session, err_resp, err_code = require_auth()
+    if err_resp:
+        return err_resp, err_code
+    if session['role'] != 'admin':
+        return jsonify({'error': 'Admin access only.'}), 403
+
+    conn = get_conn()
+    stats = {
+        'total_students':    conn.execute("SELECT COUNT(*) FROM students").fetchone()[0],
+        'active_students':   conn.execute("SELECT COUNT(*) FROM students WHERE is_active=1").fetchone()[0],
+        'revoked_students':  conn.execute("SELECT COUNT(*) FROM students WHERE is_active=0").fetchone()[0],
+        'total_enquiries':   conn.execute("SELECT COUNT(*) FROM enquiries").fetchone()[0],
+        'new_enquiries':     conn.execute("SELECT COUNT(*) FROM enquiries WHERE status='new'").fetchone()[0],
+        'active_sessions':   conn.execute("SELECT COUNT(*) FROM sessions WHERE expires_at > datetime('now')").fetchone()[0],
+        'courses': [dict(r) for r in conn.execute(
+            "SELECT course, COUNT(*) as count FROM students GROUP BY course ORDER BY count DESC"
+        ).fetchall()],
+        'recent_students': [dict(r) for r in conn.execute(
+            "SELECT id, full_name, email, course, created_at FROM students ORDER BY created_at DESC LIMIT 5"
+        ).fetchall()],
+    }
+    conn.close()
+    return jsonify(stats)
+
+# ── PATCH /api/admin/students/<id>/toggle ────────────────────────
+
+@app.route('/api/admin/students/<int:sid>/toggle', methods=['PATCH'])
+def toggle_student(sid):
+    session, err_resp, err_code = require_auth()
+    if err_resp:
+        return err_resp, err_code
+    if session['role'] != 'admin':
+        return jsonify({'error': 'Admin access only.'}), 403
+
+    conn = get_conn()
+    student = conn.execute("SELECT id, full_name, is_active FROM students WHERE id=?", (sid,)).fetchone()
+    if not student:
+        conn.close()
+        return jsonify({'error': 'Student not found.'}), 404
+
+    new_status = 0 if student['is_active'] else 1
+    conn.execute("UPDATE students SET is_active=? WHERE id=?", (new_status, sid))
+    # Revoke all sessions if deactivating
+    if new_status == 0:
+        conn.execute("DELETE FROM sessions WHERE user_id=? AND role='student'", (sid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'id': sid, 'is_active': new_status,
+                    'message': f"Access {'restored' if new_status else 'revoked'} for {student['full_name']}."})
+
+# ── DELETE /api/admin/students/<id> ─────────────────────────────
+
+@app.route('/api/admin/students/<int:sid>', methods=['DELETE'])
+def delete_student(sid):
+    session, err_resp, err_code = require_auth()
+    if err_resp:
+        return err_resp, err_code
+    if session['role'] != 'admin':
+        return jsonify({'error': 'Admin access only.'}), 403
+
+    conn = get_conn()
+    student = conn.execute("SELECT full_name FROM students WHERE id=?", (sid,)).fetchone()
+    if not student:
+        conn.close()
+        return jsonify({'error': 'Student not found.'}), 404
+
+    conn.execute("DELETE FROM sessions WHERE user_id=? AND role='student'", (sid,))
+    conn.execute("DELETE FROM students WHERE id=?", (sid,))
+    conn.commit(); conn.close()
+    return jsonify({'message': f"{student['full_name']} deleted successfully."})
+
+# ── PATCH /api/admin/enquiries/<id>/status ────────────────────────
+
+@app.route('/api/admin/enquiries/<int:eid>/status', methods=['PATCH'])
+def update_enquiry_status(eid):
+    session, err_resp, err_code = require_auth()
+    if err_resp:
+        return err_resp, err_code
+    if session['role'] != 'admin':
+        return jsonify({'error': 'Admin access only.'}), 403
+
+    data   = request.get_json() or {}
+    status = data.get('status', '')
+    if status not in ('new', 'contacted', 'enrolled'):
+        return jsonify({'error': 'status must be new, contacted, or enrolled.'}), 400
+
+    conn = get_conn()
+    conn.execute("UPDATE enquiries SET status=? WHERE id=?", (status, eid))
+    conn.commit(); conn.close()
+    return jsonify({'id': eid, 'status': status})
+
+# ── GET /api/admin/sessions ───────────────────────────────────────
+
+@app.route('/api/admin/sessions', methods=['GET'])
+def admin_sessions():
+    session, err_resp, err_code = require_auth()
+    if err_resp:
+        return err_resp, err_code
+    if session['role'] != 'admin':
+        return jsonify({'error': 'Admin access only.'}), 403
+
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT s.id, s.token, s.role, s.created_at, s.expires_at,
+               CASE s.role
+                 WHEN 'student' THEN (SELECT full_name FROM students WHERE id = s.user_id)
+                 WHEN 'admin'   THEN (SELECT name       FROM admins   WHERE id = s.user_id)
+               END as user_name
+        FROM sessions s
+        WHERE s.expires_at > datetime('now')
+        ORDER BY s.created_at DESC
+    """).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
 # ── GET /api/status ──────────────────────────────────────────────
 
 @app.route('/api/status', methods=['GET'])

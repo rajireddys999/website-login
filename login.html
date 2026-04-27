@@ -411,7 +411,7 @@
         document.getElementById('form-view').style.display = 'none';
         document.getElementById('success-view').classList.add('show');
         setTimeout(() => {
-          window.location.href = data.role === 'admin' ? 'index.html' : 'dashboard.html';
+          window.location.href = data.role === 'admin' ? 'admin-dashboard.html' : 'dashboard.html';
         }, 2000);
 
       } catch (err) {

@@ -235,22 +235,45 @@ def get_lessons():
     if err_resp:
         return err_resp, err_code
 
-    topic = request.args.get('topic', '')
-    conn  = get_conn()
-    if topic:
-        rows = conn.execute("""
-            SELECT l.*, i.name as instructor_name
-            FROM lessons l JOIN instructors i ON l.instructor_id = i.id
-            WHERE l.topic = ? AND l.is_published = 1
-            ORDER BY l.order_num ASC, l.created_at ASC
-        """, (topic,)).fetchall()
+    conn = get_conn()
+
+    if session['role'] == 'student':
+        student = conn.execute(
+            "SELECT course FROM students WHERE id = ?", (session['user_id'],)
+        ).fetchone()
+        student_course = student['course'] if student else None
+
+        if student_course:
+            rows = conn.execute("""
+                SELECT l.*, i.name as instructor_name
+                FROM lessons l JOIN instructors i ON l.instructor_id = i.id
+                WHERE l.is_published = 1 AND (l.course = ? OR l.course = 'all')
+                ORDER BY l.order_num ASC, l.created_at ASC
+            """, (student_course,)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT l.*, i.name as instructor_name
+                FROM lessons l JOIN instructors i ON l.instructor_id = i.id
+                WHERE l.is_published = 1
+                ORDER BY l.order_num ASC, l.created_at ASC
+            """).fetchall()
     else:
-        rows = conn.execute("""
-            SELECT l.*, i.name as instructor_name
-            FROM lessons l JOIN instructors i ON l.instructor_id = i.id
-            WHERE l.is_published = 1
-            ORDER BY l.topic, l.order_num ASC
-        """).fetchall()
+        topic = request.args.get('topic', '')
+        if topic:
+            rows = conn.execute("""
+                SELECT l.*, i.name as instructor_name
+                FROM lessons l JOIN instructors i ON l.instructor_id = i.id
+                WHERE l.topic = ? AND l.is_published = 1
+                ORDER BY l.order_num ASC, l.created_at ASC
+            """, (topic,)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT l.*, i.name as instructor_name
+                FROM lessons l JOIN instructors i ON l.instructor_id = i.id
+                WHERE l.is_published = 1
+                ORDER BY l.topic, l.order_num ASC
+            """).fetchall()
+
     conn.close()
     return jsonify([dict(r) for r in rows])
 
@@ -278,35 +301,32 @@ def instructor_add_lesson():
     if err_resp:
         return err_resp, err_code
 
+    VALID_COURSES = [
+        'NEET - BI-PC', 'JEE MAINS - Physics', 'EAMCET - Physics',
+        'Intermediate - 1-Year Physics', 'Intermediate - 2-Year Physics', 'all'
+    ]
     data        = request.get_json() or {}
     topic       = data.get('topic', '').strip()
+    course      = data.get('course', '').strip()
     title       = data.get('title', '').strip()
     video_url   = data.get('video_url', '').strip()
     description = data.get('description', '').strip()
     duration    = data.get('duration', '').strip()
     order_num   = int(data.get('order_num', 0))
 
-    if not topic or not title or not video_url:
-        return jsonify({'error': 'topic, title and video_url are required.'}), 400
+    if not title or not video_url:
+        return jsonify({'error': 'title and video_url are required.'}), 400
+    if not course or course not in VALID_COURSES:
+        return jsonify({'error': f'course must be one of: {", ".join(VALID_COURSES)}'}), 400
 
-    valid_topics = ['mechanics', 'thermo', 'electro', 'optics', 'modern']
-    if topic not in valid_topics:
-        return jsonify({'error': f'topic must be one of: {", ".join(valid_topics)}'}), 400
-
-    # Resolve YouTube URL to embed-ready URL
-    yt_id = extract_youtube_id(video_url)
-    if yt_id:
-        video_type      = 'youtube'
-        stored_video_url = video_url  # store original; frontend extracts ID
-    else:
-        video_type      = 'youtube'
-        stored_video_url = video_url
+    video_type       = 'youtube'
+    stored_video_url = video_url
 
     conn = get_conn()
     cursor = conn.execute("""
-        INSERT INTO lessons (instructor_id, topic, title, description, video_type, video_url, duration, order_num)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (session['user_id'], topic, title, description, video_type, stored_video_url, duration, order_num))
+        INSERT INTO lessons (instructor_id, topic, course, title, description, video_type, video_url, duration, order_num)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (session['user_id'], topic, course, title, description, video_type, stored_video_url, duration, order_num))
     conn.commit()
     lesson_id = cursor.lastrowid
     lesson    = conn.execute("SELECT * FROM lessons WHERE id = ?", (lesson_id,)).fetchone()
@@ -330,18 +350,21 @@ def instructor_upload_video():
     if not allowed_file(file.filename):
         return jsonify({'error': f'Allowed formats: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
 
+    VALID_COURSES = [
+        'NEET - BI-PC', 'JEE MAINS - Physics', 'EAMCET - Physics',
+        'Intermediate - 1-Year Physics', 'Intermediate - 2-Year Physics', 'all'
+    ]
     topic       = request.form.get('topic', '').strip()
+    course      = request.form.get('course', '').strip()
     title       = request.form.get('title', '').strip()
     description = request.form.get('description', '').strip()
     duration    = request.form.get('duration', '').strip()
     order_num   = int(request.form.get('order_num', 0))
 
-    if not topic or not title:
-        return jsonify({'error': 'topic and title are required.'}), 400
-
-    valid_topics = ['mechanics', 'thermo', 'electro', 'optics', 'modern']
-    if topic not in valid_topics:
-        return jsonify({'error': f'topic must be one of: {", ".join(valid_topics)}'}), 400
+    if not title:
+        return jsonify({'error': 'title is required.'}), 400
+    if not course or course not in VALID_COURSES:
+        return jsonify({'error': f'course must be one of: {", ".join(VALID_COURSES)}'}), 400
 
     filename  = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
     filepath  = os.path.join(UPLOAD_FOLDER, filename)
@@ -351,9 +374,9 @@ def instructor_upload_video():
 
     conn = get_conn()
     cursor = conn.execute("""
-        INSERT INTO lessons (instructor_id, topic, title, description, video_type, video_url, duration, order_num)
-        VALUES (?, ?, ?, ?, 'upload', ?, ?, ?)
-    """, (session['user_id'], topic, title, description, video_url, duration, order_num))
+        INSERT INTO lessons (instructor_id, topic, course, title, description, video_type, video_url, duration, order_num)
+        VALUES (?, ?, ?, ?, ?, 'upload', ?, ?, ?)
+    """, (session['user_id'], topic, course, title, description, video_url, duration, order_num))
     conn.commit()
     lesson_id = cursor.lastrowid
     lesson    = conn.execute("SELECT * FROM lessons WHERE id = ?", (lesson_id,)).fetchone()

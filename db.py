@@ -83,9 +83,16 @@ def init_db():
     # Migrate sessions table to support instructor role if needed
     _migrate_sessions(conn)
 
+    _migrate_lessons_course(conn)
     conn.commit()
     conn.close()
     print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries")
+
+def _migrate_lessons_course(conn):
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(lessons)").fetchall()]
+    if 'course' not in cols:
+        conn.execute("ALTER TABLE lessons ADD COLUMN course TEXT NOT NULL DEFAULT 'all'")
+        print("  [OK] lessons.course column added")
 
 def _migrate_sessions(conn):
     # Check if sessions table exists with old constraint (student|admin only)

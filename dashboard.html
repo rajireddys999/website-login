@@ -417,9 +417,9 @@
             <div class="stat-value" id="stat-plan" style="font-size:1rem;margin-top:.4rem">—</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Topics Unlocked</div>
-            <div class="stat-value" id="stat-topics" style="color:#ff9800">0</div>
-            <div class="stat-sub">of 5 topics</div>
+            <div class="stat-label">Videos Available</div>
+            <div class="stat-value" id="stat-videos" style="color:#ff9800">0</div>
+            <div class="stat-sub">in your course</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Member Since</div>
@@ -427,9 +427,14 @@
           </div>
         </div>
 
-        <!-- Quick access topics -->
-        <div class="section-title">⚡ Quick Access — Physics Topics</div>
-        <div class="topics-grid" id="home-topics"></div>
+        <!-- Course videos -->
+        <div class="section-title">📺 My Course — Videos</div>
+        <div id="home-videos-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0">Loading videos…</div>
+        <div id="home-videos" style="display:grid;gap:.65rem"></div>
+        <div id="home-videos-empty" style="display:none;padding:2.5rem;text-align:center;color:var(--muted)">
+          <div style="font-size:2.5rem;margin-bottom:.6rem">🎬</div>
+          <p>No videos have been uploaded for your course yet.</p>
+        </div>
       </div>
 
       <!-- ── COURSES PAGE ───────────────────────────────────────── -->
@@ -446,8 +451,13 @@
           </div>
         </div>
 
-        <div class="section-title">📖 Your Physics Modules</div>
-        <div class="topics-grid" id="course-topics"></div>
+        <div class="section-title">📺 Course Videos</div>
+        <div id="course-videos-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0">Loading videos…</div>
+        <div id="course-videos-list" style="display:grid;gap:.65rem"></div>
+        <div id="course-videos-empty" style="display:none;padding:2.5rem;text-align:center;color:var(--muted)">
+          <div style="font-size:2.5rem;margin-bottom:.6rem">🎬</div>
+          <p>No videos have been uploaded for your course yet.</p>
+        </div>
       </div>
 
       <!-- ── SCHEDULE PAGE ──────────────────────────────────────── -->
@@ -510,52 +520,8 @@
 </div><!-- /layout -->
 
 <script>
-  // ── Video IDs per topic (YouTube) ─────────────────────────────
-  const TOPIC_VIDEOS = {
-    mechanics: { vid: 'ZM8ECpBuQYE', playlist: 'https://www.youtube.com/results?search_query=mechanics+physics+class+11' },
-    thermo:    { vid: 'vqDbMEdLiCs', playlist: 'https://www.youtube.com/results?search_query=thermodynamics+physics+class+11' },
-    electro:   { vid: 'mc979OhitAg', playlist: 'https://www.youtube.com/results?search_query=electromagnetism+physics+class+12' },
-    optics:    { vid: 'uhsL5VzGMSA', playlist: 'https://www.youtube.com/results?search_query=optics+waves+physics+class+12' },
-    modern:    { vid: 'FXfrncRey-4', playlist: 'https://www.youtube.com/results?search_query=modern+physics+class+12' },
-  };
-
-  // ── Physics curriculum data ───────────────────────────────────
-  const TOPICS = [
-    {
-      id: 'mechanics', icon: '⚙️', title: 'Mechanics',
-      color: '#4f46e5', progress: 0,
-      chapters: ['Motion in 1D & 2D', "Newton's Laws", 'Work, Energy & Power', 'Rotational Motion', 'Gravitation', 'Fluid Mechanics'],
-    },
-    {
-      id: 'thermo', icon: '🔥', title: 'Thermodynamics',
-      color: '#ef4444', progress: 0,
-      chapters: ['Heat & Temperature', 'Kinetic Theory of Gases', '1st Law of Thermodynamics', '2nd Law & Entropy', 'Heat Engines'],
-    },
-    {
-      id: 'electro', icon: '⚡', title: 'Electromagnetism',
-      color: '#f59e0b', progress: 0,
-      chapters: ['Electrostatics & Gauss Law', 'Electric Potential', 'Current & Circuits', 'Magnetic Field & Force', 'EMI & Inductance', 'AC Circuits'],
-    },
-    {
-      id: 'optics', icon: '🔭', title: 'Optics & Waves',
-      color: '#06b6d4', progress: 0,
-      chapters: ['Ray Optics & Mirrors', 'Refraction & Lenses', 'Wave Nature of Light', 'Interference & Diffraction', 'Sound Waves'],
-    },
-    {
-      id: 'modern', icon: '⚛️', title: 'Modern Physics',
-      color: '#10b981', progress: 0,
-      chapters: ['Photoelectric Effect', 'Atomic Models', 'Nuclear Physics', 'Radioactivity', 'Semiconductor Devices'],
-    },
-  ];
-
-  // Course → unlocked topics
-  const COURSE_ACCESS = {
-    'NEET - BI-PC':                  ['mechanics', 'thermo', 'electro', 'optics', 'modern'],
-    'JEE MAINS - Physics':           ['mechanics', 'thermo', 'electro', 'optics', 'modern'],
-    'EAMCET - Physics':              ['mechanics', 'thermo', 'electro', 'optics', 'modern'],
-    'Intermediate - 1-Year Physics': ['mechanics', 'thermo', 'electro', 'optics', 'modern'],
-    'Intermediate - 2-Year Physics': ['mechanics', 'thermo', 'electro', 'optics', 'modern'],
-  };
+  const TOPIC_COLORS = { mechanics: '#4f46e5', thermo: '#ef4444', electro: '#f59e0b', optics: '#06b6d4', modern: '#10b981' };
+  const TOPIC_LABELS = { mechanics: 'Mechanics', thermo: 'Thermodynamics', electro: 'Electromagnetism', optics: 'Optics & Waves', modern: 'Modern Physics' };
 
   const SCHEDULE = [
     { day: 'Monday',    time: '7:00 – 9:00 AM',  topic: 'Mechanics',        chapter: "Newton's Laws",           status: 'completed' },
@@ -580,7 +546,11 @@
   }
 
   let student = null;
-  let unlockedTopics = [];
+  let courseVideos = [];
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
   // ── Load student data ─────────────────────────────────────────
   async function loadStudent() {
@@ -590,17 +560,16 @@
       if (!res.ok) { logout(); return; }
       student = data.user;
       renderAll();
+      loadCourseVideos();
     } catch {
-      // Fallback to localStorage if server not reachable
       const stored = localStorage.getItem('la_user');
-      if (stored) { student = JSON.parse(stored); renderAll(); }
+      if (stored) { student = JSON.parse(stored); renderAll(); loadCourseVideos(); }
       else logout();
     }
   }
 
   function renderAll() {
-    const course = student.course || 'Physics Foundation';
-    unlockedTopics = COURSE_ACCESS[course] || ['mechanics', 'thermo'];
+    const course = student.course || '';
 
     // Topbar
     document.getElementById('topbar-name').textContent = student.full_name.split(' ')[0];
@@ -622,7 +591,6 @@
     // Stats
     document.getElementById('stat-course').textContent = course;
     document.getElementById('stat-plan').textContent   = student.plan;
-    document.getElementById('stat-topics').textContent = unlockedTopics.length;
     const since = student.created_at ? student.created_at.slice(0, 10) : '—';
     document.getElementById('stat-since').textContent  = since;
 
@@ -635,56 +603,81 @@
     document.getElementById('p-since').value  = since;
 
     // Course page header
-    const icons = { 'Physics Foundation':'🌱', 'Physics Advanced':'🚀', 'Physics Crash Course':'⚡', 'Full Physics Package':'🏆' };
-    document.getElementById('course-icon').textContent  = icons[course] || '⚛️';
+    document.getElementById('course-icon').textContent  = '⚛️';
     document.getElementById('course-title').textContent = course;
-    document.getElementById('course-meta').textContent  = unlockedTopics.length + ' topics unlocked · Plan: ' + student.plan;
-
-    // Render topic grids
-    document.getElementById('home-topics').innerHTML    = buildTopicGrid(true);
-    document.getElementById('course-topics').innerHTML  = buildTopicGrid(false);
+    document.getElementById('course-meta').textContent  = 'Plan: ' + student.plan;
 
     // Schedule
     buildSchedule();
     buildTests();
   }
 
-  function buildTopicGrid(compact) {
-    return TOPICS.map(t => {
-      const unlocked = unlockedTopics.includes(t.id);
-      const chapters = compact ? t.chapters.slice(0, 3) : t.chapters;
-      return `
-        <div class="topic-card ${unlocked ? '' : 'locked'}">
-          <div class="topic-header">
-            <div class="topic-icon" style="background:${t.color}22;color:${t.color}">${t.icon}</div>
-            <div>
-              <div class="topic-title">${t.title}</div>
-              <div class="topic-chapters">${t.chapters.length} chapters</div>
-            </div>
-            ${unlocked ? `<svg style="margin-left:auto;color:#38ef7d;flex-shrink:0" width="18" height="18" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>` : ''}
+  // ── Load & render course videos ───────────────────────────────
+  async function loadCourseVideos() {
+    try {
+      const res = await fetch('/api/lessons', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (res.ok) {
+        const data = await res.json();
+        courseVideos = Array.isArray(data) ? data : [];
+      }
+    } catch { courseVideos = []; }
+
+    document.getElementById('stat-videos').textContent = courseVideos.length;
+    document.getElementById('course-meta').textContent = courseVideos.length + ' video' + (courseVideos.length !== 1 ? 's' : '') + ' · Plan: ' + (student?.plan || '');
+
+    renderVideoList('home-videos', 'home-videos-loading', 'home-videos-empty');
+    renderVideoList('course-videos-list', 'course-videos-loading', 'course-videos-empty');
+  }
+
+  function renderVideoList(listId, loadingId, emptyId) {
+    document.getElementById(loadingId).style.display = 'none';
+    if (!courseVideos.length) {
+      document.getElementById(emptyId).style.display = 'block';
+      document.getElementById(listId).innerHTML = '';
+      return;
+    }
+    document.getElementById(emptyId).style.display = 'none';
+    document.getElementById(listId).innerHTML = courseVideos.map((v, i) => `
+      <div onclick="openVideo(${i})" style="display:flex;align-items:center;gap:.85rem;padding:.9rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(255,152,0,.4)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ff9800,#ff5722);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.85rem;flex-shrink:0;color:#fff">${i + 1}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.title)}</div>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-top:.25rem;flex-wrap:wrap">
+            ${v.topic ? `<span style="font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:99px;background:${TOPIC_COLORS[v.topic] || '#66666622'}22;color:${TOPIC_COLORS[v.topic] || '#aaa'}">${TOPIC_LABELS[v.topic] || v.topic}</span>` : ''}
+            ${v.duration ? `<span style="font-size:.73rem;color:var(--muted)">${escHtml(v.duration)}</span>` : ''}
+            ${v.instructor_name ? `<span style="font-size:.73rem;color:var(--muted)">· ${escHtml(v.instructor_name)}</span>` : ''}
           </div>
-          <ul class="chapter-list">
-            ${chapters.map((ch, i) => `
-              <li class="chapter-item">
-                <span class="dot ${unlocked && i < 2 ? 'done' : ''}"></span>
-                ${ch}
-              </li>`).join('')}
-            ${compact && t.chapters.length > 3 ? `<li class="chapter-item" style="color:var(--muted);font-style:italic">+${t.chapters.length - 3} more chapters</li>` : ''}
-          </ul>
-          ${unlocked ? `
-            <div class="progress-bar-wrap">
-              <div class="progress-label"><span>Progress</span><span>${t.progress}%</span></div>
-              <div class="progress-track"><div class="progress-fill" style="width:${t.progress}%"></div></div>
-            </div>
-            <button onclick="openTopic('${t.id}')" style="margin-top:.85rem;width:100%;padding:.6rem;border-radius:10px;background:linear-gradient(135deg,#ff9800,#ff5722);border:none;color:#fff;font-weight:700;font-size:.82rem;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:.4rem">
-              ▶ Watch Video Lessons
-            </button>` : `
-            <div class="lock-overlay">
-              <span style="font-size:1.5rem">🔒</span>
-              <span>Upgrade plan to unlock</span>
-            </div>`}
-        </div>`;
-    }).join('');
+        </div>
+        <div style="font-size:.8rem;color:#ff9800;font-weight:700;flex-shrink:0">${v.video_type === 'youtube' ? '▶ Play' : '🎬 Watch'}</div>
+      </div>`).join('');
+  }
+
+  function openVideo(idx) {
+    if (idx < 0 || idx >= courseVideos.length) return;
+
+    const course = student?.course || 'My Course';
+    document.getElementById('vm-title').textContent = course;
+    document.getElementById('vm-count').textContent = courseVideos.length + ' video' + (courseVideos.length !== 1 ? 's' : '');
+    document.getElementById('vm-loading').style.display = 'none';
+    document.getElementById('vm-frame').style.display = 'none';
+    document.getElementById('vm-video').style.display = 'none';
+    document.getElementById('vm-lesson-info').style.display = 'none';
+    document.getElementById('vm-playlist').style.display = 'none';
+    document.getElementById('video-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    window._vmLessons = courseVideos;
+    document.getElementById('vm-lessons').innerHTML = courseVideos.map((l, i) =>
+      `<li id="vl-${i}" onclick="playLesson(${i})" style="display:flex;align-items:center;gap:.7rem;padding:.55rem .7rem;border-radius:9px;cursor:pointer;transition:background .15s;border:1px solid transparent" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="if(currentLesson!==${i})this.style.background=''">
+        <span style="width:24px;height:24px;border-radius:6px;background:rgba(255,152,0,.15);color:#ff9800;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</span>
+        <span style="flex:1;font-size:.82rem;font-weight:600;color:rgba(255,255,255,.8);line-height:1.3">${escHtml(l.title)}</span>
+        ${l.duration ? `<span style="font-size:.72rem;color:rgba(255,255,255,.35);flex-shrink:0">${l.duration}</span>` : ''}
+        <span style="font-size:.8rem;flex-shrink:0">${l.video_type === 'youtube' ? '▶' : '🎬'}</span>
+      </li>`
+    ).join('');
+
+    currentLesson = -1;
+    playLesson(idx);
   }
 
   function buildSchedule() {
@@ -728,59 +721,6 @@
     document.getElementById('nav-' + name)?.classList.add('active');
     document.getElementById('page-title').textContent = pageTitles[name] || name;
     closeSidebar();
-  }
-
-  async function openTopic(id) {
-    const topic = TOPICS.find(t => t.id === id);
-    if (!topic) return;
-
-    // Show modal in loading state
-    document.getElementById('vm-title').textContent = topic.icon + ' ' + topic.title;
-    document.getElementById('vm-count').textContent = '';
-    document.getElementById('vm-loading').style.display = 'flex';
-    document.getElementById('vm-frame').style.display = 'none';
-    document.getElementById('vm-video').style.display = 'none';
-    document.getElementById('vm-lesson-info').style.display = 'none';
-    document.getElementById('vm-lessons').innerHTML = '';
-    const fallback = TOPIC_VIDEOS[id];
-    document.getElementById('vm-playlist').href = fallback ? fallback.playlist : '#';
-    document.getElementById('video-modal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-
-    // Fetch lessons from API
-    let lessons = [];
-    try {
-      const res = await fetch('/api/lessons?topic=' + id, { headers: { 'Authorization': 'Bearer ' + token } });
-      if (res.ok) {
-        const data = await res.json();
-        lessons = Array.isArray(data) ? data : (data.lessons || []);
-      }
-    } catch {}
-
-    // If no lessons from API, build a synthetic one from fallback
-    if (lessons.length === 0 && fallback) {
-      lessons = [{
-        id: 0, title: topic.title + ' — Intro Video', description: '',
-        video_type: 'youtube', video_url: 'https://www.youtube.com/watch?v=' + fallback.vid,
-        duration: '', _vid: fallback.vid
-      }];
-    }
-
-    document.getElementById('vm-count').textContent = lessons.length + ' lesson' + (lessons.length !== 1 ? 's' : '');
-    document.getElementById('vm-loading').style.display = 'none';
-
-    // Render lesson list
-    document.getElementById('vm-lessons').innerHTML = lessons.map((l, i) =>
-      `<li id="vl-${i}" onclick="playLesson(${i})" style="display:flex;align-items:center;gap:.7rem;padding:.55rem .7rem;border-radius:9px;cursor:pointer;transition:background .15s;border:1px solid transparent" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="if(currentLesson!==${i})this.style.background=''"  >
-        <span style="width:24px;height:24px;border-radius:6px;background:rgba(255,152,0,.15);color:#ff9800;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</span>
-        <span style="flex:1;font-size:.82rem;font-weight:600;color:rgba(255,255,255,.8);line-height:1.3">${l.title}</span>
-        ${l.duration ? `<span style="font-size:.72rem;color:rgba(255,255,255,.35);flex-shrink:0">${l.duration}</span>` : ''}
-        <span style="font-size:.8rem;flex-shrink:0">${l.video_type === 'youtube' ? '▶' : '🎬'}</span>
-      </li>`
-    ).join('');
-
-    window._vmLessons = lessons;
-    playLesson(0);
   }
 
   let currentLesson = -1;
@@ -862,19 +802,6 @@
 
   // ── Init ──────────────────────────────────────────────────────
   loadStudent();
-
-  // Animate progress bars after load
-  setTimeout(() => {
-    const course = student?.course || '';
-    const unlocked = COURSE_ACCESS[course] || [];
-    const fills = document.querySelectorAll('.progress-fill');
-    const progressMap = { mechanics: 35, thermo: 15, electro: 0, optics: 0, modern: 0 };
-    TOPICS.forEach((t, i) => {
-      if (unlocked.includes(t.id)) {
-        t.progress = progressMap[t.id] || 0;
-      }
-    });
-  }, 500);
 </script>
 </body>
 </html>

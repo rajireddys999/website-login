@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Student Login — Laxmi Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 55%, #24243e 100%);
+    }
+
+    /* Left panel */
+    .panel-left {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 900px) { .panel-left { display: flex; } }
+
+    .panel-left::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 30% 40%, rgba(255,152,0,.18) 0%, transparent 60%),
+                  radial-gradient(circle at 70% 70%, rgba(79,70,229,.2) 0%, transparent 55%);
+    }
+
+    .blob {
+      position: absolute; border-radius: 50%; opacity: .12;
+      animation: float 7s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+
+    .brand-logo {
+      position: relative; z-index: 1; text-align: center;
+    }
+    .brand-logo img {
+      width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+      border: 3px solid rgba(255,152,0,.7);
+      box-shadow: 0 0 28px rgba(255,152,0,.4);
+    }
+    .brand-logo h1 {
+      margin-top: 1rem; font-size: 2rem; font-weight: 900;
+      background: linear-gradient(90deg,#ff9800,#ff5722);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand-logo p { color: rgba(255,255,255,.55); font-size: .9rem; margin-top: .3rem; }
+
+    .features {
+      position: relative; z-index: 1;
+      margin-top: 2.5rem; display: grid; gap: .9rem; width: 100%; max-width: 320px;
+    }
+    .feature {
+      display: flex; align-items: center; gap: .9rem;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px; padding: .85rem 1rem; color: #fff;
+    }
+    .feature-icon {
+      width: 38px; height: 38px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;
+    }
+    .feature p { font-size: .82rem; font-weight: 600; }
+    .feature span { font-size: .75rem; color: rgba(255,255,255,.5); }
+
+    /* Right panel — login card */
+    .panel-right {
+      width: 100%; max-width: 480px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .login-card {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 60px rgba(0,0,0,.45);
+      color: #fff;
+    }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .8rem; color: rgba(255,255,255,.5);
+      text-decoration: none; margin-bottom: 1.8rem;
+      transition: color .2s;
+    }
+    .back-link:hover { color: #ff9800; }
+
+    .card-header { margin-bottom: 1.8rem; }
+    .card-header h2 { font-size: 1.6rem; font-weight: 800; }
+    .card-header p { color: rgba(255,255,255,.5); font-size: .88rem; margin-top: .3rem; }
+
+    /* Tabs */
+    .tabs {
+      display: flex; background: rgba(255,255,255,.06); border-radius: 12px;
+      padding: 4px; margin-bottom: 1.6rem; gap: 4px;
+    }
+    .tab {
+      flex: 1; padding: .55rem; border-radius: 9px; font-size: .85rem;
+      font-weight: 700; border: none; cursor: pointer; transition: all .2s;
+      background: transparent; color: rgba(255,255,255,.5);
+    }
+    .tab.active {
+      background: linear-gradient(135deg,#ff9800,#ff5722);
+      color: #fff; box-shadow: 0 4px 12px rgba(255,152,0,.35);
+    }
+
+    /* Form fields */
+    .field { margin-bottom: 1.1rem; }
+    .field label { display: block; font-size: .8rem; font-weight: 600; color: rgba(255,255,255,.65); margin-bottom: .45rem; }
+
+    .input-wrap { position: relative; }
+    .input-wrap svg {
+      position: absolute; left: .85rem; top: 50%; transform: translateY(-50%);
+      width: 17px; height: 17px; color: rgba(255,255,255,.35); pointer-events: none;
+    }
+    .input-wrap input {
+      width: 100%; padding: .78rem .85rem .78rem 2.4rem;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+      border-radius: 12px; color: #fff; font-size: .9rem; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .input-wrap input::placeholder { color: rgba(255,255,255,.3); }
+    .input-wrap input:focus { border-color: #ff9800; box-shadow: 0 0 0 3px rgba(255,152,0,.2); }
+
+    .eye-btn {
+      position: absolute; right: .85rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: rgba(255,255,255,.35);
+      padding: 0; display: flex; align-items: center; transition: color .2s;
+    }
+    .eye-btn:hover { color: #ff9800; }
+
+    .forgot { text-align: right; margin-top: .4rem; }
+    .forgot a { font-size: .78rem; color: rgba(255,255,255,.45); text-decoration: none; transition: color .2s; }
+    .forgot a:hover { color: #ff9800; }
+
+    /* Error message */
+    .error-msg {
+      display: none; background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3);
+      border-radius: 10px; padding: .65rem .9rem; color: #fca5a5; font-size: .82rem;
+      margin-bottom: 1rem;
+    }
+    .error-msg.show { display: flex; align-items: center; gap: .5rem; }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%; padding: .9rem;
+      background: linear-gradient(135deg, #ff9800, #ff5722);
+      color: #fff; font-size: .95rem; font-weight: 800;
+      border: none; border-radius: 14px; cursor: pointer;
+      box-shadow: 0 6px 22px rgba(255,152,0,.35);
+      transition: transform .15s, box-shadow .15s;
+      margin-top: .5rem;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,152,0,.45); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: .75rem;
+      margin: 1.2rem 0; color: rgba(255,255,255,.25); font-size: .78rem;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.12);
+    }
+
+    /* Signup link */
+    .signup-row { text-align: center; font-size: .84rem; color: rgba(255,255,255,.45); }
+    .signup-row a { color: #ff9800; font-weight: 700; text-decoration: none; }
+    .signup-row a:hover { text-decoration: underline; }
+
+    /* Success overlay */
+    .success-overlay {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center; padding: 1rem;
+    }
+    .success-overlay.show { display: flex; }
+    .success-icon {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: linear-gradient(135deg,#38ef7d,#11998e);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; margin-bottom: 1.2rem;
+      box-shadow: 0 0 28px rgba(56,239,125,.35);
+      animation: pop .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes pop { from{transform:scale(0)} to{transform:scale(1)} }
+    .success-overlay h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: .5rem; }
+    .success-overlay p { color: rgba(255,255,255,.55); font-size: .88rem; }
+  </style>
+</head>
+<body>
+
+  <!-- Left decorative panel -->
+  <div class="panel-left">
+    <div class="blob" style="width:260px;height:260px;background:#4f46e5;top:-60px;left:-60px;animation-delay:0s"></div>
+    <div class="blob" style="width:180px;height:180px;background:#ff9800;bottom:60px;right:20px;animation-delay:3s"></div>
+
+    <div class="brand-logo">
+      <img src="logo.png.jpeg" alt="Laxmi Academy"/>
+      <h1>Laxmi Academy</h1>
+      <p>School of Knowledge · Hyderabad</p>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(255,152,0,.2)">⚡</div>
+        <div>
+          <p>Physics from Basics to Advanced</p>
+          <span>Mechanics · Thermodynamics · Electromagnetism · Optics</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(79,70,229,.3)">📊</div>
+        <div>
+          <p>Track Your Progress</p>
+          <span>Weekly tests, performance charts &amp; rank reports</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(56,239,125,.15)">💬</div>
+        <div>
+          <p>Doubt Clearing 24/7</p>
+          <span>Chat support and live doubt sessions</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(239,68,68,.15)">🏆</div>
+        <div>
+          <p>98% Success Rate</p>
+          <span>15+ years · 2500+ students trained</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right login panel -->
+  <div class="panel-right">
+    <div class="login-card">
+      <a href="index.html" class="back-link">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        Back to Home
+      </a>
+
+      <!-- Normal view -->
+      <div id="form-view">
+        <div class="card-header">
+          <h2>Welcome Back 👋</h2>
+          <p>Sign in to your student portal</p>
+        </div>
+
+        <!-- Tabs: Student / Admin -->
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab(this,'student')">Student</button>
+          <button class="tab" onclick="switchTab(this,'admin')">Admin</button>
+        </div>
+
+        <div class="error-msg" id="error-msg">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
+          <span id="error-text">Invalid email or password.</span>
+        </div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="field">
+            <label for="email">Email / Phone</label>
+            <div class="input-wrap">
+              <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+              <input type="text" id="email" placeholder="Enter your email or phone" required autocomplete="username"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="input-wrap">
+              <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password"/>
+              <button type="button" class="eye-btn" onclick="togglePassword()" aria-label="Show/hide password">
+                <svg id="eye-icon" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+            <div class="forgot"><a href="#" onclick="showForgot(event)">Forgot password?</a></div>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submit-btn">Sign In</button>
+        </form>
+
+        <div class="divider">or</div>
+        <div class="signup-row">
+          New student? <a href="signup.html">Create an account</a>
+        </div>
+      </div>
+
+      <!-- Success view -->
+      <div class="success-overlay" id="success-view">
+        <div class="success-icon">✓</div>
+        <h3>Login Successful!</h3>
+        <p>Welcome back, <strong id="success-name"></strong>! Redirecting...</p>
+      </div>
+
+      <!-- Forgot password view -->
+      <div id="forgot-view" style="display:none">
+        <button onclick="showLogin()" class="back-link" style="background:none;border:none;cursor:pointer;margin-bottom:1.5rem">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          Back to Login
+        </button>
+        <div class="card-header">
+          <h2>Reset Password 🔑</h2>
+          <p>Enter your registered email and we'll send a reset link.</p>
+        </div>
+        <form onsubmit="handleForgot(event)">
+          <div class="field">
+            <label>Registered Email</label>
+            <div class="input-wrap">
+              <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <input type="email" placeholder="you@email.com" required/>
+            </div>
+          </div>
+          <button type="submit" class="btn-submit">Send Reset Link</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function switchTab(btn, role) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector('#login-form [for="email"]').textContent =
+        role === 'admin' ? 'Admin Email' : 'Email / Phone';
+      hideError();
+    }
+
+    function togglePassword() {
+      const inp = document.getElementById('password');
+      const icon = document.getElementById('eye-icon');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>';
+      } else {
+        inp.type = 'password';
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      document.getElementById('error-text').textContent = msg;
+      el.classList.add('show');
+    }
+    function hideError() { document.getElementById('error-msg').classList.remove('show'); }
+
+    // Active role tab (student / admin)
+    let activeRole = 'student';
+    function switchTab(btn, role) {
+      activeRole = role;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector('label[for="email"]').textContent =
+        role === 'admin' ? 'Admin Email' : 'Email / Phone';
+      hideError();
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      hideError();
+      const btn        = document.getElementById('submit-btn');
+      const identifier = document.getElementById('email').value.trim();
+      const password   = document.getElementById('password').value;
+
+      if (!identifier || !password) {
+        showError('Please fill in all fields.'); return;
+      }
+
+      btn.disabled = true; btn.textContent = 'Signing in...';
+
+      try {
+        const res  = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password, role: activeRole })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || 'Login failed. Please try again.');
+          btn.disabled = false; btn.textContent = 'Sign In';
+          return;
+        }
+
+        // Store session token
+        localStorage.setItem('la_token', data.token);
+        localStorage.setItem('la_role',  data.role);
+        localStorage.setItem('la_user',  JSON.stringify(data.user));
+
+        // Show success screen
+        const name = data.user.full_name || data.user.name || 'Student';
+        document.getElementById('success-name').textContent = name;
+        document.getElementById('form-view').style.display = 'none';
+        document.getElementById('success-view').classList.add('show');
+        setTimeout(() => {
+          window.location.href = data.role === 'admin' ? 'admin-dashboard.html' : 'dashboard.html';
+        }, 2000);
+
+      } catch (err) {
+        showError('Server not reachable. Please make sure the server is running.');
+        btn.disabled = false; btn.textContent = 'Sign In';
+      }
+    }
+
+    function showForgot(e) {
+      e.preventDefault();
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('forgot-view').style.display = 'block';
+    }
+    function showLogin() {
+      document.getElementById('forgot-view').style.display = 'none';
+      document.getElementById('form-view').style.display = 'block';
+    }
+    function handleForgot(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      btn.textContent = 'Reset link sent!';
+      btn.disabled = true;
+      setTimeout(showLogin, 2000);
+    }
+  </script>
+</body>
+</html>

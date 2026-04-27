@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Student Dashboard — Laxmi Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0f0c29;
+      --surface: rgba(255,255,255,.06);
+      --border:  rgba(255,255,255,.1);
+      --text:    #f1f1f1;
+      --muted:   rgba(255,255,255,.45);
+      --accent:  #ff9800;
+      --accent2: #ff5722;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #1a1740 50%, #0f0c29 100%);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    /* ── Sidebar ─────────────────────────────── */
+    .layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 240px; flex-shrink: 0;
+      background: rgba(0,0,0,.35);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; height: 100vh;
+      z-index: 100; transition: transform .3s;
+    }
+    .sidebar.hidden { transform: translateX(-100%); }
+
+    .sidebar-logo {
+      padding: 1.2rem 1.2rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .75rem;
+    }
+    .sidebar-logo img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+    .sidebar-logo span { font-weight: 800; font-size: .95rem;
+      background: linear-gradient(90deg,#ff9800,#ff5722);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .nav-section { padding: .8rem .8rem 0; font-size: .7rem; font-weight: 700; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+
+    .nav-link {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .65rem 1rem; margin: .15rem .6rem;
+      border-radius: 12px; font-size: .88rem; font-weight: 500;
+      color: var(--muted); text-decoration: none; transition: all .2s; cursor: pointer; border: none; background: none; width: calc(100% - 1.2rem); text-align: left;
+    }
+    .nav-link:hover { background: var(--surface); color: var(--text); }
+    .nav-link.active { background: linear-gradient(135deg,rgba(255,152,0,.18),rgba(255,87,34,.12)); color: var(--accent); border: 1px solid rgba(255,152,0,.25); }
+    .nav-icon { font-size: 1.05rem; flex-shrink: 0; }
+
+    .sidebar-bottom { margin-top: auto; padding: 1rem .8rem; border-top: 1px solid var(--border); }
+
+    /* ── Main area ───────────────────────────── */
+    .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(15,12,41,.85); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: .75rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; }
+
+    .topbar-right { display: flex; align-items: center; gap: .75rem; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg,#ff9800,#ff5722);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .9rem; cursor: pointer; flex-shrink: 0;
+    }
+    .student-name { font-size: .88rem; font-weight: 600; }
+    .student-course-badge {
+      font-size: .72rem; font-weight: 700; padding: .25rem .65rem;
+      border-radius: 99px; background: rgba(255,152,0,.15); color: var(--accent);
+      border: 1px solid rgba(255,152,0,.3);
+    }
+
+    .content { padding: 1.8rem 1.5rem; flex: 1; }
+
+    /* ── Page sections ───────────────────────── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Cards ───────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px; padding: 1.4rem;
+    }
+    .card-sm { border-radius: 14px; padding: 1rem; }
+
+    /* ── Welcome banner ─────────────────────── */
+    .welcome-banner {
+      background: linear-gradient(135deg,#1e1b4b,#312e81);
+      border: 1px solid rgba(99,102,241,.3);
+      border-radius: 20px; padding: 1.6rem 1.8rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      margin-bottom: 1.5rem; position: relative; overflow: hidden;
+    }
+    .welcome-banner::before {
+      content: ''; position: absolute; right: -30px; top: -30px;
+      width: 160px; height: 160px; border-radius: 50%;
+      background: rgba(255,152,0,.12);
+    }
+    .welcome-banner h2 { font-size: 1.4rem; font-weight: 800; }
+    .welcome-banner p  { color: rgba(255,255,255,.6); font-size: .88rem; margin-top: .3rem; }
+    .welcome-emoji { font-size: 3.5rem; flex-shrink: 0; }
+
+    /* ── Stats row ───────────────────────────── */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.1rem 1.2rem;
+    }
+    .stat-label { font-size: .72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .stat-value { font-size: 1.6rem; font-weight: 900; margin-top: .3rem; }
+    .stat-sub   { font-size: .75rem; color: var(--muted); margin-top: .15rem; }
+
+    /* ── Section headings ───────────────────── */
+    .section-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+
+    /* ── Course card ─────────────────────────── */
+    .course-header {
+      background: linear-gradient(135deg,#0f0c29,#1e1b4b);
+      border: 1px solid rgba(255,152,0,.25);
+      border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 1.2rem;
+    }
+    .course-icon {
+      width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;
+      background: linear-gradient(135deg,#ff9800,#ff5722);
+      display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+      box-shadow: 0 8px 24px rgba(255,152,0,.35);
+    }
+    .course-name { font-size: 1.3rem; font-weight: 900; }
+    .course-meta { font-size: .82rem; color: var(--muted); margin-top: .3rem; }
+    .plan-badge {
+      margin-top: .6rem; display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(56,239,125,.12); border: 1px solid rgba(56,239,125,.25);
+      color: #38ef7d; font-size: .75rem; font-weight: 700;
+      padding: .3rem .75rem; border-radius: 99px;
+    }
+
+    /* ── Topic cards ─────────────────────────── */
+    .topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+    .topic-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.2rem; cursor: pointer;
+      transition: all .2s; position: relative; overflow: hidden;
+    }
+    .topic-card::before {
+      content: ''; position: absolute; inset: 0; opacity: 0;
+      background: linear-gradient(135deg,rgba(255,152,0,.08),rgba(255,87,34,.06));
+      transition: opacity .2s;
+    }
+    .topic-card:hover { border-color: rgba(255,152,0,.4); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.3); }
+    .topic-card:hover::before { opacity: 1; }
+
+    .topic-card.locked { opacity: .45; cursor: not-allowed; }
+    .topic-card.locked:hover { transform: none; border-color: var(--border); box-shadow: none; }
+    .topic-card.locked::before { display: none; }
+
+    .topic-header { display: flex; align-items: center; gap: .85rem; margin-bottom: .85rem; }
+    .topic-icon {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    }
+    .topic-title { font-weight: 700; font-size: .95rem; }
+    .topic-chapters { font-size: .75rem; color: var(--muted); }
+
+    .chapter-list { list-style: none; display: grid; gap: .4rem; }
+    .chapter-item {
+      display: flex; align-items: center; gap: .6rem;
+      font-size: .8rem; color: rgba(255,255,255,.6);
+      padding: .45rem .6rem; border-radius: 8px;
+      background: rgba(255,255,255,.04);
+    }
+    .chapter-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .chapter-item .done { background: #38ef7d; }
+
+    .lock-overlay {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: .5rem;
+      background: rgba(15,12,41,.6); border-radius: 16px;
+      font-size: .8rem; color: var(--muted);
+    }
+
+    .progress-bar-wrap { margin-top: .9rem; }
+    .progress-label { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); margin-bottom: .35rem; }
+    .progress-track { height: 5px; background: rgba(255,255,255,.08); border-radius: 99px; }
+    .progress-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#ff9800,#ff5722); transition: width .8s ease; }
+
+    /* ── Schedule table ──────────────────────── */
+    .schedule-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .schedule-table th { padding: .65rem .9rem; text-align: left; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .schedule-table td { padding: .7rem .9rem; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .schedule-table tr:last-child td { border-bottom: none; }
+    .schedule-table tr:hover td { background: rgba(255,255,255,.03); }
+    .badge { display: inline-block; padding: .2rem .65rem; border-radius: 99px; font-size: .72rem; font-weight: 700; }
+    .badge-green  { background: rgba(56,239,125,.15); color: #38ef7d; }
+    .badge-orange { background: rgba(255,152,0,.15);  color: #ff9800; }
+    .badge-blue   { background: rgba(99,102,241,.15); color: #818cf8; }
+
+    /* ── Profile form ─────────────────────────── */
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .profile-grid { grid-template-columns: 1fr; } }
+    .field label { display: block; font-size: .78rem; font-weight: 600; color: var(--muted); margin-bottom: .4rem; }
+    .field input, .field select {
+      width: 100%; padding: .7rem .9rem;
+      background: rgba(255,255,255,.07); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: 'Inter',sans-serif;
+      font-size: .88rem; outline: none; transition: border-color .2s;
+    }
+    .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,152,0,.15); }
+    .field input:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn {
+      padding: .7rem 1.4rem; border-radius: 12px; border: none;
+      font-family: 'Inter',sans-serif; font-weight: 700; font-size: .88rem;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-primary { background: linear-gradient(135deg,#ff9800,#ff5722); color: #fff; box-shadow: 0 4px 14px rgba(255,152,0,.3); }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(255,152,0,.45); transform: translateY(-1px); }
+    .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: rgba(255,255,255,.25); }
+    .btn-danger { background: rgba(239,68,68,.15); color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
+    .btn-danger:hover { background: rgba(239,68,68,.25); }
+
+    /* ── Responsive ──────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: none; }
+      .main { margin-left: 0; }
+      .hamburger { display: flex; }
+      .topics-grid { grid-template-columns: 1fr; }
+      .welcome-emoji { display: none; }
+    }
+
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99;
+    }
+    .overlay.show { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="layout">
+  <!-- ── Sidebar ──────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="logo.png.jpeg" alt="Logo"/>
+      <span>Laxmi Academy</span>
+    </div>
+
+    <div class="nav-section" style="margin-top:.8rem">Menu</div>
+    <button class="nav-link active" id="nav-home"     onclick="showPage('home')">    <span class="nav-icon">🏠</span> Dashboard</button>
+    <button class="nav-link"        id="nav-courses"  onclick="showPage('courses')"> <span class="nav-icon">📚</span> My Courses</button>
+    <button class="nav-link"        id="nav-schedule" onclick="showPage('schedule')"><span class="nav-icon">🗓️</span> Schedule</button>
+    <button class="nav-link"        id="nav-profile"  onclick="showPage('profile')"> <span class="nav-icon">👤</span> Profile</button>
+
+    <div class="nav-section" style="margin-top:.5rem">Help</div>
+    <a href="index.html" class="nav-link"><span class="nav-icon">🌐</span> Main Website</a>
+    <a href="#" class="nav-link" onclick="openWhatsApp()"><span class="nav-icon">💬</span> Contact Support</a>
+
+    <div class="sidebar-bottom">
+      <button class="nav-link btn-danger" onclick="logout()" style="width:100%;color:#fca5a5">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ─────────────────────────────────────────────────── -->
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <button class="hamburger" onclick="openSidebar()">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span id="page-title" style="font-weight:700;font-size:.95rem">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <span class="student-course-badge" id="topbar-course">Loading...</span>
+        <span class="student-name" id="topbar-name">...</span>
+        <div class="avatar" id="topbar-avatar">?</div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- ── HOME PAGE ──────────────────────────────────────────── -->
+      <div class="page active" id="page-home">
+        <!-- Welcome -->
+        <div class="welcome-banner">
+          <div>
+            <h2 id="welcome-name">Welcome back!</h2>
+            <p id="welcome-sub">Ready to master Physics today?</p>
+          </div>
+          <div class="welcome-emoji">⚡</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Enrolled Course</div>
+            <div class="stat-value" id="stat-course" style="font-size:1rem;margin-top:.4rem;line-height:1.3">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Plan</div>
+            <div class="stat-value" id="stat-plan" style="font-size:1rem;margin-top:.4rem">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Topics Unlocked</div>
+            <div class="stat-value" id="stat-topics" style="color:#ff9800">0</div>
+            <div class="stat-sub">of 5 topics</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Member Since</div>
+            <div class="stat-value" id="stat-since" style="font-size:.9rem;margin-top:.4rem">—</div>
+          </div>
+        </div>
+
+        <!-- Quick access topics -->
+        <div class="section-title">⚡ Quick Access — Physics Topics</div>
+        <div class="topics-grid" id="home-topics"></div>
+      </div>
+
+      <!-- ── COURSES PAGE ───────────────────────────────────────── -->
+      <div class="page" id="page-courses">
+        <div class="course-header">
+          <div class="course-icon" id="course-icon">⚛️</div>
+          <div>
+            <div class="course-name" id="course-title">Loading...</div>
+            <div class="course-meta" id="course-meta"></div>
+            <div class="plan-badge">
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+              Active Enrollment
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">📖 Your Physics Modules</div>
+        <div class="topics-grid" id="course-topics"></div>
+      </div>
+
+      <!-- ── SCHEDULE PAGE ──────────────────────────────────────── -->
+      <div class="page" id="page-schedule">
+        <div class="section-title">🗓️ This Week's Class Schedule</div>
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
+          <table class="schedule-table">
+            <thead>
+              <tr>
+                <th>Day</th><th>Time</th><th>Topic</th><th>Chapter</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-body"></tbody>
+          </table>
+        </div>
+
+        <div class="section-title">📋 Upcoming Tests</div>
+        <div id="tests-list" style="display:grid;gap:.75rem"></div>
+      </div>
+
+      <!-- ── PROFILE PAGE ───────────────────────────────────────── -->
+      <div class="page" id="page-profile">
+        <div class="section-title">👤 My Profile</div>
+        <div class="card" style="max-width:600px">
+          <div class="profile-grid">
+            <div class="field">
+              <label>Full Name</label>
+              <input type="text" id="p-name" disabled/>
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" id="p-email" disabled/>
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <input type="tel" id="p-phone" disabled/>
+            </div>
+            <div class="field">
+              <label>Enrolled Course</label>
+              <input type="text" id="p-course" disabled/>
+            </div>
+            <div class="field">
+              <label>Plan</label>
+              <input type="text" id="p-plan" disabled/>
+            </div>
+            <div class="field">
+              <label>Member Since</label>
+              <input type="text" id="p-since" disabled/>
+            </div>
+          </div>
+          <div style="margin-top:1.2rem;display:flex;gap:.75rem">
+            <button class="btn btn-ghost" onclick="alert('Password change — contact admin.')">Change Password</button>
+            <button class="btn btn-danger" onclick="logout()">Logout</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+  // ── Physics curriculum data ───────────────────────────────────
+  const TOPICS = [
+    {
+      id: 'mechanics', icon: '⚙️', title: 'Mechanics',
+      color: '#4f46e5', progress: 0,
+      chapters: ['Motion in 1D & 2D', "Newton's Laws", 'Work, Energy & Power', 'Rotational Motion', 'Gravitation', 'Fluid Mechanics'],
+    },
+    {
+      id: 'thermo', icon: '🔥', title: 'Thermodynamics',
+      color: '#ef4444', progress: 0,
+      chapters: ['Heat & Temperature', 'Kinetic Theory of Gases', '1st Law of Thermodynamics', '2nd Law & Entropy', 'Heat Engines'],
+    },
+    {
+      id: 'electro', icon: '⚡', title: 'Electromagnetism',
+      color: '#f59e0b', progress: 0,
+      chapters: ['Electrostatics & Gauss Law', 'Electric Potential', 'Current & Circuits', 'Magnetic Field & Force', 'EMI & Inductance', 'AC Circuits'],
+    },
+    {
+      id: 'optics', icon: '🔭', title: 'Optics & Waves',
+      color: '#06b6d4', progress: 0,
+      chapters: ['Ray Optics & Mirrors', 'Refraction & Lenses', 'Wave Nature of Light', 'Interference & Diffraction', 'Sound Waves'],
+    },
+    {
+      id: 'modern', icon: '⚛️', title: 'Modern Physics',
+      color: '#10b981', progress: 0,
+      chapters: ['Photoelectric Effect', 'Atomic Models', 'Nuclear Physics', 'Radioactivity', 'Semiconductor Devices'],
+    },
+  ];
+
+  // Course → unlocked topics
+  const COURSE_ACCESS = {
+    'Physics Foundation':   ['mechanics', 'thermo'],
+    'Physics Advanced':     ['electro', 'optics', 'modern'],
+    'Physics Crash Course': ['mechanics', 'thermo', 'electro', 'optics', 'modern'],
+    'Full Physics Package': ['mechanics', 'thermo', 'electro', 'optics', 'modern'],
+  };
+
+  const SCHEDULE = [
+    { day: 'Monday',    time: '7:00 – 9:00 AM',  topic: 'Mechanics',        chapter: "Newton's Laws",           status: 'completed' },
+    { day: 'Tuesday',   time: '7:00 – 9:00 AM',  topic: 'Mechanics',        chapter: 'Work, Energy & Power',    status: 'completed' },
+    { day: 'Wednesday', time: '7:00 – 9:00 AM',  topic: 'Thermodynamics',   chapter: 'Kinetic Theory of Gases', status: 'today'     },
+    { day: 'Thursday',  time: '7:00 – 9:00 AM',  topic: 'Thermodynamics',   chapter: '1st Law of Thermodynamics', status: 'upcoming' },
+    { day: 'Friday',    time: '7:00 – 9:00 AM',  topic: 'Electromagnetism', chapter: 'Electrostatics',          status: 'upcoming'  },
+    { day: 'Saturday',  time: '9:00 – 11:00 AM', topic: 'Weekly Test',      chapter: 'Mechanics + Thermo',      status: 'upcoming'  },
+  ];
+
+  const TESTS = [
+    { name: 'Chapter Test — Mechanics',       date: '28 Apr 2025', topics: 'Newton\'s Laws, Energy',  type: 'Chapter' },
+    { name: 'Unit Test — Thermodynamics',     date: '5 May 2025',  topics: 'All Thermo chapters',     type: 'Unit'    },
+    { name: 'Full Syllabus Mock — Physics',   date: '12 May 2025', topics: 'All 5 Physics topics',    type: 'Mock'    },
+  ];
+
+  // ── Auth guard ────────────────────────────────────────────────
+  const token = localStorage.getItem('la_token');
+  const role  = localStorage.getItem('la_role');
+  if (!token || role !== 'student') {
+    window.location.href = 'login.html';
+  }
+
+  let student = null;
+  let unlockedTopics = [];
+
+  // ── Load student data ─────────────────────────────────────────
+  async function loadStudent() {
+    try {
+      const res  = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+      const data = await res.json();
+      if (!res.ok) { logout(); return; }
+      student = data.user;
+      renderAll();
+    } catch {
+      // Fallback to localStorage if server not reachable
+      const stored = localStorage.getItem('la_user');
+      if (stored) { student = JSON.parse(stored); renderAll(); }
+      else logout();
+    }
+  }
+
+  function renderAll() {
+    const course = student.course || 'Physics Foundation';
+    unlockedTopics = COURSE_ACCESS[course] || ['mechanics', 'thermo'];
+
+    // Topbar
+    document.getElementById('topbar-name').textContent = student.full_name.split(' ')[0];
+    document.getElementById('topbar-course').textContent = course;
+    document.getElementById('topbar-avatar').textContent = student.full_name.charAt(0).toUpperCase();
+
+    // Welcome
+    document.getElementById('welcome-name').textContent = 'Welcome back, ' + student.full_name.split(' ')[0] + '!';
+    document.getElementById('welcome-sub').textContent  = 'You are enrolled in: ' + course;
+
+    // Stats
+    document.getElementById('stat-course').textContent = course;
+    document.getElementById('stat-plan').textContent   = student.plan;
+    document.getElementById('stat-topics').textContent = unlockedTopics.length;
+    const since = student.created_at ? student.created_at.slice(0, 10) : '—';
+    document.getElementById('stat-since').textContent  = since;
+
+    // Profile fields
+    document.getElementById('p-name').value   = student.full_name;
+    document.getElementById('p-email').value  = student.email;
+    document.getElementById('p-phone').value  = student.phone;
+    document.getElementById('p-course').value = course;
+    document.getElementById('p-plan').value   = student.plan;
+    document.getElementById('p-since').value  = since;
+
+    // Course page header
+    const icons = { 'Physics Foundation':'🌱', 'Physics Advanced':'🚀', 'Physics Crash Course':'⚡', 'Full Physics Package':'🏆' };
+    document.getElementById('course-icon').textContent  = icons[course] || '⚛️';
+    document.getElementById('course-title').textContent = course;
+    document.getElementById('course-meta').textContent  = unlockedTopics.length + ' topics unlocked · Plan: ' + student.plan;
+
+    // Render topic grids
+    document.getElementById('home-topics').innerHTML    = buildTopicGrid(true);
+    document.getElementById('course-topics').innerHTML  = buildTopicGrid(false);
+
+    // Schedule
+    buildSchedule();
+    buildTests();
+  }
+
+  function buildTopicGrid(compact) {
+    return TOPICS.map(t => {
+      const unlocked = unlockedTopics.includes(t.id);
+      const chapters = compact ? t.chapters.slice(0, 3) : t.chapters;
+      return `
+        <div class="topic-card ${unlocked ? '' : 'locked'}" onclick="${unlocked ? `openTopic('${t.id}')` : ''}">
+          <div class="topic-header">
+            <div class="topic-icon" style="background:${t.color}22;color:${t.color}">${t.icon}</div>
+            <div>
+              <div class="topic-title">${t.title}</div>
+              <div class="topic-chapters">${t.chapters.length} chapters</div>
+            </div>
+            ${unlocked ? `<svg style="margin-left:auto;color:#38ef7d;flex-shrink:0" width="18" height="18" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>` : ''}
+          </div>
+          <ul class="chapter-list">
+            ${chapters.map((ch, i) => `
+              <li class="chapter-item">
+                <span class="dot ${unlocked && i < 2 ? 'done' : ''}"></span>
+                ${ch}
+              </li>`).join('')}
+            ${compact && t.chapters.length > 3 ? `<li class="chapter-item" style="color:var(--muted);font-style:italic">+${t.chapters.length - 3} more chapters</li>` : ''}
+          </ul>
+          ${unlocked ? `
+            <div class="progress-bar-wrap">
+              <div class="progress-label"><span>Progress</span><span>${t.progress}%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:${t.progress}%"></div></div>
+            </div>` : `
+            <div class="lock-overlay">
+              <span style="font-size:1.5rem">🔒</span>
+              <span>Upgrade plan to unlock</span>
+            </div>`}
+        </div>`;
+    }).join('');
+  }
+
+  function buildSchedule() {
+    document.getElementById('schedule-body').innerHTML = SCHEDULE.map(s => {
+      const badge = s.status === 'completed' ? '<span class="badge badge-green">Done</span>'
+                  : s.status === 'today'     ? '<span class="badge badge-orange">Today</span>'
+                  :                            '<span class="badge badge-blue">Upcoming</span>';
+      return `<tr>
+        <td style="font-weight:600">${s.day}</td>
+        <td style="color:var(--muted)">${s.time}</td>
+        <td>${s.topic}</td>
+        <td style="color:var(--muted)">${s.chapter}</td>
+        <td>${badge}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function buildTests() {
+    const colors = { Chapter:'badge-orange', Unit:'badge-blue', Mock:'badge-green' };
+    document.getElementById('tests-list').innerHTML = TESTS.map(t => `
+      <div class="card card-sm" style="display:flex;align-items:center;gap:1rem">
+        <div style="font-size:1.8rem">📝</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.9rem">${t.name}</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">${t.topics}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:.8rem;font-weight:700">${t.date}</div>
+          <span class="badge ${colors[t.type]}" style="margin-top:.3rem">${t.type}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── Navigation ────────────────────────────────────────────────
+  const pageTitles = { home: 'Dashboard', courses: 'My Courses', schedule: 'Schedule', profile: 'Profile' };
+
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('nav-' + name)?.classList.add('active');
+    document.getElementById('page-title').textContent = pageTitles[name] || name;
+    closeSidebar();
+  }
+
+  function openTopic(id) {
+    showPage('courses');
+    setTimeout(() => {
+      const card = document.querySelector(`[onclick="openTopic('${id}')"]`);
+      card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+
+  // ── Sidebar toggle (mobile) ───────────────────────────────────
+  function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+  function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+  // ── Logout ────────────────────────────────────────────────────
+  async function logout() {
+    try { await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); } catch {}
+    localStorage.removeItem('la_token');
+    localStorage.removeItem('la_role');
+    localStorage.removeItem('la_user');
+    window.location.href = 'login.html';
+  }
+
+  function openWhatsApp() { window.open('https://wa.me/910000000369', '_blank'); }
+
+  // ── Init ──────────────────────────────────────────────────────
+  loadStudent();
+
+  // Animate progress bars after load
+  setTimeout(() => {
+    const course = student?.course || '';
+    const unlocked = COURSE_ACCESS[course] || [];
+    const fills = document.querySelectorAll('.progress-fill');
+    const progressMap = { mechanics: 35, thermo: 15, electro: 0, optics: 0, modern: 0 };
+    TOPICS.forEach((t, i) => {
+      if (unlocked.includes(t.id)) {
+        t.progress = progressMap[t.id] || 0;
+      }
+    });
+  }, 500);
+</script>
+</body>
+</html>

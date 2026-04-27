@@ -79,8 +79,40 @@
       width: 34px; height: 34px; border-radius: 50%;
       background: linear-gradient(135deg,#10b981,#34d399);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: .85rem; color: #fff;
+      font-weight: 900; font-size: .85rem; color: #fff; cursor: pointer;
     }
+
+    /* ── Profile dropdown ────────────────────────── */
+    .profile-dropdown-wrapper { position: relative; }
+    .profile-menu {
+      display: none; position: absolute; top: calc(100% + 10px); right: 0;
+      background: #0f1a1a; border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px; padding: 1rem; min-width: 240px;
+      box-shadow: 0 16px 48px rgba(0,0,0,.55); z-index: 300;
+    }
+    .profile-menu.open { display: block; }
+    .pm-header {
+      display: flex; align-items: center; gap: .75rem;
+      padding-bottom: .85rem; border-bottom: 1px solid rgba(255,255,255,.08);
+      margin-bottom: .75rem;
+    }
+    .pm-avatar-lg {
+      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg,#10b981,#34d399);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.1rem; color: #fff;
+    }
+    .pm-name { font-weight: 700; font-size: .9rem; line-height: 1.3; }
+    .pm-email { font-size: .73rem; color: rgba(255,255,255,.45); margin-top: .15rem; word-break: break-all; }
+    .pm-row { font-size: .78rem; color: rgba(255,255,255,.5); padding: .22rem 0; }
+    .pm-row strong { color: var(--text); font-weight: 600; }
+    .pm-logout {
+      width: 100%; margin-top: .85rem; padding: .55rem;
+      background: rgba(239,68,68,.12); color: #fca5a5;
+      border: 1px solid rgba(239,68,68,.22); border-radius: 8px;
+      font-size: .83rem; font-weight: 600; cursor: pointer; transition: background .15s;
+    }
+    .pm-logout:hover { background: rgba(239,68,68,.25); }
 
     .content { padding: 1.6rem 1.5rem; flex: 1; }
 
@@ -273,7 +305,21 @@
       <div class="topbar-right">
         <span class="instructor-chip">Instructor</span>
         <span id="topbar-name" style="font-size:.85rem;font-weight:600">...</span>
-        <div class="instructor-avatar" id="topbar-avatar">I</div>
+        <div class="profile-dropdown-wrapper">
+          <div class="instructor-avatar" id="topbar-avatar" onclick="toggleProfileMenu(event)">I</div>
+          <div class="profile-menu" id="profile-menu">
+            <div class="pm-header">
+              <div class="pm-avatar-lg" id="pm-avatar-lg">I</div>
+              <div>
+                <div class="pm-name" id="pm-name">Loading...</div>
+                <div class="pm-email" id="pm-email"></div>
+              </div>
+            </div>
+            <div class="pm-row">Role: <strong>Instructor</strong></div>
+            <div class="pm-row">Subject: <strong id="pm-subject">—</strong></div>
+            <button class="pm-logout" onclick="logout()">Logout</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -525,6 +571,14 @@
     if (name === 'lessons') loadLessons();
     if (name === 'overview') loadOverview();
   }
+
+  function toggleProfileMenu(e) {
+    e.stopPropagation();
+    document.getElementById('profile-menu').classList.toggle('open');
+  }
+  document.addEventListener('click', function() {
+    document.getElementById('profile-menu').classList.remove('open');
+  });
 
   function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
   function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
@@ -802,13 +856,20 @@
     const r = await api('/api/me');
     if (!r.ok) { logout(); return; }
     const u = r.data.user;
+    const initial = (u.name || 'I').charAt(0).toUpperCase();
     document.getElementById('topbar-name').textContent   = (u.name || '').split(' ')[0];
-    document.getElementById('topbar-avatar').textContent = (u.name || 'I').charAt(0).toUpperCase();
+    document.getElementById('topbar-avatar').textContent = initial;
     document.getElementById('p-name').value    = u.name    || '';
     document.getElementById('p-email').value   = u.email   || '';
     document.getElementById('p-phone').value   = u.phone   || '';
     document.getElementById('p-subject').value = u.subject || '';
     document.getElementById('p-bio').value     = u.bio     || '';
+
+    // Profile dropdown
+    document.getElementById('pm-avatar-lg').textContent = initial;
+    document.getElementById('pm-name').textContent = u.name || '';
+    document.getElementById('pm-email').textContent = u.email || '';
+    document.getElementById('pm-subject').textContent = u.subject || '—';
   }
 
   // ── Init ───────────────────────────────────────────────────────

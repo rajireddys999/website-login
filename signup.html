@@ -350,20 +350,29 @@
         </div>
       </div>
 
-      <!-- Subject + (spacer) -->
-      <div class="field">
-        <label for="subject">Subject / Course</label>
-        <div class="input-wrap">
-          <svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-          <select id="subject" required>
-            <option value="" disabled selected>Choose a subject</option>
-            <option value="PHYSICS">Physics</option>
-            <option value="CHEMISTRY">Chemistry</option>
-            <option value="MATHS">Mathematics</option>
-            <option value="IIT_JEE">IIT JEE</option>
-            <option value="NEET">NEET</option>
-            <option value="OLYMPIADS">Olympiads</option>
-          </select>
+      <!-- Exam Type + Course (cascading) -->
+      <div class="grid-2">
+        <div class="field">
+          <label for="exam-type">Exam / Stream</label>
+          <div class="input-wrap">
+            <svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <select id="exam-type" required onchange="updateCourses()">
+              <option value="" disabled selected>Select exam</option>
+              <option value="NEET">NEET</option>
+              <option value="JEE MAINS">JEE MAINS</option>
+              <option value="EAMCET">EAMCET</option>
+              <option value="Intermediate">Intermediate</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="course">Course</label>
+          <div class="input-wrap">
+            <svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <select id="course" required disabled>
+              <option value="" disabled selected>Select exam first</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -439,6 +448,33 @@
 </div>
 
 <script>
+  const EXAM_COURSES = {
+    'NEET':         ['BI-PC'],
+    'JEE MAINS':    ['Physics'],
+    'EAMCET':       ['Physics'],
+    'Intermediate': ['1-Year Physics', '2-Year Physics'],
+  };
+
+  function updateCourses() {
+    const exam = document.getElementById('exam-type').value;
+    const sel  = document.getElementById('course');
+    sel.innerHTML = '';
+    const courses = EXAM_COURSES[exam] || [];
+    if (courses.length === 0) {
+      sel.innerHTML = '<option value="" disabled selected>No courses</option>';
+      sel.disabled = true;
+      return;
+    }
+    if (courses.length === 1) {
+      sel.innerHTML = `<option value="${exam} - ${courses[0]}" selected>${courses[0]}</option>`;
+      sel.disabled = true;
+    } else {
+      sel.innerHTML = '<option value="" disabled selected>Select course</option>' +
+        courses.map(c => `<option value="${exam} - ${c}">${c}</option>`).join('');
+      sel.disabled = false;
+    }
+  }
+
   function selectPlan(id) {
     ['6m','annual','combo'].forEach(p => {
       document.getElementById('plan-' + p).classList.toggle('selected', p === id);
@@ -489,11 +525,12 @@
     const name     = document.getElementById('fullname').value.trim();
     const email    = document.getElementById('email').value.trim();
     const phone    = document.getElementById('phone').value.trim();
-    const subject  = document.getElementById('subject').value;
+    const course   = document.getElementById('course').value;
     const plan     = document.querySelector('input[name="plan"]:checked')?.value;
     const password = document.getElementById('password').value;
     const confirm  = document.getElementById('confirmPassword').value;
 
+    if (!course) { showError('Please select an exam and course.'); return; }
     if (password !== confirm) { showError('Passwords do not match.'); return; }
     if (password.length < 6)  { showError('Password must be at least 6 characters.'); return; }
 
@@ -505,7 +542,7 @@
       const res  = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: name, email, phone, subject, plan, password })
+        body: JSON.stringify({ full_name: name, email, phone, course, plan, password })
       });
       const data = await res.json();
 

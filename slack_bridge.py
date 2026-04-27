@@ -12,6 +12,9 @@ Usage:
 Trigger modes:
   • @mention the bot in any channel it is invited to
   • Send it a direct message (DM)
+
+Recovery:
+  • On error the bot asks "retry?" — reply `retry` to re-run the same prompt.
 """
 
 import os
@@ -31,9 +34,6 @@ load_dotenv(Path(__file__).parent / ".env.slack")
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]   # xoxb-...
 SLACK_APP_TOKEN = os.environ["SLACK_APP_TOKEN"]    # xapp-...
 
-# Optional: comma-separated Slack user IDs allowed to send commands.
-# Leave empty to allow anyone who can reach the bot.
-# Example:  ALLOWED_USERS=U012AB3CD,U987XY6ZW
 ALLOWED_USERS: set[str] = set(
     u.strip() for u in os.environ.get("ALLOWED_USERS", "").split(",") if u.strip()
 )
@@ -46,22 +46,31 @@ CLAUDE_CMD = os.environ.get(
     r"C:\Users\rajir\AppData\Roaming\npm\node_modules\@anthropic-ai\claude-code\bin\claude.exe"
 )
 
-# Maximum characters to send back to Slack (hard limit is ~4000 per block)
 MAX_OUTPUT = 2800
+
+# ── Per-channel last-prompt store (for retry) ─────────────────────────────────
+# key: channel id  →  value: last prompt string
+_last_prompt: dict[str, str] = {}
+_last_prompt_lock = threading.Lock()
+
+def save_last_prompt(channel: str, prompt: str):
+    with _last_prompt_lock:
+        _last_prompt[channel] = prompt
+
+def get_last_prompt(channel: str) -> str | None:
+    with _last_prompt_lock:
+        return _last_prompt.get(channel)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 app = App(token=SLACK_BOT_TOKEN)
-
-def _bot_user_id() -> str:
-    return app.client.auth_test()["user_id"]
 
 _bot_id: str | None = None
 
 def bot_id() -> str:
     global _bot_id
     if _bot_id is None:
-        _bot_id = _bot_user_id()
+        _bot_id = app.client.auth_test()["user_id"]
     return _bot_id
 
 
@@ -69,33 +78,51 @@ def is_allowed(user_id: str) -> bool:
     return not ALLOWED_USERS or user_id in ALLOWED_USERS
 
 
-def run_claude(prompt: str) -> str:
-    """Run `claude -p <prompt>` in the project directory and return output."""
+def run_claude(prompt: str) -> tuple[str, bool]:
+    """
+    Run claude and stream output live to the terminal.
+    Returns (output_text, success).
+    """
+    SEP = "─" * 60
     try:
-        result = subprocess.run(
+        print(f"\n{SEP}")
+        print(f"  PROMPT: {prompt[:120]}{'…' if len(prompt) > 120 else ''}")
+        print(SEP)
+
+        process = subprocess.Popen(
             [CLAUDE_CMD,
              "--print",
              "--dangerously-skip-permissions",
              "--output-format", "text",
              prompt],
             cwd=PROJECT_DIR,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
-            timeout=300,
             encoding="utf-8",
             errors="replace",
         )
-        output = (result.stdout or "").strip()
-        if not output and result.stderr:
-            output = result.stderr.strip()
-        return output or "(no output)"
 
-    except subprocess.TimeoutExpired:
-        return ":warning: Timed out after 5 minutes."
+        lines = []
+        for line in process.stdout:
+            print(line, end="", flush=True)
+            lines.append(line)
+
+        process.wait()
+        print(f"{SEP}\n")
+
+        output = "".join(lines).strip() or "(no output)"
+        success = process.returncode == 0
+        return output, success
+
     except FileNotFoundError:
-        return f":x: `claude` CLI not found at `{CLAUDE_CMD}`."
+        msg = f":x: `claude` CLI not found at `{CLAUDE_CMD}`."
+        print(msg)
+        return msg, False
     except Exception as exc:
-        return f":x: Unexpected error: {exc}"
+        msg = f":x: Unexpected error: {exc}"
+        print(msg)
+        return msg, False
 
 
 def format_output(output: str) -> str:
@@ -108,23 +135,41 @@ def format_output(output: str) -> str:
     return text
 
 
-def dispatch(prompt: str, say, user_id: str):
-    """Called from event handlers. Validates, acknowledges, runs, replies."""
-    if not prompt:
-        say("Hi! Send me a task and I'll run it through Claude Code in the project. :robot_face:")
-        return
-
+def dispatch(prompt: str, channel: str, say, user_id: str):
+    """Validate, acknowledge, run, reply — with retry on error."""
     if not is_allowed(user_id):
         say(":no_entry: You are not in the allowed users list.")
         return
 
-    # Acknowledge immediately (Slack requires a response within 3 s)
+    # ── Retry shortcut ────────────────────────────────────────────
+    if prompt.lower().strip() in ("retry", "yes", "y", "re-run"):
+        last = get_last_prompt(channel)
+        if not last:
+            say(":shrug: No previous prompt to retry.")
+            return
+        say(f":repeat: Retrying last prompt:\n> {last[:120]}{'…' if len(last) > 120 else ''}")
+        prompt = last
+    elif not prompt:
+        say("Hi! Send me a task and I'll run it through Claude Code. :robot_face:\n_Reply `retry` to re-run the last task._")
+        return
+
+    # Save prompt before running (so retry works even mid-run)
+    save_last_prompt(channel, prompt)
+
     short = prompt[:80] + ("…" if len(prompt) > 80 else "")
     say(f":hourglass_flowing_sand: Running: `{short}`")
 
     def _worker():
-        output = run_claude(prompt)
-        say(format_output(output))
+        output, success = run_claude(prompt)
+
+        if success:
+            say(format_output(output))
+        else:
+            # Error — post error + offer retry
+            say(
+                f"{format_output(output)}\n\n"
+                f":warning: Something went wrong. Reply `retry` to try the same task again."
+            )
 
     threading.Thread(target=_worker, daemon=True).start()
 
@@ -133,30 +178,30 @@ def dispatch(prompt: str, say, user_id: str):
 
 @app.event("app_mention")
 def handle_mention(event, say):
-    """Someone @-mentioned the bot in a channel."""
-    raw  = event.get("text", "")
-    uid  = event.get("user", "")
-    # Strip the mention token so it isn't part of the prompt
-    prompt = re.sub(r"<@[A-Z0-9]+>", "", raw).strip()
-    dispatch(prompt, say, uid)
+    raw     = event.get("text", "")
+    uid     = event.get("user", "")
+    channel = event.get("channel", "")
+    prompt  = re.sub(r"<@[A-Z0-9]+>", "", raw).strip()
+    dispatch(prompt, channel, say, uid)
 
 
 @app.event("message")
 def handle_message(event, say):
-    """Direct message sent to the bot."""
     if event.get("channel_type") != "im":
-        return                          # ignore channel messages (handled by app_mention)
+        return
     if event.get("bot_id") or event.get("subtype"):
-        return                          # ignore bot messages and edits/deletes
-    prompt = event.get("text", "").strip()
-    uid    = event.get("user", "")
-    dispatch(prompt, say, uid)
+        return
+    prompt  = event.get("text", "").strip()
+    uid     = event.get("user", "")
+    channel = event.get("channel", "")
+    dispatch(prompt, channel, say, uid)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print(f"[slack_bridge] Project dir : {PROJECT_DIR}")
+    print(f"[slack_bridge] Project dir  : {PROJECT_DIR}")
+    print(f"[slack_bridge] Claude CMD   : {CLAUDE_CMD}")
     print(f"[slack_bridge] Allowed users: {ALLOWED_USERS or 'everyone'}")
     print("[slack_bridge] Connecting to Slack via Socket Mode…\n")
     SocketModeHandler(app, SLACK_APP_TOKEN).start()

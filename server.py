@@ -124,13 +124,23 @@ def login():
 
 @app.route('/api/register', methods=['POST'])
 def register():
+    VALID_COURSES = [
+        'NEET - BI-PC',
+        'JEE MAINS - Physics',
+        'EAMCET - Physics',
+        'Intermediate - 1-Year Physics',
+        'Intermediate - 2-Year Physics',
+    ]
     data      = request.get_json() or {}
     full_name = data.get('full_name', '').strip()
     email     = data.get('email', '').strip()
     phone     = data.get('phone', '').strip()
     password  = data.get('password', '')
-    course    = data.get('course', 'Physics Foundation')
+    course    = data.get('course', '').strip()
     plan      = data.get('plan', '6 Months')
+
+    if course not in VALID_COURSES:
+        course = 'JEE MAINS - Physics'
 
     if not full_name or not email or not phone or not password:
         return jsonify({'error': 'full_name, email, phone and password are required.'}), 400

@@ -2,13 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0f0c29"/>
   <title>Student Dashboard — Laxmi Academy</title>
   <script src="theme.js"></script>
   <link rel="stylesheet" href="theme.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ═══ Keyframe Animations ═══ */
+    @keyframes fadeInUp  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn    { from { opacity:0; } to { opacity:1; } }
+    @keyframes slideLeft { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes gradientShift { 0%,100%{ background-position:0% 50%; } 50%{ background-position:100% 50%; } }
+    @keyframes shimmer   { 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
+    @keyframes spin      { to { transform:rotate(360deg); } }
+    @keyframes pulse     { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.04); } }
+    @keyframes floatUp   { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
 
     :root {
       --bg:      #0f0c29;
@@ -19,281 +32,392 @@
       --accent:  #ff9800;
       --accent2: #ff5722;
     }
-
     html { scroll-behavior: smooth; }
 
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #0f0c29 0%, #1a1740 50%, #0f0c29 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 20s ease infinite;
       min-height: 100vh;
       color: var(--text);
     }
 
-    /* ── Sidebar ─────────────────────────────── */
-    .layout { display: flex; min-height: 100vh; }
+    /* ── Scrollbar ──────────────────────────────── */
+    * { scrollbar-width: thin; scrollbar-color: rgba(255,152,0,.3) transparent; }
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(255,152,0,.3); border-radius:99px; }
+    ::-webkit-scrollbar-thumb:hover { background:rgba(255,152,0,.55); }
 
+    /* ── Layout ──────────────────────────────────── */
+    .layout { display:flex; min-height:100vh; }
+
+    /* ── Sidebar ─────────────────────────────────── */
     .sidebar {
-      width: 240px; flex-shrink: 0;
-      background: rgba(0,0,0,.35);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      position: fixed; top: 0; left: 0; height: 100vh;
-      z-index: 100; transition: transform .3s;
+      width:250px; flex-shrink:0;
+      background: rgba(10,8,30,.92);
+      backdrop-filter: blur(24px);
+      border-right:1px solid rgba(255,152,0,.1);
+      display:flex; flex-direction:column;
+      position:fixed; top:0; left:0; height:100vh;
+      z-index:100; transition:transform .3s cubic-bezier(.4,0,.2,1);
+      box-shadow: 4px 0 32px rgba(0,0,0,.4);
     }
-    .sidebar.hidden { transform: translateX(-100%); }
+    .sidebar.hidden { transform:translateX(-100%); }
 
     .sidebar-logo {
-      padding: 1.2rem 1.2rem 1rem;
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: .75rem;
+      padding:1.4rem 1.2rem 1.1rem;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      display:flex; align-items:center; gap:.8rem;
     }
-    .sidebar-logo img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
-    .sidebar-logo span { font-weight: 800; font-size: .95rem;
-      background: linear-gradient(90deg,#ff9800,#ff5722);
-      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    .sidebar-logo img {
+      width:40px; height:40px; border-radius:50%; object-fit:cover;
+      border:2px solid var(--accent); box-shadow:0 0 12px rgba(255,152,0,.35);
     }
+    .sidebar-logo-text { font-weight:900; font-size:.95rem;
+      background:linear-gradient(90deg,#ff9800,#ff5722);
+      -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+      line-height:1.2;
+    }
+    .sidebar-logo-sub { font-size:.65rem; color:var(--muted); font-weight:600; letter-spacing:.04em; margin-top:.1rem; }
 
-    .nav-section { padding: .8rem .8rem 0; font-size: .7rem; font-weight: 700; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+    .nav-section {
+      padding:.9rem 1rem .3rem;
+      font-size:.62rem; font-weight:700; color:rgba(255,255,255,.25);
+      letter-spacing:.1em; text-transform:uppercase;
+    }
 
     .nav-link {
-      display: flex; align-items: center; gap: .75rem;
-      padding: .65rem 1rem; margin: .15rem .6rem;
-      border-radius: 12px; font-size: .88rem; font-weight: 500;
-      color: var(--muted); text-decoration: none; transition: all .2s; cursor: pointer; border: none; background: none; width: calc(100% - 1.2rem); text-align: left;
+      display:flex; align-items:center; gap:.75rem;
+      padding:.68rem 1rem; margin:.15rem .6rem;
+      border-radius:12px; font-size:.87rem; font-weight:500;
+      color:var(--muted); text-decoration:none; transition:all .2s;
+      cursor:pointer; border:1px solid transparent; background:none;
+      width:calc(100% - 1.2rem); text-align:left; position:relative;
     }
-    .nav-link:hover { background: var(--surface); color: var(--text); }
-    .nav-link.active { background: linear-gradient(135deg,rgba(255,152,0,.18),rgba(255,87,34,.12)); color: var(--accent); border: 1px solid rgba(255,152,0,.25); }
-    .nav-icon { font-size: 1.05rem; flex-shrink: 0; }
+    .nav-link:hover { background:rgba(255,255,255,.06); color:var(--text); }
+    .nav-link.active {
+      background:linear-gradient(135deg,rgba(255,152,0,.16),rgba(255,87,34,.1));
+      color:var(--accent); border-color:rgba(255,152,0,.22);
+    }
+    .nav-link.active::before {
+      content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+      width:3px; height:60%; background:linear-gradient(180deg,#ff9800,#ff5722);
+      border-radius:0 3px 3px 0;
+    }
+    .nav-icon { font-size:1.05rem; flex-shrink:0; }
+    .sidebar-bottom { margin-top:auto; padding:1rem .8rem; border-top:1px solid rgba(255,255,255,.07); }
 
-    .sidebar-bottom { margin-top: auto; padding: 1rem .8rem; border-top: 1px solid var(--border); }
-
-    /* ── Main area ───────────────────────────── */
-    .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; }
+    /* ── Main ────────────────────────────────────── */
+    .main { margin-left:250px; flex:1; display:flex; flex-direction:column; }
 
     .topbar {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(15,12,41,.85); backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
-      padding: .75rem 1.5rem;
-      display: flex; align-items: center; justify-content: space-between;
+      position:sticky; top:0; z-index:50;
+      background:rgba(12,9,35,.88); backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      padding:.75rem 1.5rem;
+      display:flex; align-items:center; justify-content:space-between;
     }
+    .hamburger { display:none; background:none; border:none; color:var(--text); cursor:pointer; padding:.3rem; border-radius:8px; transition:background .2s; }
+    .hamburger:hover { background:rgba(255,255,255,.08); }
 
-    .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; }
-
-    .topbar-right { display: flex; align-items: center; gap: .75rem; }
+    .topbar-right { display:flex; align-items:center; gap:.7rem; }
     .avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: linear-gradient(135deg,#ff9800,#ff5722);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: .9rem; cursor: pointer; flex-shrink: 0;
+      width:36px; height:36px; border-radius:50%;
+      background:linear-gradient(135deg,#ff9800,#ff5722);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:.9rem; cursor:pointer; flex-shrink:0;
+      box-shadow:0 4px 12px rgba(255,152,0,.3); transition:transform .2s;
     }
-    .student-name { font-size: .88rem; font-weight: 600; }
+    .avatar:hover { transform:scale(1.08); }
+    .student-name { font-size:.87rem; font-weight:700; }
     .student-course-badge {
-      font-size: .72rem; font-weight: 700; padding: .25rem .65rem;
-      border-radius: 99px; background: rgba(255,152,0,.15); color: var(--accent);
-      border: 1px solid rgba(255,152,0,.3);
+      font-size:.71rem; font-weight:700; padding:.25rem .65rem;
+      border-radius:99px; background:rgba(255,152,0,.12); color:var(--accent);
+      border:1px solid rgba(255,152,0,.25); white-space:nowrap;
     }
 
-    /* ── Profile dropdown ────────────────────────── */
-    .profile-dropdown-wrapper { position: relative; }
+    /* ── Profile dropdown ───────────────────────── */
+    .profile-dropdown-wrapper { position:relative; }
     .profile-menu {
-      display: none; position: absolute; top: calc(100% + 10px); right: 0;
-      background: #1c1a2e; border: 1px solid rgba(255,255,255,.1);
-      border-radius: 14px; padding: 1rem; min-width: 240px;
-      box-shadow: 0 16px 48px rgba(0,0,0,.55); z-index: 300;
+      display:none; position:absolute; top:calc(100% + 10px); right:0;
+      background:#1c1a2e; border:1px solid rgba(255,255,255,.1);
+      border-radius:16px; padding:1rem; min-width:240px;
+      box-shadow:0 20px 60px rgba(0,0,0,.6); z-index:300;
+      animation:fadeIn .15s ease;
     }
-    .profile-menu.open { display: block; }
+    .profile-menu.open { display:block; }
     .pm-header {
-      display: flex; align-items: center; gap: .75rem;
-      padding-bottom: .85rem; border-bottom: 1px solid rgba(255,255,255,.08);
-      margin-bottom: .75rem;
+      display:flex; align-items:center; gap:.75rem;
+      padding-bottom:.85rem; border-bottom:1px solid rgba(255,255,255,.08);
+      margin-bottom:.75rem;
     }
     .pm-avatar-lg {
-      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg,#ff9800,#ff5722);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 1.1rem;
+      width:46px; height:46px; border-radius:50%; flex-shrink:0;
+      background:linear-gradient(135deg,#ff9800,#ff5722);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:1.15rem;
+      box-shadow:0 4px 14px rgba(255,152,0,.35);
     }
-    .pm-name { font-weight: 700; font-size: .9rem; line-height: 1.3; }
-    .pm-email { font-size: .73rem; color: rgba(255,255,255,.45); margin-top: .15rem; word-break: break-all; }
-    .pm-row { font-size: .78rem; color: rgba(255,255,255,.5); padding: .22rem 0; }
-    .pm-row strong { color: var(--text); font-weight: 600; }
+    .pm-name  { font-weight:700; font-size:.9rem; line-height:1.3; }
+    .pm-email { font-size:.73rem; color:rgba(255,255,255,.45); margin-top:.15rem; word-break:break-all; }
+    .pm-row   { font-size:.78rem; color:rgba(255,255,255,.5); padding:.22rem 0; }
+    .pm-row strong { color:var(--text); font-weight:600; }
     .pm-logout {
-      width: 100%; margin-top: .85rem; padding: .55rem;
-      background: rgba(239,68,68,.12); color: #fca5a5;
-      border: 1px solid rgba(239,68,68,.22); border-radius: 8px;
-      font-size: .83rem; font-weight: 600; cursor: pointer; transition: background .15s;
+      width:100%; margin-top:.85rem; padding:.55rem;
+      background:rgba(239,68,68,.12); color:#fca5a5;
+      border:1px solid rgba(239,68,68,.22); border-radius:8px;
+      font-size:.83rem; font-weight:600; cursor:pointer; transition:background .15s;
     }
-    .pm-logout:hover { background: rgba(239,68,68,.25); }
+    .pm-logout:hover { background:rgba(239,68,68,.25); }
 
-    .content { padding: 1.8rem 1.5rem; flex: 1; }
+    .content { padding:1.8rem 1.5rem; flex:1; }
 
-    /* ── Page sections ───────────────────────── */
-    .page { display: none; }
-    .page.active { display: block; }
+    /* ── Pages ───────────────────────────────────── */
+    .page { display:none; }
+    .page.active { display:block; animation:fadeInUp .32s ease both; }
 
-    /* ── Cards ───────────────────────────────── */
+    /* ── Cards ───────────────────────────────────── */
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px; padding: 1.4rem;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:18px; padding:1.4rem;
+      transition:box-shadow .2s;
     }
-    .card-sm { border-radius: 14px; padding: 1rem; }
+    .card-sm { border-radius:14px; padding:1rem; }
 
-    /* ── Welcome banner ─────────────────────── */
+    /* ── Welcome banner ─────────────────────────── */
     .welcome-banner {
-      background: linear-gradient(135deg,#1e1b4b,#312e81);
-      border: 1px solid rgba(99,102,241,.3);
-      border-radius: 20px; padding: 1.6rem 1.8rem;
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-      margin-bottom: 1.5rem; position: relative; overflow: hidden;
+      background:linear-gradient(135deg,#1e1b4b,#312e81,#1e1a4c,#2d1e5b);
+      background-size:300% 300%;
+      animation:gradientShift 12s ease infinite;
+      border:1px solid rgba(99,102,241,.3);
+      border-radius:22px; padding:1.7rem 1.9rem;
+      display:flex; align-items:center; justify-content:space-between; gap:1rem;
+      margin-bottom:1.5rem; position:relative; overflow:hidden;
     }
     .welcome-banner::before {
-      content: ''; position: absolute; right: -30px; top: -30px;
-      width: 160px; height: 160px; border-radius: 50%;
-      background: rgba(255,152,0,.12);
+      content:''; position:absolute; right:-40px; top:-40px;
+      width:180px; height:180px; border-radius:50%;
+      background:rgba(255,152,0,.1); pointer-events:none;
     }
-    .welcome-banner h2 { font-size: 1.4rem; font-weight: 800; }
-    .welcome-banner p  { color: rgba(255,255,255,.6); font-size: .88rem; margin-top: .3rem; }
-    .welcome-emoji { font-size: 3.5rem; flex-shrink: 0; }
+    .welcome-banner::after {
+      content:''; position:absolute; left:-20px; bottom:-30px;
+      width:120px; height:120px; border-radius:50%;
+      background:rgba(99,102,241,.08); pointer-events:none;
+    }
+    .welcome-banner h2 { font-size:1.45rem; font-weight:900; line-height:1.25; }
+    .welcome-banner p  { color:rgba(255,255,255,.65); font-size:.9rem; margin-top:.35rem; }
+    .welcome-emoji {
+      font-size:3.6rem; flex-shrink:0; position:relative; z-index:1;
+      animation:floatUp 3s ease-in-out infinite;
+    }
 
-    /* ── Stats row ───────────────────────────── */
-    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    /* ── Stats ───────────────────────────────────── */
+    .stats-row {
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+      gap:1rem; margin-bottom:1.5rem;
+    }
     .stat-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.1rem 1.2rem;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:18px; padding:1.2rem; position:relative; overflow:hidden;
+      transition:transform .22s, box-shadow .22s;
     }
-    .stat-label { font-size: .72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-    .stat-value { font-size: 1.6rem; font-weight: 900; margin-top: .3rem; }
-    .stat-sub   { font-size: .75rem; color: var(--muted); margin-top: .15rem; }
+    .stat-card:hover { transform:translateY(-4px); box-shadow:0 16px 40px rgba(0,0,0,.35); }
+    .stat-card::after {
+      content:''; position:absolute; top:0; left:0; right:0;
+      height:3px; border-radius:18px 18px 0 0;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+    }
+    .stat-card:nth-child(1) { animation:fadeInUp .35s .05s ease both; }
+    .stat-card:nth-child(2) { animation:fadeInUp .35s .10s ease both; }
+    .stat-card:nth-child(3) { animation:fadeInUp .35s .15s ease both; }
+    .stat-card:nth-child(4) { animation:fadeInUp .35s .20s ease both; }
+    .stat-icon { font-size:1.6rem; margin-bottom:.5rem; }
+    .stat-label { font-size:.71rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
+    .stat-value { font-size:1.55rem; font-weight:900; margin-top:.3rem; line-height:1; }
+    .stat-sub   { font-size:.74rem; color:var(--muted); margin-top:.2rem; }
 
-    /* ── Section headings ───────────────────── */
-    .section-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+    /* ── Section headings ───────────────────────── */
+    .section-title {
+      font-size:1.05rem; font-weight:800; margin-bottom:1rem;
+      display:flex; align-items:center; gap:.5rem;
+    }
+    .section-title::after {
+      content:''; flex:1; height:1px; background:var(--border); margin-left:.5rem;
+    }
 
-    /* ── Course card ─────────────────────────── */
+    /* ── Course header ──────────────────────────── */
     .course-header {
-      background: linear-gradient(135deg,#0f0c29,#1e1b4b);
-      border: 1px solid rgba(255,152,0,.25);
-      border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem;
-      display: flex; align-items: center; gap: 1.2rem;
+      background:linear-gradient(135deg,#0f0c29,#1e1b4b);
+      border:1px solid rgba(255,152,0,.22);
+      border-radius:22px; padding:1.6rem; margin-bottom:1.5rem;
+      display:flex; align-items:center; gap:1.2rem;
+      animation:fadeInUp .35s ease both;
     }
     .course-icon {
-      width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;
-      background: linear-gradient(135deg,#ff9800,#ff5722);
-      display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
-      box-shadow: 0 8px 24px rgba(255,152,0,.35);
+      width:64px; height:64px; border-radius:18px; flex-shrink:0;
+      background:linear-gradient(135deg,#ff9800,#ff5722);
+      display:flex; align-items:center; justify-content:center; font-size:1.9rem;
+      box-shadow:0 8px 28px rgba(255,152,0,.4);
+      animation:floatUp 4s ease-in-out infinite;
     }
-    .course-name { font-size: 1.3rem; font-weight: 900; }
-    .course-meta { font-size: .82rem; color: var(--muted); margin-top: .3rem; }
+    .course-name { font-size:1.3rem; font-weight:900; }
+    .course-meta { font-size:.82rem; color:var(--muted); margin-top:.3rem; }
     .plan-badge {
-      margin-top: .6rem; display: inline-flex; align-items: center; gap: .4rem;
-      background: rgba(56,239,125,.12); border: 1px solid rgba(56,239,125,.25);
-      color: #38ef7d; font-size: .75rem; font-weight: 700;
-      padding: .3rem .75rem; border-radius: 99px;
+      margin-top:.6rem; display:inline-flex; align-items:center; gap:.4rem;
+      background:rgba(56,239,125,.1); border:1px solid rgba(56,239,125,.22);
+      color:#38ef7d; font-size:.75rem; font-weight:700;
+      padding:.3rem .75rem; border-radius:99px;
     }
 
-    /* ── Topic cards ─────────────────────────── */
-    .topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    /* ── Video list ─────────────────────────────── */
+    .video-item {
+      display:flex; align-items:center; gap:.85rem;
+      padding:1rem 1.1rem;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:14px; cursor:pointer; transition:all .2s;
+      margin-bottom:.55rem;
+    }
+    .video-item:hover {
+      border-color:rgba(255,152,0,.4); transform:translateY(-2px);
+      box-shadow:0 12px 32px rgba(0,0,0,.3);
+      background:rgba(255,152,0,.04);
+    }
+    .video-num {
+      width:38px; height:38px; border-radius:10px; flex-shrink:0;
+      background:linear-gradient(135deg,#ff9800,#ff5722);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900; font-size:.85rem; color:#fff;
+      box-shadow:0 4px 12px rgba(255,152,0,.3);
+    }
+    .video-play { font-size:.82rem; color:var(--accent); font-weight:700; flex-shrink:0; white-space:nowrap; }
 
+    /* ── Topic cards ─────────────────────────────── */
+    .topics-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
     .topic-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.2rem; cursor: pointer;
-      transition: all .2s; position: relative; overflow: hidden;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:16px; padding:1.2rem; cursor:pointer;
+      transition:all .22s; position:relative; overflow:hidden;
     }
     .topic-card::before {
-      content: ''; position: absolute; inset: 0; opacity: 0;
-      background: linear-gradient(135deg,rgba(255,152,0,.08),rgba(255,87,34,.06));
-      transition: opacity .2s;
+      content:''; position:absolute; inset:0; opacity:0;
+      background:linear-gradient(135deg,rgba(255,152,0,.07),rgba(255,87,34,.05));
+      transition:opacity .22s;
     }
-    .topic-card:hover { border-color: rgba(255,152,0,.4); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.3); }
-    .topic-card:hover::before { opacity: 1; }
+    .topic-card:hover { border-color:rgba(255,152,0,.38); transform:translateY(-4px); box-shadow:0 14px 36px rgba(0,0,0,.3); }
+    .topic-card:hover::before { opacity:1; }
+    .topic-card.locked { opacity:.4; cursor:not-allowed; }
+    .topic-card.locked:hover { transform:none; border-color:var(--border); box-shadow:none; }
+    .topic-card.locked::before { display:none; }
 
-    .topic-card.locked { opacity: .45; cursor: not-allowed; }
-    .topic-card.locked:hover { transform: none; border-color: var(--border); box-shadow: none; }
-    .topic-card.locked::before { display: none; }
+    .topic-header { display:flex; align-items:center; gap:.85rem; margin-bottom:.85rem; }
+    .topic-icon { width:44px; height:44px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.25rem; }
+    .topic-title { font-weight:700; font-size:.95rem; }
+    .topic-chapters { font-size:.75rem; color:var(--muted); }
 
-    .topic-header { display: flex; align-items: center; gap: .85rem; margin-bottom: .85rem; }
-    .topic-icon {
-      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-    }
-    .topic-title { font-weight: 700; font-size: .95rem; }
-    .topic-chapters { font-size: .75rem; color: var(--muted); }
-
-    .chapter-list { list-style: none; display: grid; gap: .4rem; }
+    .chapter-list { list-style:none; display:grid; gap:.4rem; }
     .chapter-item {
-      display: flex; align-items: center; gap: .6rem;
-      font-size: .8rem; color: rgba(255,255,255,.6);
-      padding: .45rem .6rem; border-radius: 8px;
-      background: rgba(255,255,255,.04);
+      display:flex; align-items:center; gap:.6rem; font-size:.8rem;
+      color:rgba(255,255,255,.6); padding:.48rem .65rem; border-radius:8px;
+      background:rgba(255,255,255,.04);
     }
-    .chapter-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-    .chapter-item .done { background: #38ef7d; }
+    .chapter-item .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+    .chapter-item .done { background:#38ef7d; }
 
     .lock-overlay {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: .5rem;
-      background: rgba(15,12,41,.6); border-radius: 16px;
-      font-size: .8rem; color: var(--muted);
+      position:absolute; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:.5rem;
+      background:rgba(15,12,41,.6); border-radius:16px;
+      font-size:.8rem; color:var(--muted);
     }
 
-    .progress-bar-wrap { margin-top: .9rem; }
-    .progress-label { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); margin-bottom: .35rem; }
-    .progress-track { height: 5px; background: rgba(255,255,255,.08); border-radius: 99px; }
-    .progress-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#ff9800,#ff5722); transition: width .8s ease; }
+    .progress-bar-wrap { margin-top:.9rem; }
+    .progress-label { display:flex; justify-content:space-between; font-size:.72rem; color:var(--muted); margin-bottom:.35rem; }
+    .progress-track { height:5px; background:rgba(255,255,255,.08); border-radius:99px; }
+    .progress-fill  { height:100%; border-radius:99px; background:linear-gradient(90deg,#ff9800,#ff5722); transition:width 1s ease; }
 
-    /* ── Schedule table ──────────────────────── */
-    .schedule-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-    .schedule-table th { padding: .65rem .9rem; text-align: left; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--border); }
-    .schedule-table td { padding: .7rem .9rem; border-bottom: 1px solid rgba(255,255,255,.05); }
-    .schedule-table tr:last-child td { border-bottom: none; }
-    .schedule-table tr:hover td { background: rgba(255,255,255,.03); }
-    .badge { display: inline-block; padding: .2rem .65rem; border-radius: 99px; font-size: .72rem; font-weight: 700; }
-    .badge-green  { background: rgba(56,239,125,.15); color: #38ef7d; }
-    .badge-orange { background: rgba(255,152,0,.15);  color: #ff9800; }
-    .badge-blue   { background: rgba(99,102,241,.15); color: #818cf8; }
+    /* ── Schedule ────────────────────────────────── */
+    .schedule-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+    .schedule-table th { padding:.65rem .9rem; text-align:left; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); border-bottom:1px solid var(--border); }
+    .schedule-table td { padding:.75rem .9rem; border-bottom:1px solid rgba(255,255,255,.05); }
+    .schedule-table tr:last-child td { border-bottom:none; }
+    .schedule-table tr:hover td { background:rgba(255,255,255,.03); }
+    .schedule-table .today-row td { background:rgba(255,152,0,.05); }
+    .badge { display:inline-block; padding:.22rem .65rem; border-radius:99px; font-size:.71rem; font-weight:700; }
+    .badge-green  { background:rgba(56,239,125,.12); color:#38ef7d; border:1px solid rgba(56,239,125,.2); }
+    .badge-orange { background:rgba(255,152,0,.12);  color:#ff9800; border:1px solid rgba(255,152,0,.2); }
+    .badge-blue   { background:rgba(99,102,241,.12); color:#818cf8; border:1px solid rgba(99,102,241,.2); }
 
-    /* ── Profile form ─────────────────────────── */
-    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 600px) { .profile-grid { grid-template-columns: 1fr; } }
-    .field label { display: block; font-size: .78rem; font-weight: 600; color: var(--muted); margin-bottom: .4rem; }
+    /* ── Profile form ────────────────────────────── */
+    .profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .field label { display:block; font-size:.78rem; font-weight:600; color:var(--muted); margin-bottom:.4rem; }
     .field input, .field select {
-      width: 100%; padding: .7rem .9rem;
-      background: rgba(255,255,255,.07); border: 1px solid var(--border);
-      border-radius: 10px; color: var(--text); font-family: 'Inter',sans-serif;
-      font-size: .88rem; outline: none; transition: border-color .2s;
+      width:100%; padding:.72rem .95rem;
+      background:rgba(255,255,255,.07); border:1px solid var(--border);
+      border-radius:10px; color:var(--text); font-family:'Inter',sans-serif;
+      font-size:.88rem; outline:none; transition:border-color .2s, box-shadow .2s;
     }
-    .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,152,0,.15); }
-    .field input:disabled { opacity: .5; cursor: not-allowed; }
+    .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,152,0,.15); }
+    .field input:disabled { opacity:.5; cursor:not-allowed; }
 
     .btn {
-      padding: .7rem 1.4rem; border-radius: 12px; border: none;
-      font-family: 'Inter',sans-serif; font-weight: 700; font-size: .88rem;
-      cursor: pointer; transition: all .2s;
+      padding:.72rem 1.4rem; border-radius:12px; border:none;
+      font-family:'Inter',sans-serif; font-weight:700; font-size:.88rem;
+      cursor:pointer; transition:all .22s;
     }
-    .btn-primary { background: linear-gradient(135deg,#ff9800,#ff5722); color: #fff; box-shadow: 0 4px 14px rgba(255,152,0,.3); }
-    .btn-primary:hover { box-shadow: 0 6px 20px rgba(255,152,0,.45); transform: translateY(-1px); }
-    .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .btn-ghost:hover { border-color: rgba(255,255,255,.25); }
-    .btn-danger { background: rgba(239,68,68,.15); color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
-    .btn-danger:hover { background: rgba(239,68,68,.25); }
+    .btn-primary { background:linear-gradient(135deg,#ff9800,#ff5722); color:#fff; box-shadow:0 4px 14px rgba(255,152,0,.3); }
+    .btn-primary:hover { box-shadow:0 6px 22px rgba(255,152,0,.5); transform:translateY(-1px); }
+    .btn-ghost  { background:var(--surface); color:var(--text); border:1px solid var(--border); }
+    .btn-ghost:hover { border-color:rgba(255,255,255,.25); background:rgba(255,255,255,.09); }
+    .btn-danger { background:rgba(239,68,68,.13); color:#fca5a5; border:1px solid rgba(239,68,68,.22); }
+    .btn-danger:hover { background:rgba(239,68,68,.25); }
 
-    /* ── Responsive ──────────────────────────── */
+    /* ── Overlay ─────────────────────────────────── */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:99; }
+    .overlay.show { display:block; animation:fadeIn .2s ease; }
+
+    /* ── Bottom Nav ──────────────────────────────── */
+    .bottom-nav {
+      display:none;
+      position:fixed; bottom:0; left:0; right:0;
+      background:rgba(10,8,30,.97); backdrop-filter:blur(24px);
+      border-top:1px solid rgba(255,255,255,.08);
+      z-index:150;
+      padding:.5rem 0 calc(.5rem + env(safe-area-inset-bottom, 0px));
+    }
+    .bottom-nav-item {
+      flex:1; display:flex; flex-direction:column; align-items:center; gap:.18rem;
+      background:none; border:none; font-family:'Inter',sans-serif;
+      font-size:.58rem; font-weight:700; letter-spacing:.02em;
+      color:rgba(255,255,255,.38); cursor:pointer; padding:.35rem .2rem;
+      transition:color .2s; text-decoration:none;
+    }
+    .bottom-nav-item .bn-icon { font-size:1.25rem; line-height:1; transition:transform .2s; }
+    .bottom-nav-item.active { color:var(--accent); }
+    .bottom-nav-item.active .bn-icon { transform:scale(1.15); filter:drop-shadow(0 0 5px rgba(255,152,0,.6)); }
+
+    /* ── Responsive ──────────────────────────────── */
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: none; }
-      .main { margin-left: 0; }
-      .hamburger { display: flex; }
-      .topics-grid { grid-template-columns: 1fr; }
-      .welcome-emoji { display: none; }
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:none; }
+      .main { margin-left:0; }
+      .hamburger { display:flex; }
+      .topics-grid { grid-template-columns:1fr; }
+      .welcome-emoji { display:none; }
+      .profile-grid { grid-template-columns:1fr; }
+      .bottom-nav { display:flex; }
+      .content { padding-bottom:5.5rem; }
+    }
+    @media (max-width: 480px) {
+      .content { padding:1.2rem 1rem; }
+      .welcome-banner { padding:1.2rem 1.3rem; }
+      .welcome-banner h2 { font-size:1.15rem; }
+      .stats-row { grid-template-columns:1fr 1fr; }
     }
 
-    .overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99;
-    }
-    .overlay.show { display: block; }
-
-    /* ══ Site-wide theme: light (default) / dark (html.dark) ══ */
+    /* ═══ Theme overrides ═══ */
     :root {
       --bg:      #ffffff;
       --surface: #f8fafc;
@@ -310,94 +434,81 @@
       --text:    #f1f1f1;
       --muted:   rgba(255,255,255,.45);
     }
-    body { background: var(--bg) !important; color: var(--text); }
-    html.dark body { background: linear-gradient(135deg,#0f0c29 0%,#1a1740 50%,#0f0c29 100%) !important; }
+    body { background: var(--bg) !important; color:var(--text); }
+    html.dark body { background:linear-gradient(135deg,#0f0c29 0%,#1a1740 50%,#0f0c29 100%) !important; background-size:400% 400% !important; animation:gradientShift 20s ease infinite !important; }
 
-    .sidebar { background: var(--surface) !important; }
-    html.dark .sidebar { background: rgba(0,0,0,.35) !important; }
+    .sidebar { background:rgba(248,250,252,.97) !important; }
+    html.dark .sidebar { background:rgba(10,8,30,.92) !important; }
+    .sidebar-logo { border-bottom-color:var(--border) !important; }
+    .sidebar-bottom { border-top-color:var(--border) !important; }
 
-    .sidebar-logo { border-bottom-color: var(--border) !important; }
-    .sidebar-bottom { border-top-color: var(--border) !important; }
+    .topbar { background:rgba(255,255,255,.96) !important; border-bottom-color:var(--border) !important; box-shadow:0 1px 8px rgba(0,0,0,.06); }
+    html.dark .topbar { background:rgba(12,9,35,.88) !important; box-shadow:none; }
 
-    .topbar {
-      background: rgba(255,255,255,.97) !important;
-      border-bottom: 1px solid var(--border) !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06);
-    }
-    html.dark .topbar {
-      background: rgba(15,12,41,.85) !important;
-      box-shadow: none;
-    }
+    .profile-menu { background:#ffffff !important; border-color:#e2e8f0 !important; box-shadow:0 20px 60px rgba(0,0,0,.14) !important; }
+    html.dark .profile-menu { background:#1c1a2e !important; border-color:rgba(255,255,255,.1) !important; box-shadow:0 20px 60px rgba(0,0,0,.6) !important; }
+    .pm-header { border-bottom-color:#e2e8f0 !important; }
+    html.dark .pm-header { border-bottom-color:rgba(255,255,255,.08) !important; }
+    .pm-name { color:#111827 !important; }
+    html.dark .pm-name { color:#f1f5f9 !important; }
+    .pm-email { color:#6b7280 !important; }
+    html.dark .pm-email { color:rgba(255,255,255,.45) !important; }
+    .pm-row { color:#6b7280 !important; }
+    html.dark .pm-row { color:rgba(255,255,255,.5) !important; }
+    .pm-row strong { color:#111827 !important; }
+    html.dark .pm-row strong { color:var(--text) !important; }
 
-    .profile-menu {
-      background: #ffffff !important;
-      border-color: #e2e8f0 !important;
-      box-shadow: 0 16px 48px rgba(0,0,0,.12) !important;
-    }
-    html.dark .profile-menu {
-      background: #1c1a2e !important;
-      border-color: rgba(255,255,255,.1) !important;
-      box-shadow: 0 16px 48px rgba(0,0,0,.55) !important;
-    }
-    .pm-header { border-bottom-color: #e2e8f0 !important; }
-    html.dark .pm-header { border-bottom-color: rgba(255,255,255,.08) !important; }
-    .pm-name  { color: #111827 !important; }
-    html.dark .pm-name  { color: #f1f5f9 !important; }
-    .pm-email { color: #6b7280 !important; }
-    html.dark .pm-email { color: rgba(255,255,255,.45) !important; }
-    .pm-row   { color: #6b7280 !important; }
-    html.dark .pm-row   { color: rgba(255,255,255,.5) !important; }
-    .pm-row strong { color: #111827 !important; }
-    html.dark .pm-row strong { color: var(--text) !important; }
+    .chapter-item { color:#4b5563 !important; background:#f1f5f9 !important; }
+    html.dark .chapter-item { color:rgba(255,255,255,.6) !important; background:rgba(255,255,255,.04) !important; }
 
-    .chapter-item { color: #4b5563 !important; background: #f1f5f9 !important; }
-    html.dark .chapter-item { color: rgba(255,255,255,.6) !important; background: rgba(255,255,255,.04) !important; }
+    .welcome-banner { color:#fff; }
 
-    /* Keep welcome banner accent colors in both modes */
-    .welcome-banner { color: #fff; }
+    html:not(.dark) .bottom-nav { background:rgba(255,255,255,.97) !important; border-top-color:#e2e8f0 !important; }
+    html:not(.dark) .bottom-nav-item { color:#9ca3af !important; }
+    html:not(.dark) .bottom-nav-item.active { color:var(--accent) !important; }
+
+    html:not(.dark) .video-item { background:var(--surface); border-color:var(--border); }
+    html:not(.dark) .topbar-title { color:#111827; }
+    html:not(.dark) .student-name { color:#111827; }
+    html:not(.dark) .hamburger { color:#374151; }
   </style>
 </head>
 <body>
 
 <!-- Video Modal -->
-<div id="video-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto" onclick="if(event.target===this)closeVideoModal()">
-  <div style="background:#13131f;border:1px solid rgba(255,255,255,.1);border-radius:20px;width:100%;max-width:900px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7);margin:auto">
-    <!-- Modal header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.08)">
+<div id="video-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:500;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto" onclick="if(event.target===this)closeVideoModal()">
+  <div style="background:#13131f;border:1px solid rgba(255,255,255,.1);border-radius:22px;width:100%;max-width:920px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.8);margin:auto;animation:fadeInUp .3s ease">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)">
       <div>
         <span id="vm-title" style="font-weight:800;font-size:1.05rem;color:#f1f1f1"></span>
-        <span id="vm-count" style="margin-left:.6rem;font-size:.75rem;color:rgba(255,255,255,.35);font-weight:600"></span>
+        <span id="vm-count" style="margin-left:.6rem;font-size:.75rem;color:rgba(255,255,255,.3);font-weight:600"></span>
       </div>
-      <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#f1f1f1;border-radius:8px;padding:.4rem .9rem;cursor:pointer;font-size:.85rem;font-weight:700;font-family:Inter,sans-serif">Close ✕</button>
+      <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#f1f1f1;border-radius:10px;padding:.45rem 1rem;cursor:pointer;font-size:.85rem;font-weight:700;font-family:Inter,sans-serif;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.08)'">Close ✕</button>
     </div>
-    <!-- Video player -->
     <div style="position:relative;padding-bottom:56.25%;background:#000">
       <iframe id="vm-frame" style="position:absolute;inset:0;width:100%;height:100%;border:none;display:none" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
       <video id="vm-video" style="position:absolute;inset:0;width:100%;height:100%;display:none" controls controlsList="nodownload"></video>
-      <div id="vm-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:.9rem;flex-direction:column;gap:.5rem">
-        <div style="width:32px;height:32px;border:3px solid rgba(255,152,0,.3);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
-        Loading lessons…
+      <div id="vm-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:.9rem;flex-direction:column;gap:.7rem">
+        <div style="width:36px;height:36px;border:3px solid rgba(255,152,0,.25);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
+        Loading lesson…
       </div>
     </div>
-    <!-- Current lesson info -->
-    <div id="vm-lesson-info" style="padding:.85rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.06);display:none">
+    <div id="vm-lesson-info" style="padding:.9rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.06);display:none;background:rgba(255,255,255,.02)">
       <div id="vm-lesson-title" style="font-weight:700;font-size:.95rem;color:#f1f1f1"></div>
       <div style="display:flex;align-items:center;gap:.75rem;margin-top:.3rem">
-        <span id="vm-lesson-duration" style="font-size:.75rem;color:#ff9800;font-weight:600"></span>
-        <span id="vm-lesson-desc" style="font-size:.78rem;color:rgba(255,255,255,.45)"></span>
+        <span id="vm-lesson-duration" style="font-size:.75rem;color:#ff9800;font-weight:700"></span>
+        <span id="vm-lesson-desc" style="font-size:.78rem;color:rgba(255,255,255,.4)"></span>
       </div>
     </div>
-    <!-- Lesson list -->
-    <div style="padding:1rem 1.4rem">
+    <div style="padding:1rem 1.5rem">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem">
-        <span style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em">All Lessons</span>
-        <a id="vm-playlist" href="#" target="_blank" style="font-size:.75rem;color:#ff9800;font-weight:700;text-decoration:none;border:1px solid rgba(255,152,0,.3);padding:.22rem .65rem;border-radius:99px;background:rgba(255,152,0,.08)">YouTube →</a>
+        <span style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.08em">All Lessons</span>
+        <a id="vm-playlist" href="#" target="_blank" style="font-size:.75rem;color:#ff9800;font-weight:700;text-decoration:none;border:1px solid rgba(255,152,0,.28);padding:.22rem .7rem;border-radius:99px;background:rgba(255,152,0,.08)">YouTube →</a>
       </div>
       <ul id="vm-lessons" style="list-style:none;display:grid;gap:.35rem;max-height:220px;overflow-y:auto;padding-right:.2rem"></ul>
     </div>
   </div>
 </div>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
@@ -405,8 +516,11 @@
   <!-- ── Sidebar ──────────────────────────────────────────────── -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <img src="logo.png.jpeg" alt="Logo"/>
-      <span>Laxmi Academy</span>
+      <img src="logo.png.jpeg" alt="Logo" loading="lazy"/>
+      <div>
+        <div class="sidebar-logo-text">Laxmi Academy</div>
+        <div class="sidebar-logo-sub">Student Portal</div>
+      </div>
     </div>
 
     <div class="nav-section" style="margin-top:.8rem">Menu</div>
@@ -434,24 +548,24 @@
         <button class="hamburger" onclick="openSidebar()">
           <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <span id="page-title" style="font-weight:700;font-size:.95rem">Dashboard</span>
+        <span id="page-title" class="topbar-title" style="font-weight:800;font-size:.95rem">Dashboard</span>
       </div>
       <div class="topbar-right">
         <button class="btn-theme" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button>
-        <span class="student-course-badge" id="topbar-course">Loading...</span>
-        <span class="student-name" id="topbar-name">...</span>
+        <span class="student-course-badge" id="topbar-course">Loading…</span>
+        <span class="student-name" id="topbar-name">…</span>
         <div class="profile-dropdown-wrapper">
           <div class="avatar" id="topbar-avatar" onclick="toggleProfileMenu(event)">?</div>
           <div class="profile-menu" id="profile-menu">
             <div class="pm-header">
               <div class="pm-avatar-lg" id="pm-avatar-lg">?</div>
               <div>
-                <div class="pm-name" id="pm-name">Loading...</div>
+                <div class="pm-name"  id="pm-name">Loading…</div>
                 <div class="pm-email" id="pm-email"></div>
               </div>
             </div>
             <div class="pm-row">Course: <strong id="pm-course">—</strong></div>
-            <div class="pm-row">Plan: <strong id="pm-plan">—</strong></div>
+            <div class="pm-row">Plan:   <strong id="pm-plan">—</strong></div>
             <button class="pm-logout" onclick="logout()">Logout</button>
           </div>
         </div>
@@ -463,7 +577,6 @@
 
       <!-- ── HOME PAGE ──────────────────────────────────────────── -->
       <div class="page active" id="page-home">
-        <!-- Welcome -->
         <div class="welcome-banner">
           <div>
             <h2 id="welcome-name">Welcome back!</h2>
@@ -472,43 +585,49 @@
           <div class="welcome-emoji">⚡</div>
         </div>
 
-        <!-- Stats -->
         <div class="stats-row">
           <div class="stat-card">
+            <div class="stat-icon">📚</div>
             <div class="stat-label">Enrolled Course</div>
-            <div class="stat-value" id="stat-course" style="font-size:1rem;margin-top:.4rem;line-height:1.3">—</div>
+            <div class="stat-value" id="stat-course" style="font-size:.95rem;line-height:1.3;margin-top:.3rem">—</div>
           </div>
           <div class="stat-card">
+            <div class="stat-icon">⭐</div>
             <div class="stat-label">Plan</div>
-            <div class="stat-value" id="stat-plan" style="font-size:1rem;margin-top:.4rem">—</div>
+            <div class="stat-value" id="stat-plan" style="font-size:.95rem;margin-top:.3rem">—</div>
           </div>
           <div class="stat-card">
+            <div class="stat-icon">🎬</div>
             <div class="stat-label">Videos Available</div>
             <div class="stat-value" id="stat-videos" style="color:#ff9800">0</div>
             <div class="stat-sub">in your course</div>
           </div>
           <div class="stat-card">
+            <div class="stat-icon">📅</div>
             <div class="stat-label">Member Since</div>
-            <div class="stat-value" id="stat-since" style="font-size:.9rem;margin-top:.4rem">—</div>
+            <div class="stat-value" id="stat-since" style="font-size:.88rem;margin-top:.3rem">—</div>
           </div>
         </div>
 
-        <!-- Course videos -->
         <div class="section-title">📺 My Course — Videos</div>
-        <div id="home-videos-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0">Loading videos…</div>
-        <div id="home-videos" style="display:grid;gap:.65rem"></div>
-        <div id="home-videos-empty" style="display:none;padding:2.5rem;text-align:center;color:var(--muted)">
-          <div style="font-size:2.5rem;margin-bottom:.6rem">🎬</div>
-          <p>No videos have been uploaded for your course yet.</p>
+        <div id="home-videos-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0;display:flex;align-items:center;gap:.6rem">
+          <div style="width:18px;height:18px;border:2px solid rgba(255,152,0,.3);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
+          Loading videos…
+        </div>
+        <div id="home-videos"></div>
+        <div id="home-videos-empty" style="display:none;padding:3rem;text-align:center;color:var(--muted)">
+          <div style="font-size:3rem;margin-bottom:.8rem">🎬</div>
+          <p style="font-weight:600">No videos yet</p>
+          <p style="font-size:.85rem;margin-top:.3rem">Videos will appear here once uploaded by your instructor.</p>
         </div>
       </div>
 
-      <!-- ── COURSES PAGE ───────────────────────────────────────── -->
+      <!-- ── COURSES PAGE ──────────────────────────────────────── -->
       <div class="page" id="page-courses">
         <div class="course-header">
           <div class="course-icon" id="course-icon">⚛️</div>
           <div>
-            <div class="course-name" id="course-title">Loading...</div>
+            <div class="course-name" id="course-title">Loading…</div>
             <div class="course-meta" id="course-meta"></div>
             <div class="plan-badge">
               <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
@@ -518,23 +637,24 @@
         </div>
 
         <div class="section-title">📺 Course Videos</div>
-        <div id="course-videos-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0">Loading videos…</div>
-        <div id="course-videos-list" style="display:grid;gap:.65rem"></div>
-        <div id="course-videos-empty" style="display:none;padding:2.5rem;text-align:center;color:var(--muted)">
-          <div style="font-size:2.5rem;margin-bottom:.6rem">🎬</div>
-          <p>No videos have been uploaded for your course yet.</p>
+        <div id="course-videos-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0;display:flex;align-items:center;gap:.6rem">
+          <div style="width:18px;height:18px;border:2px solid rgba(255,152,0,.3);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
+          Loading videos…
+        </div>
+        <div id="course-videos-list"></div>
+        <div id="course-videos-empty" style="display:none;padding:3rem;text-align:center;color:var(--muted)">
+          <div style="font-size:3rem;margin-bottom:.8rem">🎬</div>
+          <p style="font-weight:600">No videos yet</p>
         </div>
       </div>
 
-      <!-- ── SCHEDULE PAGE ──────────────────────────────────────── -->
+      <!-- ── SCHEDULE PAGE ─────────────────────────────────────── -->
       <div class="page" id="page-schedule">
         <div class="section-title">🗓️ This Week's Class Schedule</div>
         <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
           <table class="schedule-table">
             <thead>
-              <tr>
-                <th>Day</th><th>Time</th><th>Topic</th><th>Chapter</th><th>Status</th>
-              </tr>
+              <tr><th>Day</th><th>Time</th><th>Topic</th><th>Chapter</th><th>Status</th></tr>
             </thead>
             <tbody id="schedule-body"></tbody>
           </table>
@@ -544,37 +664,26 @@
         <div id="tests-list" style="display:grid;gap:.75rem"></div>
       </div>
 
-      <!-- ── PROFILE PAGE ───────────────────────────────────────── -->
+      <!-- ── PROFILE PAGE ──────────────────────────────────────── -->
       <div class="page" id="page-profile">
         <div class="section-title">👤 My Profile</div>
-        <div class="card" style="max-width:600px">
-          <div class="profile-grid">
-            <div class="field">
-              <label>Full Name</label>
-              <input type="text" id="p-name" disabled/>
-            </div>
-            <div class="field">
-              <label>Email</label>
-              <input type="email" id="p-email" disabled/>
-            </div>
-            <div class="field">
-              <label>Phone</label>
-              <input type="tel" id="p-phone" disabled/>
-            </div>
-            <div class="field">
-              <label>Enrolled Course</label>
-              <input type="text" id="p-course" disabled/>
-            </div>
-            <div class="field">
-              <label>Plan</label>
-              <input type="text" id="p-plan" disabled/>
-            </div>
-            <div class="field">
-              <label>Member Since</label>
-              <input type="text" id="p-since" disabled/>
+        <div class="card" style="max-width:620px">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding-bottom:1.2rem;border-bottom:1px solid var(--border)">
+            <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#ff9800,#ff5722);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.5rem;box-shadow:0 6px 20px rgba(255,152,0,.35)" id="profile-avatar-lg">?</div>
+            <div>
+              <div style="font-weight:800;font-size:1.1rem" id="profile-name-display">…</div>
+              <div style="font-size:.8rem;color:var(--muted);margin-top:.2rem" id="profile-email-display">…</div>
             </div>
           </div>
-          <div style="margin-top:1.2rem;display:flex;gap:.75rem">
+          <div class="profile-grid">
+            <div class="field"><label>Full Name</label><input type="text"  id="p-name"   disabled/></div>
+            <div class="field"><label>Email</label>    <input type="email" id="p-email"  disabled/></div>
+            <div class="field"><label>Phone</label>    <input type="tel"   id="p-phone"  disabled/></div>
+            <div class="field"><label>Enrolled Course</label><input type="text" id="p-course" disabled/></div>
+            <div class="field"><label>Plan</label>     <input type="text"  id="p-plan"   disabled/></div>
+            <div class="field"><label>Member Since</label><input type="text" id="p-since" disabled/></div>
+          </div>
+          <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
             <button class="btn btn-ghost" onclick="alert('Password change — contact admin.')">Change Password</button>
             <button class="btn btn-danger" onclick="logout()">Logout</button>
           </div>
@@ -585,43 +694,66 @@
   </div><!-- /main -->
 </div><!-- /layout -->
 
+<!-- ── Mobile Bottom Nav ──────────────────────────────────────── -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bottom-nav-item active" data-page="home"     onclick="showPage('home')">    <span class="bn-icon">🏠</span><span>Home</span></button>
+  <button class="bottom-nav-item"        data-page="courses"  onclick="showPage('courses')"> <span class="bn-icon">📚</span><span>Courses</span></button>
+  <button class="bottom-nav-item"        data-page="schedule" onclick="showPage('schedule')"><span class="bn-icon">🗓️</span><span>Schedule</span></button>
+  <button class="bottom-nav-item"        data-page="profile"  onclick="showPage('profile')"> <span class="bn-icon">👤</span><span>Profile</span></button>
+</nav>
+
 <script>
-  const TOPIC_COLORS = { mechanics: '#4f46e5', thermo: '#ef4444', electro: '#f59e0b', optics: '#06b6d4', modern: '#10b981' };
-  const TOPIC_LABELS = { mechanics: 'Mechanics', thermo: 'Thermodynamics', electro: 'Electromagnetism', optics: 'Optics & Waves', modern: 'Modern Physics' };
+  const TOPIC_COLORS = { mechanics:'#4f46e5', thermo:'#ef4444', electro:'#f59e0b', optics:'#06b6d4', modern:'#10b981' };
+  const TOPIC_LABELS = { mechanics:'Mechanics', thermo:'Thermodynamics', electro:'Electromagnetism', optics:'Optics & Waves', modern:'Modern Physics' };
 
   const SCHEDULE = [
-    { day: 'Monday',    time: '7:00 – 9:00 AM',  topic: 'Mechanics',        chapter: "Newton's Laws",           status: 'completed' },
-    { day: 'Tuesday',   time: '7:00 – 9:00 AM',  topic: 'Mechanics',        chapter: 'Work, Energy & Power',    status: 'completed' },
-    { day: 'Wednesday', time: '7:00 – 9:00 AM',  topic: 'Thermodynamics',   chapter: 'Kinetic Theory of Gases', status: 'today'     },
-    { day: 'Thursday',  time: '7:00 – 9:00 AM',  topic: 'Thermodynamics',   chapter: '1st Law of Thermodynamics', status: 'upcoming' },
-    { day: 'Friday',    time: '7:00 – 9:00 AM',  topic: 'Electromagnetism', chapter: 'Electrostatics',          status: 'upcoming'  },
-    { day: 'Saturday',  time: '9:00 – 11:00 AM', topic: 'Weekly Test',      chapter: 'Mechanics + Thermo',      status: 'upcoming'  },
+    { day:'Monday',    time:'7:00 – 9:00 AM',  topic:'Mechanics',        chapter:"Newton's Laws",            status:'completed' },
+    { day:'Tuesday',   time:'7:00 – 9:00 AM',  topic:'Mechanics',        chapter:'Work, Energy & Power',     status:'completed' },
+    { day:'Wednesday', time:'7:00 – 9:00 AM',  topic:'Thermodynamics',   chapter:'Kinetic Theory of Gases',  status:'today'     },
+    { day:'Thursday',  time:'7:00 – 9:00 AM',  topic:'Thermodynamics',   chapter:'1st Law of Thermodynamics',status:'upcoming'  },
+    { day:'Friday',    time:'7:00 – 9:00 AM',  topic:'Electromagnetism', chapter:'Electrostatics',           status:'upcoming'  },
+    { day:'Saturday',  time:'9:00 – 11:00 AM', topic:'Weekly Test',      chapter:'Mechanics + Thermo',       status:'upcoming'  },
   ];
-
   const TESTS = [
-    { name: 'Chapter Test — Mechanics',       date: '28 Apr 2025', topics: 'Newton\'s Laws, Energy',  type: 'Chapter' },
-    { name: 'Unit Test — Thermodynamics',     date: '5 May 2025',  topics: 'All Thermo chapters',     type: 'Unit'    },
-    { name: 'Full Syllabus Mock — Physics',   date: '12 May 2025', topics: 'All 5 Physics topics',    type: 'Mock'    },
+    { name:'Chapter Test — Mechanics',     date:'28 Apr 2025', topics:"Newton's Laws, Energy", type:'Chapter' },
+    { name:'Unit Test — Thermodynamics',   date:'5 May 2025',  topics:'All Thermo chapters',   type:'Unit'    },
+    { name:'Full Syllabus Mock — Physics', date:'12 May 2025', topics:'All 5 Physics topics',  type:'Mock'    },
   ];
 
   // ── Auth guard ────────────────────────────────────────────────
   const token = localStorage.getItem('la_token');
   const role  = localStorage.getItem('la_role');
-  if (!token || role !== 'student') {
-    window.location.href = 'login.html';
-  }
+  if (!token || role !== 'student') window.location.href = 'login.html';
 
   let student = null;
   let courseVideos = [];
 
   function escHtml(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Animated counter ──────────────────────────────────────────
+  function animateValue(el, target) {
+    if (!el) return;
+    const num = parseInt(target);
+    if (isNaN(num) || num === 0) { if(el) el.textContent = num||0; return; }
+    const duration = 900;
+    const startTime = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - startTime;
+      const p = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(eased * num);
+      if (p < 1) requestAnimationFrame(tick);
+      else el.textContent = num;
+    };
+    requestAnimationFrame(tick);
   }
 
   // ── Load student data ─────────────────────────────────────────
   async function loadStudent() {
     try {
-      const res  = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+      const res  = await fetch('/api/me', { headers:{'Authorization':'Bearer '+token} });
       const data = await res.json();
       if (!res.ok) { logout(); return; }
       student = data.user;
@@ -635,32 +767,27 @@
   }
 
   function renderAll() {
-    const course = student.course || '';
-
-    // Topbar
-    document.getElementById('topbar-name').textContent = student.full_name.split(' ')[0];
-    document.getElementById('topbar-course').textContent = course;
+    const course  = student.course || '';
     const initial = student.full_name.charAt(0).toUpperCase();
-    document.getElementById('topbar-avatar').textContent = initial;
+    const firstName = student.full_name.split(' ')[0];
 
-    // Profile dropdown
-    document.getElementById('pm-avatar-lg').textContent = initial;
-    document.getElementById('pm-name').textContent = student.full_name;
-    document.getElementById('pm-email').textContent = student.email;
-    document.getElementById('pm-course').textContent = course;
-    document.getElementById('pm-plan').textContent = student.plan || '—';
+    document.getElementById('topbar-name').textContent    = firstName;
+    document.getElementById('topbar-course').textContent  = course;
+    document.getElementById('topbar-avatar').textContent  = initial;
+    document.getElementById('pm-avatar-lg').textContent   = initial;
+    document.getElementById('pm-name').textContent        = student.full_name;
+    document.getElementById('pm-email').textContent       = student.email;
+    document.getElementById('pm-course').textContent      = course;
+    document.getElementById('pm-plan').textContent        = student.plan || '—';
 
-    // Welcome
-    document.getElementById('welcome-name').textContent = 'Welcome back, ' + student.full_name.split(' ')[0] + '!';
-    document.getElementById('welcome-sub').textContent  = 'You are enrolled in: ' + course;
+    document.getElementById('welcome-name').textContent   = 'Welcome back, ' + firstName + '!';
+    document.getElementById('welcome-sub').textContent    = 'You are enrolled in: ' + course;
 
-    // Stats
-    document.getElementById('stat-course').textContent = course;
-    document.getElementById('stat-plan').textContent   = student.plan;
-    const since = student.created_at ? student.created_at.slice(0, 10) : '—';
-    document.getElementById('stat-since').textContent  = since;
+    document.getElementById('stat-course').textContent    = course;
+    document.getElementById('stat-plan').textContent      = student.plan;
+    const since = student.created_at ? student.created_at.slice(0,10) : '—';
+    document.getElementById('stat-since').textContent     = since;
 
-    // Profile fields
     document.getElementById('p-name').value   = student.full_name;
     document.getElementById('p-email').value  = student.email;
     document.getElementById('p-phone').value  = student.phone;
@@ -668,12 +795,18 @@
     document.getElementById('p-plan').value   = student.plan;
     document.getElementById('p-since').value  = since;
 
-    // Course page header
+    // Profile page avatar
+    const pav = document.getElementById('profile-avatar-lg');
+    if (pav) { pav.textContent = initial; }
+    const pnd = document.getElementById('profile-name-display');
+    if (pnd) pnd.textContent = student.full_name;
+    const ped = document.getElementById('profile-email-display');
+    if (ped) ped.textContent = student.email;
+
     document.getElementById('course-icon').textContent  = '⚛️';
     document.getElementById('course-title').textContent = course;
     document.getElementById('course-meta').textContent  = 'Plan: ' + student.plan;
 
-    // Schedule
     buildSchedule();
     buildTests();
   }
@@ -681,15 +814,15 @@
   // ── Load & render course videos ───────────────────────────────
   async function loadCourseVideos() {
     try {
-      const res = await fetch('/api/lessons', { headers: { 'Authorization': 'Bearer ' + token } });
+      const res = await fetch('/api/lessons', { headers:{'Authorization':'Bearer '+token} });
       if (res.ok) {
         const data = await res.json();
         courseVideos = Array.isArray(data) ? data : [];
       }
     } catch { courseVideos = []; }
 
-    document.getElementById('stat-videos').textContent = courseVideos.length;
-    document.getElementById('course-meta').textContent = courseVideos.length + ' video' + (courseVideos.length !== 1 ? 's' : '') + ' · Plan: ' + (student?.plan || '');
+    animateValue(document.getElementById('stat-videos'), courseVideos.length);
+    document.getElementById('course-meta').textContent = courseVideos.length + ' video' + (courseVideos.length!==1?'s':'') + ' · Plan: ' + (student?.plan||'');
 
     renderVideoList('home-videos', 'home-videos-loading', 'home-videos-empty');
     renderVideoList('course-videos-list', 'course-videos-loading', 'course-videos-empty');
@@ -703,27 +836,26 @@
       return;
     }
     document.getElementById(emptyId).style.display = 'none';
-    document.getElementById(listId).innerHTML = courseVideos.map((v, i) => `
-      <div onclick="openVideo(${i})" style="display:flex;align-items:center;gap:.85rem;padding:.9rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(255,152,0,.4)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ff9800,#ff5722);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.85rem;flex-shrink:0;color:#fff">${i + 1}</div>
+    document.getElementById(listId).innerHTML = courseVideos.map((v,i) => `
+      <div class="video-item" onclick="openVideo(${i})" style="animation:fadeInUp .3s ${i*0.04}s ease both">
+        <div class="video-num">${i+1}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.title)}</div>
           <div style="display:flex;align-items:center;gap:.5rem;margin-top:.25rem;flex-wrap:wrap">
-            ${v.topic ? `<span style="font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:99px;background:${TOPIC_COLORS[v.topic] || '#66666622'}22;color:${TOPIC_COLORS[v.topic] || '#aaa'}">${TOPIC_LABELS[v.topic] || v.topic}</span>` : ''}
-            ${v.duration ? `<span style="font-size:.73rem;color:var(--muted)">${escHtml(v.duration)}</span>` : ''}
-            ${v.instructor_name ? `<span style="font-size:.73rem;color:var(--muted)">· ${escHtml(v.instructor_name)}</span>` : ''}
+            ${v.topic?`<span style="font-size:.69rem;font-weight:700;padding:.15rem .55rem;border-radius:99px;background:${TOPIC_COLORS[v.topic]||'#666'}22;color:${TOPIC_COLORS[v.topic]||'#aaa'};border:1px solid ${TOPIC_COLORS[v.topic]||'#666'}33">${TOPIC_LABELS[v.topic]||v.topic}</span>`:''}
+            ${v.duration?`<span style="font-size:.73rem;color:var(--muted)">⏱ ${escHtml(v.duration)}</span>`:''}
+            ${v.instructor_name?`<span style="font-size:.73rem;color:var(--muted)">· ${escHtml(v.instructor_name)}</span>`:''}
           </div>
         </div>
-        <div style="font-size:.8rem;color:#ff9800;font-weight:700;flex-shrink:0">${v.video_type === 'youtube' ? '▶ Play' : '🎬 Watch'}</div>
+        <div class="video-play">${v.video_type==='youtube'?'▶ Play':'🎬 Watch'}</div>
       </div>`).join('');
   }
 
   function openVideo(idx) {
     if (idx < 0 || idx >= courseVideos.length) return;
-
     const course = student?.course || 'My Course';
     document.getElementById('vm-title').textContent = course;
-    document.getElementById('vm-count').textContent = courseVideos.length + ' video' + (courseVideos.length !== 1 ? 's' : '');
+    document.getElementById('vm-count').textContent = courseVideos.length + ' video' + (courseVideos.length!==1?'s':'');
     document.getElementById('vm-loading').style.display = 'none';
     document.getElementById('vm-frame').style.display = 'none';
     document.getElementById('vm-video').style.display = 'none';
@@ -731,29 +863,28 @@
     document.getElementById('vm-playlist').style.display = 'none';
     document.getElementById('video-modal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
-
     window._vmLessons = courseVideos;
-    document.getElementById('vm-lessons').innerHTML = courseVideos.map((l, i) =>
-      `<li id="vl-${i}" onclick="playLesson(${i})" style="display:flex;align-items:center;gap:.7rem;padding:.55rem .7rem;border-radius:9px;cursor:pointer;transition:background .15s;border:1px solid transparent" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="if(currentLesson!==${i})this.style.background=''">
-        <span style="width:24px;height:24px;border-radius:6px;background:rgba(255,152,0,.15);color:#ff9800;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</span>
-        <span style="flex:1;font-size:.82rem;font-weight:600;color:rgba(255,255,255,.8);line-height:1.3">${escHtml(l.title)}</span>
-        ${l.duration ? `<span style="font-size:.72rem;color:rgba(255,255,255,.35);flex-shrink:0">${l.duration}</span>` : ''}
-        <span style="font-size:.8rem;flex-shrink:0">${l.video_type === 'youtube' ? '▶' : '🎬'}</span>
+    document.getElementById('vm-lessons').innerHTML = courseVideos.map((l,i) =>
+      `<li id="vl-${i}" onclick="playLesson(${i})" style="display:flex;align-items:center;gap:.7rem;padding:.55rem .7rem;border-radius:10px;cursor:pointer;transition:background .15s;border:1px solid transparent" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="if(currentLesson!==${i})this.style.background=''">
+        <span style="width:26px;height:26px;border-radius:7px;background:rgba(255,152,0,.14);color:#ff9800;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+        <span style="flex:1;font-size:.83rem;font-weight:600;color:rgba(255,255,255,.8);line-height:1.3">${escHtml(l.title)}</span>
+        ${l.duration?`<span style="font-size:.72rem;color:rgba(255,255,255,.3);flex-shrink:0">${l.duration}</span>`:''}
+        <span style="font-size:.8rem;flex-shrink:0">${l.video_type==='youtube'?'▶':'🎬'}</span>
       </li>`
     ).join('');
-
     currentLesson = -1;
     playLesson(idx);
   }
 
   function buildSchedule() {
     document.getElementById('schedule-body').innerHTML = SCHEDULE.map(s => {
-      const badge = s.status === 'completed' ? '<span class="badge badge-green">Done</span>'
-                  : s.status === 'today'     ? '<span class="badge badge-orange">Today</span>'
-                  :                            '<span class="badge badge-blue">Upcoming</span>';
-      return `<tr>
-        <td style="font-weight:600">${s.day}</td>
-        <td style="color:var(--muted)">${s.time}</td>
+      const badge = s.status==='completed'?'<span class="badge badge-green">Done</span>'
+                  : s.status==='today'    ?'<span class="badge badge-orange">Today</span>'
+                  :                        '<span class="badge badge-blue">Upcoming</span>';
+      const rowClass = s.status==='today'?'today-row':'';
+      return `<tr class="${rowClass}">
+        <td style="font-weight:700">${s.day}</td>
+        <td style="color:var(--muted);font-size:.83rem">${s.time}</td>
         <td>${s.topic}</td>
         <td style="color:var(--muted)">${s.chapter}</td>
         <td>${badge}</td>
@@ -763,29 +894,32 @@
 
   function buildTests() {
     const colors = { Chapter:'badge-orange', Unit:'badge-blue', Mock:'badge-green' };
-    document.getElementById('tests-list').innerHTML = TESTS.map(t => `
-      <div class="card card-sm" style="display:flex;align-items:center;gap:1rem">
-        <div style="font-size:1.8rem">📝</div>
+    document.getElementById('tests-list').innerHTML = TESTS.map((t,i) => `
+      <div class="card card-sm" style="display:flex;align-items:center;gap:1rem;animation:fadeInUp .35s ${i*0.08}s ease both">
+        <div style="font-size:1.9rem">📝</div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:.9rem">${t.name}</div>
           <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">${t.topics}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-size:.8rem;font-weight:700">${t.date}</div>
-          <span class="badge ${colors[t.type]}" style="margin-top:.3rem">${t.type}</span>
+          <span class="badge ${colors[t.type]||'badge-blue'}" style="margin-top:.3rem">${t.type}</span>
         </div>
       </div>`).join('');
   }
 
   // ── Navigation ────────────────────────────────────────────────
-  const pageTitles = { home: 'Dashboard', courses: 'My Courses', schedule: 'Schedule', profile: 'Profile' };
+  const pageTitles = { home:'Dashboard', courses:'My Courses', schedule:'Schedule', profile:'Profile' };
 
   function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    document.getElementById('page-' + name).classList.add('active');
-    document.getElementById('nav-' + name)?.classList.add('active');
+    document.getElementById('page-'+name).classList.add('active');
+    document.getElementById('nav-'+name)?.classList.add('active');
     document.getElementById('page-title').textContent = pageTitles[name] || name;
+    // Update bottom nav
+    document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.bottom-nav-item[data-page="${name}"]`)?.classList.add('active');
     closeSidebar();
   }
 
@@ -794,79 +928,63 @@
     const lessons = window._vmLessons || [];
     if (idx < 0 || idx >= lessons.length) return;
     const l = lessons[idx];
-
-    // Highlight active lesson
     if (currentLesson >= 0) {
-      const prev = document.getElementById('vl-' + currentLesson);
-      if (prev) { prev.style.background = ''; prev.style.borderColor = 'transparent'; }
+      const prev = document.getElementById('vl-'+currentLesson);
+      if (prev) { prev.style.background=''; prev.style.borderColor='transparent'; }
     }
     currentLesson = idx;
-    const el = document.getElementById('vl-' + idx);
-    if (el) { el.style.background = 'rgba(255,152,0,.1)'; el.style.borderColor = 'rgba(255,152,0,.25)'; }
-
-    // Lesson info bar
-    document.getElementById('vm-lesson-title').textContent = l.title;
-    document.getElementById('vm-lesson-duration').textContent = l.duration || '';
-    document.getElementById('vm-lesson-desc').textContent = l.description || '';
-    document.getElementById('vm-lesson-info').style.display = 'block';
-
+    const el = document.getElementById('vl-'+idx);
+    if (el) { el.style.background='rgba(255,152,0,.1)'; el.style.borderColor='rgba(255,152,0,.25)'; }
+    document.getElementById('vm-lesson-title').textContent    = l.title;
+    document.getElementById('vm-lesson-duration').textContent = l.duration||'';
+    document.getElementById('vm-lesson-desc').textContent     = l.description||'';
+    document.getElementById('vm-lesson-info').style.display   = 'block';
     const frame = document.getElementById('vm-frame');
     const vid   = document.getElementById('vm-video');
-
-    if (l.video_type === 'youtube') {
-      // Extract YouTube ID
+    if (l.video_type==='youtube') {
       let ytId = l._vid;
       if (!ytId) {
-        const m = (l.video_url || '').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
+        const m = (l.video_url||'').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
         ytId = m ? m[1] : '';
       }
-      vid.style.display = 'none'; vid.src = '';
+      vid.style.display='none'; vid.src='';
       frame.src = ytId ? `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&autoplay=1` : '';
-      frame.style.display = 'block';
+      frame.style.display='block';
     } else {
-      frame.style.display = 'none'; frame.src = '';
+      frame.style.display='none'; frame.src='';
       vid.src = l.video_url;
-      vid.style.display = 'block';
+      vid.style.display='block';
       vid.load();
     }
   }
 
   function closeVideoModal() {
-    document.getElementById('video-modal').style.display = 'none';
-    document.getElementById('vm-frame').src = '';
-    document.getElementById('vm-video').src = '';
-    document.getElementById('vm-video').style.display = 'none';
-    document.getElementById('vm-frame').style.display = 'none';
-    currentLesson = -1;
-    window._vmLessons = [];
-    document.body.style.overflow = '';
+    document.getElementById('video-modal').style.display='none';
+    document.getElementById('vm-frame').src='';
+    document.getElementById('vm-video').src='';
+    document.getElementById('vm-video').style.display='none';
+    document.getElementById('vm-frame').style.display='none';
+    currentLesson=-1; window._vmLessons=[];
+    document.body.style.overflow='';
   }
 
-  // ── Profile dropdown ──────────────────────────────────────────
   function toggleProfileMenu(e) {
     e.stopPropagation();
     document.getElementById('profile-menu').classList.toggle('open');
   }
-  document.addEventListener('click', function() {
-    document.getElementById('profile-menu').classList.remove('open');
-  });
+  document.addEventListener('click', () => document.getElementById('profile-menu').classList.remove('open'));
 
-  // ── Sidebar toggle (mobile) ───────────────────────────────────
   function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
   function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 
-  // ── Logout ────────────────────────────────────────────────────
   async function logout() {
-    try { await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); } catch {}
-    localStorage.removeItem('la_token');
-    localStorage.removeItem('la_role');
-    localStorage.removeItem('la_user');
+    try { await fetch('/api/logout', { method:'POST', headers:{'Authorization':'Bearer '+token} }); } catch {}
+    localStorage.removeItem('la_token'); localStorage.removeItem('la_role'); localStorage.removeItem('la_user');
     window.location.href = 'login.html';
   }
 
-  function openWhatsApp() { window.open('https://wa.me/910000000369', '_blank'); }
+  function openWhatsApp() { window.open('https://wa.me/910000000369','_blank'); }
 
-  // ── Init ──────────────────────────────────────────────────────
   loadStudent();
 </script>
 </body>

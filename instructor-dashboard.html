@@ -2,13 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Instructor Logged In — Laxmi Academy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0a0e1a"/>
+  <title>Instructor Portal — Laxmi Academy</title>
   <script src="theme.js"></script>
   <link rel="stylesheet" href="theme.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+    /* ═══ Keyframe Animations ═══ */
+    @keyframes fadeInUp  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn    { from { opacity:0; } to { opacity:1; } }
+    @keyframes gradientShift { 0%,100%{ background-position:0% 50%; } 50%{ background-position:100% 50%; } }
+    @keyframes shimmer   { 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
+    @keyframes spin      { to { transform:rotate(360deg); } }
+    @keyframes barGrow   { from { width:0%; } to { width:var(--bar-w); } }
+    @keyframes uploadPulse { 0%,100%{ border-color:rgba(16,185,129,.3); } 50%{ border-color:rgba(16,185,129,.7); } }
+
     :root {
       --bg:      #0a0e1a;
       --surface: rgba(255,255,255,.055);
@@ -21,251 +34,341 @@
       --red:     #ef4444;
       --blue:    #3b82f6;
     }
-    html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); }
+    html { scroll-behavior:smooth; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); min-height:100vh; color:var(--text); }
 
-    /* ── Layout ────────────────────────────────── */
-    .layout { display: flex; min-height: 100vh; }
+    /* ── Scrollbar ──────────────────────────────── */
+    * { scrollbar-width:thin; scrollbar-color:rgba(16,185,129,.3) transparent; }
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(16,185,129,.3); border-radius:99px; }
+    ::-webkit-scrollbar-thumb:hover { background:rgba(16,185,129,.55); }
 
+    /* ── Layout ──────────────────────────────────── */
+    .layout { display:flex; min-height:100vh; }
+
+    /* ── Sidebar ─────────────────────────────────── */
     .sidebar {
-      width: 235px; flex-shrink: 0;
-      background: rgba(0,0,0,.35); border-right: 1px solid var(--border);
-      position: fixed; top: 0; left: 0; height: 100vh;
-      display: flex; flex-direction: column; z-index: 100; transition: transform .3s;
+      width:245px; flex-shrink:0;
+      background:rgba(4,10,18,.95);
+      backdrop-filter:blur(24px);
+      border-right:1px solid rgba(16,185,129,.1);
+      position:fixed; top:0; left:0; height:100vh;
+      display:flex; flex-direction:column; z-index:100;
+      transition:transform .3s cubic-bezier(.4,0,.2,1);
+      box-shadow:4px 0 32px rgba(0,0,0,.5);
     }
 
     .sidebar-logo {
-      padding: 1.1rem; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: .7rem;
+      padding:1.3rem 1.1rem 1rem;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      display:flex; align-items:center; gap:.75rem;
     }
-    .sidebar-logo img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
-    .logo-text { font-weight: 900; font-size: .9rem;
-      background: linear-gradient(90deg,#10b981,#34d399);
-      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-    .logo-sub  { font-size: .65rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .sidebar-logo img { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--accent); box-shadow:0 0 12px rgba(16,185,129,.35); }
+    .logo-text { font-weight:900; font-size:.9rem; background:linear-gradient(90deg,#10b981,#34d399); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; line-height:1.2; }
+    .logo-sub  { font-size:.63rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em; margin-top:.1rem; }
 
-    .nav-group { padding: .7rem .7rem 0; font-size: .65rem; font-weight: 700; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-top: .4rem; }
+    .nav-group { padding:.8rem .9rem .25rem; font-size:.62rem; font-weight:700; color:rgba(255,255,255,.25); letter-spacing:.1em; text-transform:uppercase; margin-top:.3rem; }
 
     .nav-btn {
-      display: flex; align-items: center; gap: .7rem;
-      padding: .6rem .9rem; margin: .1rem .5rem;
-      border-radius: 10px; font-size: .84rem; font-weight: 500;
-      color: var(--muted); background: none; border: none;
-      cursor: pointer; width: calc(100% - 1rem); text-align: left;
-      transition: all .18s; text-decoration: none;
+      display:flex; align-items:center; gap:.7rem;
+      padding:.65rem .9rem; margin:.12rem .5rem;
+      border-radius:11px; font-size:.85rem; font-weight:500;
+      color:var(--muted); background:none; border:1px solid transparent;
+      cursor:pointer; width:calc(100% - 1rem); text-align:left;
+      transition:all .2s; text-decoration:none; position:relative;
     }
-    .nav-btn:hover  { background: var(--surface); color: var(--text); }
-    .nav-btn.active { background: rgba(16,185,129,.15); color: var(--accent2); border: 1px solid rgba(16,185,129,.2); }
-    .nav-icon { font-size: 1rem; flex-shrink: 0; }
+    .nav-btn:hover  { background:rgba(255,255,255,.05); color:var(--text); }
+    .nav-btn.active {
+      background:rgba(16,185,129,.14); color:var(--accent2);
+      border-color:rgba(16,185,129,.2);
+    }
+    .nav-btn.active::before {
+      content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+      width:3px; height:60%; background:linear-gradient(180deg,#10b981,#34d399);
+      border-radius:0 3px 3px 0;
+    }
+    .nav-icon { font-size:1rem; flex-shrink:0; }
+    .sidebar-bottom { margin-top:auto; padding:.9rem .7rem; border-top:1px solid rgba(255,255,255,.06); }
 
-    .sidebar-bottom { margin-top: auto; padding: .9rem .7rem; border-top: 1px solid var(--border); }
-    .main { margin-left: 235px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    /* ── Main ────────────────────────────────────── */
+    .main { margin-left:245px; flex:1; display:flex; flex-direction:column; min-width:0; }
 
-    /* ── Topbar ─────────────────────────────────── */
     .topbar {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(10,14,26,.9); backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
-      padding: .7rem 1.5rem;
-      display: flex; align-items: center; justify-content: space-between;
+      position:sticky; top:0; z-index:50;
+      background:rgba(6,10,22,.92); backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(255,255,255,.07);
+      padding:.72rem 1.5rem;
+      display:flex; align-items:center; justify-content:space-between;
     }
-    .topbar-left { display: flex; align-items: center; gap: .8rem; }
-    .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; }
-    .page-heading { font-weight: 800; font-size: .95rem; }
-    .topbar-right { display: flex; align-items: center; gap: .75rem; }
+    .topbar-left  { display:flex; align-items:center; gap:.8rem; }
+    .hamburger    { display:none; background:none; border:none; color:var(--text); cursor:pointer; padding:.3rem; border-radius:8px; transition:background .2s; }
+    .hamburger:hover { background:rgba(255,255,255,.07); }
+    .page-heading { font-weight:800; font-size:.95rem; }
+    .topbar-right { display:flex; align-items:center; gap:.72rem; }
     .instructor-chip {
-      font-size: .72rem; font-weight: 700; padding: .25rem .65rem; border-radius: 99px;
-      background: rgba(16,185,129,.15); color: var(--accent2); border: 1px solid rgba(16,185,129,.25);
+      font-size:.71rem; font-weight:700; padding:.25rem .65rem; border-radius:99px;
+      background:rgba(16,185,129,.14); color:var(--accent2); border:1px solid rgba(16,185,129,.22);
     }
     .instructor-avatar {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: linear-gradient(135deg,#10b981,#34d399);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: .85rem; color: #fff; cursor: pointer;
+      width:35px; height:35px; border-radius:50%;
+      background:linear-gradient(135deg,#10b981,#34d399);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900; font-size:.88rem; color:#fff; cursor:pointer;
+      box-shadow:0 4px 12px rgba(16,185,129,.3); transition:transform .2s;
     }
+    .instructor-avatar:hover { transform:scale(1.08); }
 
-    /* ── Profile dropdown ────────────────────────── */
-    .profile-dropdown-wrapper { position: relative; }
+    /* ── Profile dropdown ───────────────────────── */
+    .profile-dropdown-wrapper { position:relative; }
     .profile-menu {
-      display: none; position: absolute; top: calc(100% + 10px); right: 0;
-      background: #0f1a1a; border: 1px solid rgba(255,255,255,.1);
-      border-radius: 14px; padding: 1rem; min-width: 240px;
-      box-shadow: 0 16px 48px rgba(0,0,0,.55); z-index: 300;
+      display:none; position:absolute; top:calc(100% + 10px); right:0;
+      background:#0f1a1a; border:1px solid rgba(255,255,255,.1);
+      border-radius:16px; padding:1rem; min-width:240px;
+      box-shadow:0 20px 60px rgba(0,0,0,.65); z-index:300;
+      animation:fadeIn .15s ease;
     }
-    .profile-menu.open { display: block; }
+    .profile-menu.open { display:block; }
     .pm-header {
-      display: flex; align-items: center; gap: .75rem;
-      padding-bottom: .85rem; border-bottom: 1px solid rgba(255,255,255,.08);
-      margin-bottom: .75rem;
+      display:flex; align-items:center; gap:.75rem;
+      padding-bottom:.85rem; border-bottom:1px solid rgba(255,255,255,.08);
+      margin-bottom:.75rem;
     }
     .pm-avatar-lg {
-      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg,#10b981,#34d399);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 1.1rem; color: #fff;
+      width:46px; height:46px; border-radius:50%; flex-shrink:0;
+      background:linear-gradient(135deg,#10b981,#34d399);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:1.15rem; color:#fff;
+      box-shadow:0 4px 14px rgba(16,185,129,.35);
     }
-    .pm-name { font-weight: 700; font-size: .9rem; line-height: 1.3; }
-    .pm-email { font-size: .73rem; color: rgba(255,255,255,.45); margin-top: .15rem; word-break: break-all; }
-    .pm-row { font-size: .78rem; color: rgba(255,255,255,.5); padding: .22rem 0; }
-    .pm-row strong { color: var(--text); font-weight: 600; }
+    .pm-name  { font-weight:700; font-size:.9rem; line-height:1.3; }
+    .pm-email { font-size:.73rem; color:rgba(255,255,255,.45); margin-top:.15rem; word-break:break-all; }
+    .pm-row   { font-size:.78rem; color:rgba(255,255,255,.5); padding:.22rem 0; }
+    .pm-row strong { color:var(--text); font-weight:600; }
     .pm-logout {
-      width: 100%; margin-top: .85rem; padding: .55rem;
-      background: rgba(239,68,68,.12); color: #fca5a5;
-      border: 1px solid rgba(239,68,68,.22); border-radius: 8px;
-      font-size: .83rem; font-weight: 600; cursor: pointer; transition: background .15s;
+      width:100%; margin-top:.85rem; padding:.55rem;
+      background:rgba(239,68,68,.12); color:#fca5a5;
+      border:1px solid rgba(239,68,68,.22); border-radius:8px;
+      font-size:.83rem; font-weight:600; cursor:pointer; transition:background .15s;
     }
-    .pm-logout:hover { background: rgba(239,68,68,.25); }
+    .pm-logout:hover { background:rgba(239,68,68,.25); }
 
-    .content { padding: 1.6rem 1.5rem; flex: 1; }
+    .content { padding:1.6rem 1.5rem; flex:1; }
 
-    /* ── Pages ─────────────────────────────────── */
-    .page { display: none; }
-    .page.active { display: block; }
+    /* ── Pages ───────────────────────────────────── */
+    .page { display:none; }
+    .page.active { display:block; animation:fadeInUp .3s ease both; }
 
-    /* ── Stat cards ────────────────────────────── */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    /* ── Stat cards ──────────────────────────────── */
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:1rem; margin-bottom:1.5rem; }
     .stat-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.1rem 1.2rem; position: relative; overflow: hidden;
-      transition: transform .2s, box-shadow .2s;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:18px; padding:1.2rem; position:relative; overflow:hidden;
+      transition:transform .22s, box-shadow .22s;
     }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.3); }
-    .stat-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 16px 16px 0 0; }
-    .stat-card.green::after  { background: linear-gradient(90deg,#10b981,#34d399); }
-    .stat-card.blue::after   { background: linear-gradient(90deg,#3b82f6,#60a5fa); }
-    .stat-card.orange::after { background: linear-gradient(90deg,#f97316,#fb923c); }
-    .stat-card.purple::after { background: linear-gradient(90deg,#a855f7,#d8b4fe); }
-    .stat-card.teal::after   { background: linear-gradient(90deg,#06b6d4,#67e8f9); }
-    .stat-label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-    .stat-value { font-size: 2rem; font-weight: 900; margin-top: .3rem; line-height: 1; }
-    .stat-icon  { position: absolute; right: 1rem; top: 1rem; font-size: 1.4rem; opacity: .4; }
+    .stat-card:hover { transform:translateY(-4px); box-shadow:0 16px 44px rgba(0,0,0,.4); }
+    .stat-card:nth-child(1) { animation:fadeInUp .35s .04s ease both; }
+    .stat-card:nth-child(2) { animation:fadeInUp .35s .08s ease both; }
+    .stat-card:nth-child(3) { animation:fadeInUp .35s .12s ease both; }
+    .stat-card:nth-child(4) { animation:fadeInUp .35s .16s ease both; }
+    .stat-card:nth-child(5) { animation:fadeInUp .35s .20s ease both; }
+    .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:18px 18px 0 0; }
+    .stat-card.green::after  { background:linear-gradient(90deg,#10b981,#34d399); }
+    .stat-card.blue::after   { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .stat-card.orange::after { background:linear-gradient(90deg,#f97316,#fb923c); }
+    .stat-card.purple::after { background:linear-gradient(90deg,#a855f7,#d8b4fe); }
+    .stat-card.teal::after   { background:linear-gradient(90deg,#06b6d4,#67e8f9); }
+    .stat-label { font-size:.69rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
+    .stat-value { font-size:2.1rem; font-weight:900; margin-top:.3rem; line-height:1; }
+    .stat-icon  { position:absolute; right:1rem; top:1rem; font-size:1.5rem; opacity:.4; }
 
-    /* ── Section title ──────────────────────────── */
-    .sec-title { font-size: 1rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    /* ── Section title ───────────────────────────── */
+    .sec-title { font-size:1rem; font-weight:800; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
 
-    /* ── Card ──────────────────────────────────── */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.3rem; }
+    /* ── Card ────────────────────────────────────── */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.3rem; }
+    .card-title { font-size:.8rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; margin-bottom:.9rem; }
 
-    /* ── Form ──────────────────────────────────── */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
-    .field { margin-bottom: .1rem; }
-    .field label { display: block; font-size: .79rem; font-weight: 600; color: var(--muted); margin-bottom: .4rem; }
+    /* ── Overview grid ───────────────────────────── */
+    .overview-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+
+    /* ── Course breakdown bars ───────────────────── */
+    .bar-row { margin-bottom:.7rem; }
+    .bar-label { display:flex; justify-content:space-between; font-size:.82rem; margin-bottom:.32rem; }
+    .bar-track { height:7px; background:rgba(255,255,255,.07); border-radius:99px; overflow:hidden; }
+    .bar-fill  { height:100%; border-radius:99px; background:linear-gradient(90deg,#10b981,#34d399); animation:barGrow .8s ease both; }
+
+    /* ── Lesson row ──────────────────────────────── */
+    .lesson-row {
+      display:flex; align-items:center; gap:.85rem;
+      padding:.72rem .9rem; border-radius:12px;
+      background:var(--surface); border:1px solid var(--border);
+      margin-bottom:.5rem; transition:border-color .2s;
+    }
+    .lesson-row:hover { border-color:rgba(16,185,129,.25); }
+    .topic-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .topic-dot.mechanics { background:#6366f1; }
+    .topic-dot.thermo    { background:#ef4444; }
+    .topic-dot.electro   { background:#f59e0b; }
+    .topic-dot.optics    { background:#06b6d4; }
+    .topic-dot.modern    { background:#10b981; }
+
+    /* ── Form ────────────────────────────────────── */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .field { margin-bottom:.1rem; }
+    .field label { display:block; font-size:.79rem; font-weight:600; color:var(--muted); margin-bottom:.4rem; }
     .field input, .field select, .field textarea {
-      width: 100%; padding: .72rem .95rem;
-      background: rgba(255,255,255,.07); border: 1px solid var(--border);
-      border-radius: 10px; color: var(--text); font-family: 'Inter',sans-serif;
-      font-size: .88rem; outline: none; transition: border-color .2s, box-shadow .2s;
+      width:100%; padding:.72rem .95rem;
+      background:rgba(255,255,255,.07); border:1px solid var(--border);
+      border-radius:10px; color:var(--text); font-family:'Inter',sans-serif;
+      font-size:.88rem; outline:none; transition:border-color .2s, box-shadow .2s;
     }
     .field input:focus, .field select:focus, .field textarea:focus {
-      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,.15);
+      border-color:var(--accent); box-shadow:0 0 0 3px rgba(16,185,129,.15);
     }
-    .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
-    .field textarea { resize: vertical; min-height: 80px; }
-    .field select option { background: #1a1a2e; }
+    .field input::placeholder, .field textarea::placeholder { color:var(--muted); }
+    .field textarea { resize:vertical; min-height:80px; }
+    .field select option { background:#1a1a2e; }
 
-    /* Source type toggle */
-    .source-tabs { display: flex; background: rgba(255,255,255,.06); border-radius: 10px; padding: 3px; gap: 3px; margin-bottom: 1rem; }
+    /* Source tabs */
+    .source-tabs { display:flex; background:rgba(255,255,255,.06); border-radius:11px; padding:3px; gap:3px; margin-bottom:1rem; }
     .source-tab {
-      flex: 1; padding: .55rem; border-radius: 8px; font-size: .83rem;
-      font-weight: 700; border: none; cursor: pointer; transition: all .2s;
-      background: transparent; color: var(--muted); font-family: 'Inter',sans-serif;
+      flex:1; padding:.55rem; border-radius:9px; font-size:.83rem;
+      font-weight:700; border:none; cursor:pointer; transition:all .22s;
+      background:transparent; color:var(--muted); font-family:'Inter',sans-serif;
     }
-    .source-tab.active { background: linear-gradient(135deg,#10b981,#059669); color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,.3); }
+    .source-tab.active { background:linear-gradient(135deg,#10b981,#059669); color:#fff; box-shadow:0 4px 14px rgba(16,185,129,.32); }
 
     /* Upload area */
     .upload-area {
-      border: 2px dashed var(--border); border-radius: 14px; padding: 2.5rem 1rem;
-      text-align: center; cursor: pointer; transition: all .2s;
+      border:2px dashed rgba(255,255,255,.15); border-radius:16px; padding:2.8rem 1.5rem;
+      text-align:center; cursor:pointer; transition:all .25s;
+      background:rgba(16,185,129,.02);
     }
-    .upload-area:hover, .upload-area.drag { border-color: var(--accent); background: rgba(16,185,129,.05); }
-    .upload-area input[type=file] { display: none; }
-    .upload-icon { font-size: 2.5rem; margin-bottom: .6rem; }
-    .upload-area p { color: var(--muted); font-size: .85rem; }
-    .upload-area strong { color: var(--accent2); }
+    .upload-area:hover, .upload-area.drag {
+      border-color:var(--accent); background:rgba(16,185,129,.06);
+      animation:uploadPulse 1.5s ease infinite;
+    }
+    .upload-area input[type=file] { display:none; }
+    .upload-icon { font-size:2.8rem; margin-bottom:.7rem; }
+    .upload-area p { color:var(--muted); font-size:.85rem; line-height:1.55; }
+    .upload-area strong { color:var(--accent2); }
 
-    /* Progress bar */
-    .progress-wrap { display: none; margin-top: 1rem; }
-    .progress-wrap.show { display: block; }
-    .progress-track { height: 6px; background: rgba(255,255,255,.08); border-radius: 99px; margin-top: .5rem; }
-    .progress-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#10b981,#34d399); transition: width .3s; }
-    .progress-label { font-size: .8rem; color: var(--muted); display: flex; justify-content: space-between; }
+    /* Progress */
+    .progress-wrap { display:none; margin-top:1rem; }
+    .progress-wrap.show { display:block; }
+    .progress-track { height:7px; background:rgba(255,255,255,.08); border-radius:99px; margin-top:.5rem; overflow:hidden; }
+    .progress-fill  { height:100%; border-radius:99px; background:linear-gradient(90deg,#10b981,#34d399); transition:width .3s; }
+    .progress-label { font-size:.8rem; color:var(--muted); display:flex; justify-content:space-between; }
 
     /* YouTube preview */
-    .yt-preview { display: none; margin-top: 1rem; background: rgba(0,0,0,.4); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
-    .yt-preview.show { display: block; }
-    .yt-preview iframe { width: 100%; height: 200px; border: none; display: block; }
+    .yt-preview { display:none; margin-top:1rem; background:rgba(0,0,0,.4); border-radius:14px; overflow:hidden; border:1px solid var(--border); }
+    .yt-preview.show { display:block; animation:fadeIn .2s ease; }
+    .yt-preview iframe { width:100%; height:200px; border:none; display:block; }
 
     /* Buttons */
-    .btn { padding: .72rem 1.4rem; border-radius: 12px; border: none; font-family: 'Inter',sans-serif; font-weight: 700; font-size: .88rem; cursor: pointer; transition: all .2s; }
-    .btn-primary { background: linear-gradient(135deg,#10b981,#059669); color: #fff; box-shadow: 0 4px 14px rgba(16,185,129,.3); }
-    .btn-primary:hover { box-shadow: 0 6px 20px rgba(16,185,129,.45); transform: translateY(-1px); }
-    .btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-    .btn-ghost  { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .btn-danger { background: rgba(239,68,68,.15); color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
-    .btn-danger:hover { background: rgba(239,68,68,.25); }
+    .btn { padding:.72rem 1.4rem; border-radius:12px; border:none; font-family:'Inter',sans-serif; font-weight:700; font-size:.88rem; cursor:pointer; transition:all .22s; }
+    .btn-primary { background:linear-gradient(135deg,#10b981,#059669); color:#fff; box-shadow:0 4px 16px rgba(16,185,129,.32); }
+    .btn-primary:hover { box-shadow:0 6px 22px rgba(16,185,129,.5); transform:translateY(-1px); }
+    .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    .btn-ghost  { background:var(--surface); color:var(--text); border:1px solid var(--border); }
+    .btn-ghost:hover  { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2); }
+    .btn-danger { background:rgba(239,68,68,.14); color:#fca5a5; border:1px solid rgba(239,68,68,.22); }
+    .btn-danger:hover { background:rgba(239,68,68,.25); }
 
-    /* ── Table ─────────────────────────────────── */
-    .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
-    thead th { padding: .75rem 1rem; text-align: left; font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.025); white-space: nowrap; }
-    tbody td { padding: .85rem 1rem; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr { transition: background .15s; }
-    tbody tr:hover td { background: rgba(255,255,255,.03); }
-    tbody tr td:first-child { border-left: 3px solid transparent; }
-    tbody tr:hover td:first-child { border-left-color: var(--accent); }
+    /* ── Table ───────────────────────────────────── */
+    .table-wrap { overflow-x:auto; border-radius:14px; border:1px solid var(--border); }
+    table { width:100%; border-collapse:collapse; font-size:.84rem; }
+    thead th { padding:.75rem 1rem; text-align:left; font-size:.67rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; border-bottom:1px solid var(--border); background:rgba(255,255,255,.025); white-space:nowrap; }
+    tbody td { padding:.88rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr { transition:background .15s; }
+    tbody tr:hover td { background:rgba(255,255,255,.03); }
+    tbody tr td:first-child { border-left:3px solid transparent; }
+    tbody tr:hover td:first-child { border-left-color:var(--accent); }
 
-    /* ── Badges ────────────────────────────────── */
-    .badge { display: inline-flex; align-items: center; gap: .3rem; padding: .22rem .65rem; border-radius: 99px; font-size: .7rem; font-weight: 700; white-space: nowrap; }
-    .badge-green  { background: rgba(16,185,129,.12);  color: #34d399; border: 1px solid rgba(16,185,129,.2);  }
-    .badge-blue   { background: rgba(59,130,246,.12);  color: #93c5fd; border: 1px solid rgba(59,130,246,.2);  }
-    .badge-orange { background: rgba(249,115,22,.12);  color: #fb923c; border: 1px solid rgba(249,115,22,.2);  }
-    .badge-red    { background: rgba(239,68,68,.12);   color: #f87171; border: 1px solid rgba(239,68,68,.2);   }
-    .badge-gray   { background: rgba(255,255,255,.08); color: var(--muted); border: 1px solid var(--border); }
+    /* ── Badges ──────────────────────────────────── */
+    .badge { display:inline-flex; align-items:center; gap:.3rem; padding:.22rem .65rem; border-radius:99px; font-size:.7rem; font-weight:700; white-space:nowrap; }
+    .badge-green  { background:rgba(16,185,129,.12);  color:#34d399; border:1px solid rgba(16,185,129,.2);  }
+    .badge-blue   { background:rgba(59,130,246,.12);  color:#93c5fd; border:1px solid rgba(59,130,246,.2);  }
+    .badge-orange { background:rgba(249,115,22,.12);  color:#fb923c; border:1px solid rgba(249,115,22,.2);  }
+    .badge-red    { background:rgba(239,68,68,.12);   color:#f87171; border:1px solid rgba(239,68,68,.2);   }
+    .badge-gray   { background:rgba(255,255,255,.08); color:var(--muted); border:1px solid var(--border);   }
 
     /* Action buttons */
-    .action-group { display: flex; gap: .4rem; flex-wrap: wrap; }
-    .action-btn { padding: .28rem .7rem; border-radius: 8px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; cursor: pointer; font-family: 'Inter',sans-serif; transition: all .18s; white-space: nowrap; }
-    .btn-edit   { background: rgba(59,130,246,.12);  color: #93c5fd; border-color: rgba(59,130,246,.2); }
-    .btn-edit:hover   { background: rgba(59,130,246,.25); }
-    .btn-unpub  { background: rgba(249,115,22,.12);  color: #fb923c; border-color: rgba(249,115,22,.2); }
-    .btn-unpub:hover  { background: rgba(249,115,22,.25); }
-    .btn-pub    { background: rgba(16,185,129,.12);  color: #34d399; border-color: rgba(16,185,129,.2); }
-    .btn-pub:hover    { background: rgba(16,185,129,.25); }
-    .btn-del    { background: rgba(239,68,68,.1);    color: #fca5a5; border-color: rgba(239,68,68,.15); }
-    .btn-del:hover    { background: rgba(239,68,68,.22); }
+    .action-group { display:flex; gap:.4rem; flex-wrap:wrap; }
+    .action-btn { padding:.28rem .72rem; border-radius:8px; font-size:.74rem; font-weight:700; border:1px solid transparent; cursor:pointer; font-family:'Inter',sans-serif; transition:all .18s; white-space:nowrap; }
+    .btn-edit  { background:rgba(59,130,246,.12);  color:#93c5fd; border-color:rgba(59,130,246,.2); }
+    .btn-edit:hover  { background:rgba(59,130,246,.25); transform:translateY(-1px); }
+    .btn-unpub { background:rgba(249,115,22,.12);  color:#fb923c; border-color:rgba(249,115,22,.2); }
+    .btn-unpub:hover { background:rgba(249,115,22,.25); transform:translateY(-1px); }
+    .btn-pub   { background:rgba(16,185,129,.12);  color:#34d399; border-color:rgba(16,185,129,.2); }
+    .btn-pub:hover   { background:rgba(16,185,129,.25); transform:translateY(-1px); }
+    .btn-del   { background:rgba(239,68,68,.1);    color:#fca5a5; border-color:rgba(239,68,68,.15); }
+    .btn-del:hover   { background:rgba(239,68,68,.22); }
 
-    /* ── Toast ─────────────────────────────────── */
-    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; background: #1a2040; border: 1px solid rgba(16,185,129,.3); border-radius: 12px; padding: .8rem 1.2rem; display: flex; align-items: center; gap: .7rem; font-size: .85rem; font-weight: 600; box-shadow: 0 8px 28px rgba(0,0,0,.4); transform: translateY(80px); opacity: 0; transition: all .3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; }
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.error { border-color: rgba(239,68,68,.3); }
-
-    /* ── Responsive ────────────────────────────── */
-    @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: none; }
-      .main { margin-left: 0; }
-      .hamburger { display: flex; }
+    /* ── Toast ───────────────────────────────────── */
+    .toast {
+      position:fixed; bottom:1.5rem; right:1.5rem; z-index:999;
+      background:#1a2040; border:1px solid rgba(16,185,129,.3);
+      border-radius:14px; padding:.88rem 1.25rem;
+      display:flex; align-items:center; gap:.7rem; font-size:.85rem; font-weight:600;
+      box-shadow:0 10px 32px rgba(0,0,0,.45);
+      transform:translateY(80px); opacity:0;
+      transition:all .3s cubic-bezier(.34,1.56,.64,1); pointer-events:none;
     }
-    .overlay-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; }
-    .overlay-bg.show { display: block; }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.error { border-color:rgba(239,68,68,.3); }
 
-    /* ── Recent lessons list ────────────────────── */
-    .lesson-row { display: flex; align-items: center; gap: .85rem; padding: .7rem .9rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); margin-bottom: .5rem; }
-    .topic-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .topic-dot.mechanics { background: #6366f1; }
-    .topic-dot.thermo    { background: #ef4444; }
-    .topic-dot.electro   { background: #f59e0b; }
-    .topic-dot.optics    { background: #06b6d4; }
-    .topic-dot.modern    { background: #10b981; }
+    /* ── Empty ───────────────────────────────────── */
+    .empty { text-align:center; padding:3.5rem 1rem; color:var(--muted); }
+    .empty-icon { font-size:2.8rem; margin-bottom:.8rem; }
 
-    /* ══ Site-wide theme: light (default) / dark (html.dark) ══ */
+    /* ── Bottom Nav ──────────────────────────────── */
+    .bottom-nav {
+      display:none;
+      position:fixed; bottom:0; left:0; right:0;
+      background:rgba(4,10,18,.97); backdrop-filter:blur(24px);
+      border-top:1px solid rgba(255,255,255,.07);
+      z-index:150;
+      padding:.5rem 0 calc(.5rem + env(safe-area-inset-bottom,0px));
+    }
+    .bottom-nav-item {
+      flex:1; display:flex; flex-direction:column; align-items:center; gap:.18rem;
+      background:none; border:none; font-family:'Inter',sans-serif;
+      font-size:.58rem; font-weight:700; letter-spacing:.02em;
+      color:rgba(255,255,255,.35); cursor:pointer; padding:.35rem .2rem;
+      transition:color .2s; text-decoration:none;
+    }
+    .bottom-nav-item .bn-icon { font-size:1.22rem; line-height:1; transition:transform .2s; }
+    .bottom-nav-item.active { color:var(--accent2); }
+    .bottom-nav-item.active .bn-icon { transform:scale(1.15); filter:drop-shadow(0 0 5px rgba(16,185,129,.7)); }
+
+    /* ── Responsive ──────────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:none; }
+      .main { margin-left:0; }
+      .hamburger { display:flex; }
+      .bottom-nav { display:flex; }
+      .content { padding-bottom:5.5rem; }
+      .overview-grid { grid-template-columns:1fr; }
+    }
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns:1fr; }
+      .content { padding:1.2rem 1rem; }
+      .stats-grid { grid-template-columns:1fr 1fr; }
+    }
+
+    .overlay-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:99; }
+    .overlay-bg.show { display:block; animation:fadeIn .2s ease; }
+
+    /* ═══ Theme overrides ═══ */
     :root {
       --bg:      #ffffff;
       --surface: #f8fafc;
       --border:  #e2e8f0;
-      --text:    #f0f0f5;
+      --text:    #111827;
       --muted:   #6b7280;
       --accent:  #10b981;
       --accent2: #34d399;
@@ -280,63 +383,56 @@
       --text:    #f0f0f5;
       --muted:   rgba(255,255,255,.42);
     }
-    body { background: var(--bg) !important; color: var(--text); }
-    html.dark body { background: var(--bg) !important; }
+    body { background:var(--bg) !important; color:var(--text); }
+    html.dark body { background:var(--bg) !important; }
+    html:not(.dark) { --text:#111827; --muted:#6b7280; }
 
-    /* Light mode: readable text */
-    html:not(.dark) { --text: #111827; --muted: #6b7280; }
+    .sidebar { background:rgba(248,250,252,.97) !important; }
+    html.dark .sidebar { background:rgba(4,10,18,.95) !important; }
+    .sidebar-logo { border-bottom-color:var(--border) !important; }
+    .sidebar-bottom { border-top-color:var(--border) !important; }
 
-    .sidebar { background: var(--surface) !important; }
-    html.dark .sidebar { background: rgba(0,0,0,.35) !important; }
+    .topbar { background:rgba(255,255,255,.96) !important; border-bottom-color:var(--border) !important; box-shadow:0 1px 8px rgba(0,0,0,.06); }
+    html.dark .topbar { background:rgba(6,10,22,.92) !important; box-shadow:none; }
 
-    .sidebar-logo { border-bottom-color: var(--border) !important; }
-    .sidebar-bottom { border-top-color: var(--border) !important; }
+    .profile-menu { background:#ffffff !important; border-color:#e2e8f0 !important; box-shadow:0 20px 60px rgba(0,0,0,.14) !important; }
+    html.dark .profile-menu { background:#0f1a1a !important; border-color:rgba(255,255,255,.1) !important; box-shadow:0 20px 60px rgba(0,0,0,.65) !important; }
+    .pm-header { border-bottom-color:#e2e8f0 !important; }
+    html.dark .pm-header { border-bottom-color:rgba(255,255,255,.08) !important; }
+    .pm-name  { color:#111827 !important; }
+    html.dark .pm-name  { color:#f0f0f5 !important; }
+    .pm-email { color:#6b7280 !important; }
+    html.dark .pm-email { color:rgba(255,255,255,.45) !important; }
+    .pm-row   { color:#6b7280 !important; }
+    html.dark .pm-row   { color:rgba(255,255,255,.5) !important; }
+    .pm-row strong { color:#111827 !important; }
+    html.dark .pm-row strong { color:var(--text) !important; }
 
-    .topbar {
-      background: rgba(255,255,255,.97) !important;
-      border-bottom: 1px solid var(--border) !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06);
-    }
-    html.dark .topbar {
-      background: rgba(10,14,26,.9) !important;
-      box-shadow: none;
-    }
+    .toast { background:#ffffff !important; border-color:rgba(16,185,129,.3) !important; color:#111827 !important; }
+    html.dark .toast { background:#1a2040 !important; color:var(--text) !important; }
 
-    .profile-menu {
-      background: #ffffff !important;
-      border-color: #e2e8f0 !important;
-      box-shadow: 0 16px 48px rgba(0,0,0,.12) !important;
-    }
-    html.dark .profile-menu {
-      background: #0f1a1a !important;
-      border-color: rgba(255,255,255,.1) !important;
-      box-shadow: 0 16px 48px rgba(0,0,0,.55) !important;
-    }
-    .pm-header { border-bottom-color: #e2e8f0 !important; }
-    html.dark .pm-header { border-bottom-color: rgba(255,255,255,.08) !important; }
-    .pm-name  { color: #111827 !important; }
-    html.dark .pm-name  { color: #f0f0f5 !important; }
-    .pm-email { color: #6b7280 !important; }
-    html.dark .pm-email { color: rgba(255,255,255,.45) !important; }
-    .pm-row   { color: #6b7280 !important; }
-    html.dark .pm-row   { color: rgba(255,255,255,.5) !important; }
-    .pm-row strong { color: #111827 !important; }
-    html.dark .pm-row strong { color: var(--text) !important; }
+    .bar-track { background:rgba(0,0,0,.06) !important; }
+    html.dark .bar-track { background:rgba(255,255,255,.07) !important; }
 
-    .toast { background: #ffffff !important; border-color: rgba(16,185,129,.3) !important; color: #111827 !important; }
-    html.dark .toast { background: #1a2040 !important; color: var(--text) !important; }
+    html:not(.dark) .page-heading, html:not(.dark) #topbar-name { color:#111827 !important; }
+    html:not(.dark) .hamburger { color:#374151 !important; }
 
-    /* Topbar text in light mode */
-    html:not(.dark) .page-heading,
-    html:not(.dark) #topbar-name { color: #111827 !important; }
-    html:not(.dark) .hamburger { color: #374151 !important; }
+    .source-tabs { background:rgba(0,0,0,.04) !important; }
+    html.dark .source-tabs { background:rgba(255,255,255,.06) !important; }
 
-    /* Source tabs / upload area in light mode */
-    .source-tabs { background: rgba(0,0,0,.04) !important; }
-    html.dark .source-tabs { background: rgba(255,255,255,.06) !important; }
+    .field select option { background:#ffffff; color:#111827; }
+    html.dark .field select option { background:#1a1a2e; color:#f0f0f5; }
 
-    .field select option { background: #ffffff; color: #111827; }
-    html.dark .field select option { background: #1a1a2e; color: #f0f0f5; }
+    thead th { background:rgba(0,0,0,.02) !important; }
+    html.dark thead th { background:rgba(255,255,255,.025) !important; }
+    tbody td { border-bottom-color:rgba(0,0,0,.04) !important; }
+    html.dark tbody td { border-bottom-color:rgba(255,255,255,.04) !important; }
+    tbody tr:hover td { background:rgba(0,0,0,.02) !important; }
+    html.dark tbody tr:hover td { background:rgba(255,255,255,.03) !important; }
+
+    html:not(.dark) .bottom-nav { background:rgba(255,255,255,.97) !important; border-top-color:#e2e8f0 !important; }
+    html:not(.dark) .bottom-nav-item { color:#9ca3af !important; }
+    html:not(.dark) .bottom-nav-item.active { color:var(--accent) !important; }
   </style>
 </head>
 <body>
@@ -348,23 +444,23 @@
   <!-- ── Sidebar ──────────────────────────────────────────────── -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <img src="logo.png.jpeg" alt="Logo"/>
+      <img src="logo.png.jpeg" alt="Logo" loading="lazy"/>
       <div>
         <div class="logo-text">Laxmi Academy</div>
         <div class="logo-sub">Instructor Portal</div>
       </div>
     </div>
 
-    <div class="nav-group" style="margin-top:.6rem">Dashboard</div>
+    <div class="nav-group" style="margin-top:.5rem">Dashboard</div>
     <button class="nav-btn active" id="nav-overview" onclick="showPage('overview')"><span class="nav-icon">📊</span> Overview</button>
 
     <div class="nav-group">Lessons</div>
-    <button class="nav-btn" id="nav-upload"   onclick="showPage('upload')">  <span class="nav-icon">📤</span> Upload Lesson</button>
-    <button class="nav-btn" id="nav-lessons"  onclick="showPage('lessons')"> <span class="nav-icon">🎬</span> My Lessons</button>
+    <button class="nav-btn" id="nav-upload"  onclick="showPage('upload')"> <span class="nav-icon">📤</span> Upload Lesson</button>
+    <button class="nav-btn" id="nav-lessons" onclick="showPage('lessons')"><span class="nav-icon">🎬</span> My Lessons</button>
 
     <div class="nav-group">Account</div>
-    <button class="nav-btn" id="nav-profile"  onclick="showPage('profile')"> <span class="nav-icon">👤</span> Profile</button>
-    <a href="index.html"  class="nav-btn"><span class="nav-icon">🌐</span> Main Website</a>
+    <button class="nav-btn" id="nav-profile" onclick="showPage('profile')"><span class="nav-icon">👤</span> Profile</button>
+    <a href="index.html" class="nav-btn"><span class="nav-icon">🌐</span> Main Website</a>
 
     <div class="sidebar-bottom">
       <button class="nav-btn" onclick="logout()" style="color:#fca5a5;">
@@ -384,14 +480,15 @@
       </div>
       <div class="topbar-right">
         <button class="btn-theme" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button>
-        <span id="topbar-name" style="font-size:.85rem;font-weight:600">Instructor : ...</span>
+        <span class="instructor-chip">Instructor</span>
+        <span id="topbar-name" style="font-size:.85rem;font-weight:700">…</span>
         <div class="profile-dropdown-wrapper">
           <div class="instructor-avatar" id="topbar-avatar" onclick="toggleProfileMenu(event)">I</div>
           <div class="profile-menu" id="profile-menu">
             <div class="pm-header">
               <div class="pm-avatar-lg" id="pm-avatar-lg">I</div>
               <div>
-                <div class="pm-name" id="pm-name">Loading...</div>
+                <div class="pm-name"  id="pm-name">Loading…</div>
                 <div class="pm-email" id="pm-email"></div>
               </div>
             </div>
@@ -435,32 +532,32 @@
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem">
-          <!-- Recent lessons -->
+        <div class="overview-grid" style="margin-bottom:1.2rem">
           <div class="card">
-            <div style="font-size:.82rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.9rem">Recent Lessons</div>
-            <div id="recent-lessons-list"><p style="color:var(--muted);font-size:.85rem">Loading...</p></div>
+            <div class="card-title">🕐 Recent Lessons</div>
+            <div id="recent-lessons-list">
+              <div style="color:var(--muted);font-size:.85rem;display:flex;align-items:center;gap:.5rem">
+                <div style="width:16px;height:16px;border:2px solid rgba(16,185,129,.3);border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite"></div> Loading…
+              </div>
+            </div>
           </div>
-          <!-- Topics breakdown -->
           <div class="card">
-            <div style="font-size:.82rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.9rem">Lessons by Topic</div>
-            <div id="topic-breakdown"></div>
+            <div class="card-title">📊 Lessons by Topic</div>
+            <div id="topic-breakdown"><div style="color:var(--muted);font-size:.85rem">Loading…</div></div>
           </div>
         </div>
 
-        <div style="margin-top:1.2rem">
+        <div>
           <button class="btn btn-primary" onclick="showPage('upload')" style="margin-right:.75rem">+ Upload New Lesson</button>
-          <button class="btn btn-ghost" onclick="showPage('lessons')">View All Lessons</button>
+          <button class="btn btn-ghost"   onclick="showPage('lessons')">View All Lessons</button>
         </div>
       </div>
 
       <!-- ── UPLOAD LESSON ─────────────────────────────────────── -->
       <div class="page" id="page-upload">
-        <div class="sec-title">
-          <span>📤 Upload New Lesson</span>
-        </div>
+        <div class="sec-title"><span>📤 Upload New Lesson</span></div>
 
-        <div class="card" style="max-width:720px">
+        <div class="card" style="max-width:740px">
           <div class="form-grid" style="margin-bottom:1rem">
             <div class="field">
               <label>Course *</label>
@@ -494,10 +591,9 @@
 
           <div class="field" style="margin-bottom:1.2rem">
             <label>Description (optional)</label>
-            <textarea id="ul-description" placeholder="Brief description of what this lesson covers..."></textarea>
+            <textarea id="ul-description" placeholder="Brief description of what this lesson covers…"></textarea>
           </div>
 
-          <!-- Video source toggle -->
           <div style="margin-bottom:.75rem">
             <label style="font-size:.79rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.5rem">Video Source *</label>
             <div class="source-tabs">
@@ -506,40 +602,38 @@
             </div>
           </div>
 
-          <!-- YouTube section -->
           <div id="src-youtube">
             <div class="field">
               <label>YouTube Video URL *</label>
-              <input type="url" id="ul-yt-url" placeholder="https://www.youtube.com/watch?v=..." oninput="previewYoutube()"/>
+              <input type="url" id="ul-yt-url" placeholder="https://www.youtube.com/watch?v=…" oninput="previewYoutube()"/>
             </div>
             <div class="yt-preview" id="yt-preview">
               <iframe id="yt-frame" allowfullscreen></iframe>
             </div>
-            <p style="font-size:.75rem;color:var(--muted);margin-top:.5rem">Supports: youtube.com/watch?v=... · youtu.be/... · youtube.com/embed/...</p>
+            <p style="font-size:.75rem;color:var(--muted);margin-top:.5rem">Supports: youtube.com/watch?v=… · youtu.be/… · youtube.com/embed/…</p>
           </div>
 
-          <!-- Upload section -->
           <div id="src-upload" style="display:none">
             <div class="upload-area" id="upload-area" onclick="document.getElementById('ul-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
               <input type="file" id="ul-file" accept="video/mp4,video/webm,video/mkv,video/mov,video/avi" onchange="fileSelected(this)"/>
               <div class="upload-icon">🎬</div>
               <p><strong>Click to choose video</strong> or drag &amp; drop here</p>
               <p style="margin-top:.4rem;font-size:.75rem">MP4 · WebM · MKV · MOV · AVI</p>
-              <p id="file-name" style="margin-top:.6rem;font-size:.82rem;color:var(--accent2);display:none"></p>
+              <p id="file-name" style="margin-top:.65rem;font-size:.82rem;color:var(--accent2);display:none;font-weight:700"></p>
             </div>
             <div class="progress-wrap" id="progress-wrap">
               <div class="progress-label">
-                <span id="progress-text">Uploading...</span>
+                <span id="progress-text">Uploading…</span>
                 <span id="progress-pct">0%</span>
               </div>
               <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
             </div>
-            <p style="font-size:.75rem;color:rgba(249,115,22,.8);margin-top:.6rem">Note: Uploaded files are stored on the server. Use YouTube links for the live hosted site (Render resets files on redeploy).</p>
+            <p style="font-size:.75rem;color:rgba(249,115,22,.75);margin-top:.6rem">Note: Uploaded files are stored on the server. Use YouTube links for the live hosted site (Render resets files on redeploy).</p>
           </div>
 
-          <div style="margin-top:1.4rem;display:flex;gap:.75rem;align-items:center">
+          <div style="margin-top:1.4rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
             <button class="btn btn-primary" id="ul-btn" onclick="uploadLesson()">Upload Lesson</button>
-            <button class="btn btn-ghost" onclick="resetForm()">Clear Form</button>
+            <button class="btn btn-ghost"   onclick="resetForm()">Clear Form</button>
             <span id="ul-status" style="font-size:.82rem;color:var(--muted)"></span>
           </div>
         </div>
@@ -550,7 +644,7 @@
         <div class="sec-title">
           <span>🎬 My Lessons</span>
           <div style="display:flex;gap:.5rem;align-items:center">
-            <select id="filter-topic" onchange="filterLessons()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.45rem .75rem;border-radius:9px;font-size:.82rem;font-family:Inter,sans-serif;outline:none">
+            <select id="filter-topic" onchange="filterLessons()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.45rem .75rem;border-radius:9px;font-size:.82rem;font-family:Inter,sans-serif;outline:none;transition:border-color .2s">
               <option value="">All Topics</option>
               <option value="mechanics">Mechanics</option>
               <option value="thermo">Thermodynamics</option>
@@ -565,24 +659,13 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr>
-                <th>#</th>
-                <th>Title</th>
-                <th>Course</th>
-                <th>Topic</th>
-                <th>Type</th>
-                <th>Duration</th>
-                <th>Order</th>
-                <th>Status</th>
-                <th>Added</th>
-                <th>Actions</th>
-              </tr>
+              <tr><th>#</th><th>Title</th><th>Course</th><th>Topic</th><th>Type</th><th>Duration</th><th>Order</th><th>Status</th><th>Added</th><th>Actions</th></tr>
             </thead>
             <tbody id="lessons-tbody"></tbody>
           </table>
         </div>
-        <div id="lessons-empty" class="empty" style="display:none;text-align:center;padding:3rem;color:var(--muted)">
-          <div style="font-size:2.5rem;margin-bottom:.75rem">🎬</div>
+        <div id="lessons-empty" class="empty" style="display:none">
+          <div class="empty-icon">🎬</div>
           <p>No lessons yet. Upload your first lesson!</p>
           <button class="btn btn-primary" style="margin-top:1rem" onclick="showPage('upload')">+ Upload Lesson</button>
         </div>
@@ -592,17 +675,24 @@
       <!-- ── PROFILE ──────────────────────────────────────────── -->
       <div class="page" id="page-profile">
         <div class="sec-title"><span>👤 My Profile</span></div>
-        <div class="card" style="max-width:560px">
+        <div class="card" style="max-width:580px">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding-bottom:1.2rem;border-bottom:1px solid var(--border)">
+            <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.5rem;color:#fff;box-shadow:0 6px 20px rgba(16,185,129,.35)" id="profile-avatar-lg">I</div>
+            <div>
+              <div style="font-weight:800;font-size:1.05rem" id="profile-name-display">…</div>
+              <div style="font-size:.8rem;color:var(--muted);margin-top:.2rem" id="profile-email-display">…</div>
+            </div>
+          </div>
           <div class="form-grid">
-            <div class="field"><label>Full Name</label><input id="p-name"    type="text"  disabled/></div>
-            <div class="field"><label>Email</label>    <input id="p-email"   type="email" disabled/></div>
-            <div class="field"><label>Phone</label>    <input id="p-phone"   type="tel"   disabled/></div>
-            <div class="field"><label>Subject</label>  <input id="p-subject" type="text"  disabled/></div>
+            <div class="field"><label>Full Name</label> <input id="p-name"    type="text"  disabled/></div>
+            <div class="field"><label>Email</label>     <input id="p-email"   type="email" disabled/></div>
+            <div class="field"><label>Phone</label>     <input id="p-phone"   type="tel"   disabled/></div>
+            <div class="field"><label>Subject</label>   <input id="p-subject" type="text"  disabled/></div>
           </div>
           <div class="field" style="margin-top:1rem"><label>Bio</label><textarea id="p-bio" disabled></textarea></div>
-          <div style="margin-top:1.2rem;display:flex;gap:.75rem">
-            <button class="btn btn-ghost" onclick="alert('Contact admin to update profile details.')">Edit Profile</button>
-            <button class="btn btn-danger" onclick="logout()">Logout</button>
+          <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+            <button class="btn btn-ghost"   onclick="alert('Contact admin to update profile details.')">Edit Profile</button>
+            <button class="btn btn-danger"  onclick="logout()">Logout</button>
           </div>
         </div>
       </div>
@@ -611,34 +701,40 @@
   </div><!-- /main -->
 </div><!-- /layout -->
 
+<!-- ── Mobile Bottom Nav ──────────────────────────────────────── -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bottom-nav-item active" data-page="overview" onclick="showPage('overview')"><span class="bn-icon">📊</span><span>Overview</span></button>
+  <button class="bottom-nav-item"        data-page="upload"   onclick="showPage('upload')">  <span class="bn-icon">📤</span><span>Upload</span></button>
+  <button class="bottom-nav-item"        data-page="lessons"  onclick="showPage('lessons')"> <span class="bn-icon">🎬</span><span>Lessons</span></button>
+  <button class="bottom-nav-item"        data-page="profile"  onclick="showPage('profile')"> <span class="bn-icon">👤</span><span>Profile</span></button>
+</nav>
+
 <script>
-  // ── Auth guard ─────────────────────────────────────────────────
   const token = localStorage.getItem('la_token');
   const role  = localStorage.getItem('la_role');
   if (!token || role !== 'instructor') window.location.href = 'login.html';
 
-  const TOPIC_LABELS = { mechanics: 'Mechanics', thermo: 'Thermodynamics', electro: 'Electromagnetism', optics: 'Optics & Waves', modern: 'Modern Physics' };
-  const TOPIC_BADGES = { mechanics: 'badge-blue', thermo: 'badge-orange', electro: 'badge-orange', optics: 'badge-blue', modern: 'badge-green' };
-  const pageTitles   = { overview: 'Overview', upload: 'Upload Lesson', lessons: 'My Lessons', profile: 'Profile' };
+  const TOPIC_LABELS = { mechanics:'Mechanics', thermo:'Thermodynamics', electro:'Electromagnetism', optics:'Optics & Waves', modern:'Modern Physics' };
+  const TOPIC_BADGES = { mechanics:'badge-blue', thermo:'badge-orange', electro:'badge-orange', optics:'badge-blue', modern:'badge-green' };
+  const pageTitles   = { overview:'Overview', upload:'Upload Lesson', lessons:'My Lessons', profile:'Profile' };
 
   let allLessons = [];
   let sourceMode = 'youtube';
 
-  // ── Helpers ────────────────────────────────────────────────────
-  const api = (url, opts = {}) =>
-    fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...opts.headers }, ...opts })
-    .then(r => r.json().then(d => ({ ok: r.ok, data: d })));
+  const api = (url,opts={}) =>
+    fetch(url, { headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json',...(opts.headers||{})}, ...opts })
+    .then(r => r.json().then(d => ({ ok:r.ok, data:d })));
 
-  function toast(msg, type = 'success') {
+  function toast(msg, type='success') {
     const el = document.getElementById('toast');
     document.getElementById('toast-msg').textContent  = msg;
-    document.getElementById('toast-icon').textContent = type === 'success' ? '✓' : '✕';
+    document.getElementById('toast-icon').textContent = type==='success'?'✓':'✕';
     el.className = `toast ${type} show`;
     setTimeout(() => el.classList.remove('show'), 3500);
   }
 
   function escHtml(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function extractYtId(url) {
@@ -646,42 +742,58 @@
     return m ? m[1] : null;
   }
 
-  // ── Page navigation ────────────────────────────────────────────
+  // ── Animated counter ──────────────────────────────────────────
+  function animateValue(el, target) {
+    if (!el) return;
+    const num = parseInt(target);
+    if (isNaN(num)) return;
+    const duration = 900;
+    const startTime = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - startTime;
+      const p = Math.min(elapsed/duration, 1);
+      const eased = 1 - Math.pow(1-p, 3);
+      el.textContent = Math.round(eased*num);
+      if (p < 1) requestAnimationFrame(tick);
+      else el.textContent = num;
+    };
+    requestAnimationFrame(tick);
+  }
+
   function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-' + name).classList.add('active');
-    document.getElementById('nav-' + name)?.classList.add('active');
+    document.getElementById('page-'+name).classList.add('active');
+    document.getElementById('nav-'+name)?.classList.add('active');
     document.getElementById('page-title').textContent = pageTitles[name] || name;
+    // Update bottom nav
+    document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.bottom-nav-item[data-page="${name}"]`)?.classList.add('active');
     closeSidebar();
-    if (name === 'lessons') loadLessons();
-    if (name === 'overview') loadOverview();
+    if (name==='lessons') loadLessons();
+    if (name==='overview') loadOverview();
   }
 
   function toggleProfileMenu(e) {
     e.stopPropagation();
     document.getElementById('profile-menu').classList.toggle('open');
   }
-  document.addEventListener('click', function() {
-    document.getElementById('profile-menu').classList.remove('open');
-  });
+  document.addEventListener('click', () => document.getElementById('profile-menu').classList.remove('open'));
 
   function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
   function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 
-  // ── Load overview ──────────────────────────────────────────────
   async function loadOverview() {
     const r = await api('/api/instructor/stats');
     if (!r.ok) return;
     const d = r.data;
 
-    document.getElementById('s-total').textContent     = d.total_lessons;
-    document.getElementById('s-published').textContent = d.published_lessons;
-    document.getElementById('s-topics').textContent    = d.topics_covered;
-    document.getElementById('s-youtube').textContent   = d.youtube_lessons;
-    document.getElementById('s-uploads').textContent   = d.upload_lessons;
+    animateValue(document.getElementById('s-total'),     d.total_lessons);
+    animateValue(document.getElementById('s-published'), d.published_lessons);
+    animateValue(document.getElementById('s-topics'),    d.topics_covered);
+    animateValue(document.getElementById('s-youtube'),   d.youtube_lessons);
+    animateValue(document.getElementById('s-uploads'),   d.upload_lessons);
 
-    // Recent lessons
     const rl = document.getElementById('recent-lessons-list');
     if (!d.recent_lessons.length) {
       rl.innerHTML = '<p style="color:var(--muted);font-size:.85rem">No lessons yet.</p>';
@@ -691,32 +803,30 @@
           <span class="topic-dot ${l.topic}"></span>
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(l.title)}</div>
-            <div style="font-size:.73rem;color:var(--muted)">${TOPIC_LABELS[l.topic] || l.topic} · ${l.video_type === 'youtube' ? 'YouTube' : 'Uploaded'}</div>
+            <div style="font-size:.73rem;color:var(--muted)">${TOPIC_LABELS[l.topic]||l.topic||'—'} · ${l.video_type==='youtube'?'YouTube':'Uploaded'}</div>
           </div>
-          <span class="badge ${l.is_published ? 'badge-green' : 'badge-gray'}">${l.is_published ? 'Live' : 'Draft'}</span>
+          <span class="badge ${l.is_published?'badge-green':'badge-gray'}">${l.is_published?'Live':'Draft'}</span>
         </div>`).join('');
     }
 
-    // Topic breakdown
     const tb = document.getElementById('topic-breakdown');
     if (!d.by_topic.length) {
       tb.innerHTML = '<p style="color:var(--muted);font-size:.85rem">No data yet.</p>';
     } else {
       const max = Math.max(...d.by_topic.map(t => t.count));
       tb.innerHTML = d.by_topic.map(t => `
-        <div style="margin-bottom:.65rem">
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-            <span>${TOPIC_LABELS[t.topic] || t.topic}</span>
-            <span style="font-weight:700;color:var(--accent2)">${t.count}</span>
+        <div class="bar-row">
+          <div class="bar-label">
+            <span>${TOPIC_LABELS[t.topic]||t.topic}</span>
+            <span style="font-weight:800;color:var(--accent2)">${t.count}</span>
           </div>
-          <div style="height:6px;background:rgba(255,255,255,.07);border-radius:99px">
-            <div style="height:100%;border-radius:99px;background:linear-gradient(90deg,#10b981,#34d399);width:${Math.round(t.count/max*100)}%"></div>
+          <div class="bar-track">
+            <div class="bar-fill" style="--bar-w:${Math.round(t.count/max*100)}%;width:${Math.round(t.count/max*100)}%"></div>
           </div>
         </div>`).join('');
     }
   }
 
-  // ── Load my lessons ────────────────────────────────────────────
   async function loadLessons() {
     const r = await api('/api/instructor/lessons');
     if (!r.ok) return;
@@ -728,38 +838,35 @@
     const tbody = document.getElementById('lessons-tbody');
     const empty = document.getElementById('lessons-empty');
     document.getElementById('lessons-count').textContent =
-      `Showing ${list.length} of ${allLessons.length} lesson${allLessons.length !== 1 ? 's' : ''}`;
-
-    if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+      `Showing ${list.length} of ${allLessons.length} lesson${allLessons.length!==1?'s':''}`;
+    if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
     empty.style.display = 'none';
-
-    tbody.innerHTML = list.map((l, i) => {
-      const typeBadge = l.video_type === 'youtube'
+    tbody.innerHTML = list.map((l,i) => {
+      const typeBadge = l.video_type==='youtube'
         ? '<span class="badge badge-blue">YouTube</span>'
         : '<span class="badge badge-green">Uploaded</span>';
       const pubBadge = l.is_published
         ? '<span class="badge badge-green">Published</span>'
         : '<span class="badge badge-gray">Draft</span>';
-
       return `<tr>
-        <td style="color:var(--muted)">${i + 1}</td>
+        <td style="color:var(--muted)">${i+1}</td>
         <td>
           <div style="font-weight:700;font-size:.86rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.title)}</div>
-          ${l.description ? `<div style="font-size:.73rem;color:var(--muted);margin-top:.15rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.description)}</div>` : ''}
+          ${l.description?`<div style="font-size:.73rem;color:var(--muted);margin-top:.15rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.description)}</div>`:''}
         </td>
-        <td style="font-size:.8rem;color:var(--text);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.course || '—')}</td>
-        <td>${l.topic ? `<span class="badge ${TOPIC_BADGES[l.topic] || 'badge-gray'}">${TOPIC_LABELS[l.topic] || l.topic}</span>` : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
+        <td style="font-size:.8rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.course||'—')}</td>
+        <td>${l.topic?`<span class="badge ${TOPIC_BADGES[l.topic]||'badge-gray'}">${TOPIC_LABELS[l.topic]||l.topic}</span>`:'<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
         <td>${typeBadge}</td>
-        <td style="color:var(--muted);font-size:.8rem">${escHtml(l.duration || '—')}</td>
+        <td style="color:var(--muted);font-size:.8rem">${escHtml(l.duration||'—')}</td>
         <td style="color:var(--muted)">${l.order_num}</td>
         <td>${pubBadge}</td>
-        <td style="color:var(--muted);font-size:.78rem">${(l.created_at || '').slice(0, 10)}</td>
+        <td style="color:var(--muted);font-size:.78rem">${(l.created_at||'').slice(0,10)}</td>
         <td>
           <div class="action-group">
             ${l.is_published
-              ? `<button class="action-btn btn-unpub" onclick="togglePublish(${l.id}, 0)">Unpublish</button>`
-              : `<button class="action-btn btn-pub"   onclick="togglePublish(${l.id}, 1)">Publish</button>`}
-            <button class="action-btn btn-del" onclick="deleteLesson(${l.id}, '${escHtml(l.title)}')">Delete</button>
+              ?`<button class="action-btn btn-unpub" onclick="togglePublish(${l.id},0)">Unpublish</button>`
+              :`<button class="action-btn btn-pub"   onclick="togglePublish(${l.id},1)">Publish</button>`}
+            <button class="action-btn btn-del" onclick="deleteLesson(${l.id},'${escHtml(l.title)}')">Delete</button>
           </div>
         </td>
       </tr>`;
@@ -768,32 +875,28 @@
 
   function filterLessons() {
     const t = document.getElementById('filter-topic').value;
-    renderLessons(t ? allLessons.filter(l => l.topic === t) : allLessons);
+    renderLessons(t ? allLessons.filter(l => l.topic===t) : allLessons);
   }
 
   async function togglePublish(id, value) {
-    const r = await api(`/api/instructor/lessons/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ is_published: value })
-    });
-    if (r.ok) { toast(value ? 'Lesson published.' : 'Lesson moved to draft.'); loadLessons(); loadOverview(); }
-    else toast(r.data.error || 'Failed.', 'error');
+    const r = await api(`/api/instructor/lessons/${id}`, { method:'PATCH', body:JSON.stringify({is_published:value}) });
+    if (r.ok) { toast(value?'Lesson published.':'Lesson moved to draft.'); loadLessons(); loadOverview(); }
+    else toast(r.data.error||'Failed.','error');
   }
 
   async function deleteLesson(id, title) {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    const r = await api(`/api/instructor/lessons/${id}`, { method: 'DELETE' });
+    const r = await api(`/api/instructor/lessons/${id}`, { method:'DELETE' });
     if (r.ok) { toast('Lesson deleted.'); loadLessons(); loadOverview(); }
-    else toast(r.data.error || 'Failed.', 'error');
+    else toast(r.data.error||'Failed.','error');
   }
 
-  // ── Upload lesson ──────────────────────────────────────────────
   function switchSource(mode) {
     sourceMode = mode;
-    document.getElementById('src-youtube').style.display = mode === 'youtube' ? 'block' : 'none';
-    document.getElementById('src-upload').style.display  = mode === 'upload'  ? 'block' : 'none';
-    document.getElementById('tab-youtube').classList.toggle('active', mode === 'youtube');
-    document.getElementById('tab-upload').classList.toggle('active',  mode === 'upload');
+    document.getElementById('src-youtube').style.display = mode==='youtube'?'block':'none';
+    document.getElementById('src-upload').style.display  = mode==='upload' ?'block':'none';
+    document.getElementById('tab-youtube').classList.toggle('active', mode==='youtube');
+    document.getElementById('tab-upload').classList.toggle('active',  mode==='upload');
   }
 
   function previewYoutube() {
@@ -814,7 +917,7 @@
     const file = input.files[0];
     if (file) {
       const fn = document.getElementById('file-name');
-      fn.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
+      fn.textContent = file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)';
       fn.style.display = 'block';
     }
   }
@@ -841,130 +944,97 @@
     const order   = document.getElementById('ul-order').value || '1';
     const btn     = document.getElementById('ul-btn');
     const status  = document.getElementById('ul-status');
-
-    if (!course || !title) { toast('Course and title are required.', 'error'); return; }
-
-    btn.disabled = true;
-    status.textContent = 'Uploading...';
-
-    if (sourceMode === 'youtube') {
+    if (!course || !title) { toast('Course and title are required.','error'); return; }
+    btn.disabled = true; status.textContent = 'Uploading…';
+    if (sourceMode==='youtube') {
       const url = document.getElementById('ul-yt-url').value.trim();
-      if (!url) { toast('YouTube URL is required.', 'error'); btn.disabled = false; status.textContent = ''; return; }
-
+      if (!url) { toast('YouTube URL is required.','error'); btn.disabled=false; status.textContent=''; return; }
       const r = await api('/api/instructor/lessons', {
-        method: 'POST',
-        body: JSON.stringify({ course, topic, title, video_url: url, description: desc, duration: dur, order_num: parseInt(order) })
+        method:'POST',
+        body:JSON.stringify({ course, topic, title, video_url:url, description:desc, duration:dur, order_num:parseInt(order) })
       });
-      if (r.ok) {
-        toast('Lesson uploaded successfully!');
-        resetForm();
-        loadOverview();
-      } else {
-        toast(r.data.error || 'Upload failed.', 'error');
-      }
+      if (r.ok) { toast('Lesson uploaded successfully!'); resetForm(); loadOverview(); }
+      else toast(r.data.error||'Upload failed.','error');
     } else {
-      // File upload
       const fileInput = document.getElementById('ul-file');
-      if (!fileInput.files.length) { toast('Please select a video file.', 'error'); btn.disabled = false; status.textContent = ''; return; }
-
+      if (!fileInput.files.length) { toast('Please select a video file.','error'); btn.disabled=false; status.textContent=''; return; }
       const formData = new FormData();
-      formData.append('video', fileInput.files[0]);
-      formData.append('course', course);
-      formData.append('topic', topic);
-      formData.append('title', title);
+      formData.append('video',       fileInput.files[0]);
+      formData.append('course',      course);
+      formData.append('topic',       topic);
+      formData.append('title',       title);
       formData.append('description', desc);
-      formData.append('duration', dur);
-      formData.append('order_num', order);
-
+      formData.append('duration',    dur);
+      formData.append('order_num',   order);
       document.getElementById('progress-wrap').classList.add('show');
-
       const xhr = new XMLHttpRequest();
       xhr.upload.addEventListener('progress', e => {
         if (e.lengthComputable) {
-          const pct = Math.round(e.loaded / e.total * 100);
-          document.getElementById('progress-fill').style.width = pct + '%';
-          document.getElementById('progress-pct').textContent  = pct + '%';
-          document.getElementById('progress-text').textContent = pct < 100 ? 'Uploading...' : 'Processing...';
+          const pct = Math.round(e.loaded/e.total*100);
+          document.getElementById('progress-fill').style.width = pct+'%';
+          document.getElementById('progress-pct').textContent  = pct+'%';
+          document.getElementById('progress-text').textContent = pct<100?'Uploading…':'Processing…';
         }
       });
       xhr.addEventListener('load', () => {
         const res = JSON.parse(xhr.responseText);
-        if (xhr.status === 201) {
-          toast('Video uploaded and lesson created!');
-          resetForm();
-          loadOverview();
-        } else {
-          toast(res.error || 'Upload failed.', 'error');
-          btn.disabled = false;
-          status.textContent = '';
-          document.getElementById('progress-wrap').classList.remove('show');
-        }
+        if (xhr.status===201) { toast('Video uploaded and lesson created!'); resetForm(); loadOverview(); }
+        else { toast(res.error||'Upload failed.','error'); btn.disabled=false; status.textContent=''; document.getElementById('progress-wrap').classList.remove('show'); }
       });
-      xhr.addEventListener('error', () => {
-        toast('Network error. Please try again.', 'error');
-        btn.disabled = false;
-        status.textContent = '';
-        document.getElementById('progress-wrap').classList.remove('show');
-      });
-      xhr.open('POST', '/api/instructor/upload');
-      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+      xhr.addEventListener('error', () => { toast('Network error. Please try again.','error'); btn.disabled=false; status.textContent=''; document.getElementById('progress-wrap').classList.remove('show'); });
+      xhr.open('POST','/api/instructor/upload');
+      xhr.setRequestHeader('Authorization','Bearer '+token);
       xhr.send(formData);
       return;
     }
-
-    btn.disabled = false;
-    status.textContent = '';
+    btn.disabled=false; status.textContent='';
   }
 
   function resetForm() {
-    document.getElementById('ul-course').value      = '';
-    document.getElementById('ul-topic').value       = '';
-    document.getElementById('ul-title').value       = '';
-    document.getElementById('ul-description').value = '';
-    document.getElementById('ul-duration').value    = '';
-    document.getElementById('ul-order').value       = '1';
-    document.getElementById('ul-yt-url').value      = '';
-    document.getElementById('ul-file').value        = '';
-    document.getElementById('file-name').style.display = 'none';
+    ['ul-course','ul-topic','ul-title','ul-description','ul-duration','ul-yt-url'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('ul-order').value='1';
+    document.getElementById('ul-file').value='';
+    document.getElementById('file-name').style.display='none';
     document.getElementById('yt-preview').classList.remove('show');
     document.getElementById('progress-wrap').classList.remove('show');
-    document.getElementById('progress-fill').style.width = '0%';
-    document.getElementById('ul-btn').disabled    = false;
-    document.getElementById('ul-status').textContent = '';
+    document.getElementById('progress-fill').style.width='0%';
+    document.getElementById('ul-btn').disabled=false;
+    document.getElementById('ul-status').textContent='';
     switchSource('youtube');
   }
 
-  // ── Logout ─────────────────────────────────────────────────────
   async function logout() {
-    try { await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); } catch {}
+    try { await fetch('/api/logout',{method:'POST',headers:{'Authorization':'Bearer '+token}}); } catch {}
     localStorage.clear();
     window.location.href = 'login.html';
   }
 
-  // ── Load profile ───────────────────────────────────────────────
   async function loadProfile() {
     const r = await api('/api/me');
     if (!r.ok) { logout(); return; }
     const u = r.data.user;
-    const cleanName = (u.name || '').replace(/^(Dr|Mr|Mrs|Ms|Prof)\.\s*/i, '');
+    const cleanName = (u.name||'').replace(/^(Dr|Mr|Mrs|Ms|Prof)\.\s*/i,'');
     const firstName = cleanName.split(' ')[0];
-    const initial = (firstName || 'I').charAt(0).toUpperCase();
-    document.getElementById('topbar-name').textContent   = 'Instructor : ' + firstName;
-    document.getElementById('topbar-avatar').textContent = initial;
+    const initial   = (firstName||'I').charAt(0).toUpperCase();
+    document.getElementById('topbar-name').textContent    = firstName;
+    document.getElementById('topbar-avatar').textContent  = initial;
     document.getElementById('p-name').value    = u.name    || '';
     document.getElementById('p-email').value   = u.email   || '';
     document.getElementById('p-phone').value   = u.phone   || '';
     document.getElementById('p-subject').value = u.subject || '';
     document.getElementById('p-bio').value     = u.bio     || '';
-
-    // Profile dropdown
-    document.getElementById('pm-avatar-lg').textContent = initial;
-    document.getElementById('pm-name').textContent = cleanName;
-    document.getElementById('pm-email').textContent = u.email || '';
+    document.getElementById('pm-avatar-lg').textContent  = initial;
+    document.getElementById('pm-name').textContent    = cleanName;
+    document.getElementById('pm-email').textContent   = u.email || '';
     document.getElementById('pm-subject').textContent = u.subject || '—';
+    const pav = document.getElementById('profile-avatar-lg');
+    if (pav) { pav.textContent = initial; }
+    const pnd = document.getElementById('profile-name-display');
+    if (pnd) pnd.textContent = cleanName;
+    const ped = document.getElementById('profile-email-display');
+    if (ped) ped.textContent = u.email || '';
   }
 
-  // ── Init ───────────────────────────────────────────────────────
   loadProfile();
   loadOverview();
 </script>

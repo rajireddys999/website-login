@@ -306,7 +306,7 @@
       <div class="success-overlay" id="success-view">
         <div class="success-icon">✓</div>
         <h3>Login Successful!</h3>
-        <p>Welcome back. Redirecting to your dashboard…</p>
+        <p>Welcome back, <strong id="success-name"></strong>! Redirecting...</p>
       </div>
 
       <!-- Forgot password view -->
@@ -362,28 +362,60 @@
     }
     function hideError() { document.getElementById('error-msg').classList.remove('show'); }
 
-    function handleLogin(e) {
+    // Active role tab (student / admin)
+    let activeRole = 'student';
+    function switchTab(btn, role) {
+      activeRole = role;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector('label[for="email"]').textContent =
+        role === 'admin' ? 'Admin Email' : 'Email / Phone';
+      hideError();
+    }
+
+    async function handleLogin(e) {
       e.preventDefault();
       hideError();
-      const btn = document.getElementById('submit-btn');
-      btn.disabled = true; btn.textContent = 'Signing in…';
+      const btn        = document.getElementById('submit-btn');
+      const identifier = document.getElementById('email').value.trim();
+      const password   = document.getElementById('password').value;
 
-      setTimeout(() => {
-        const email = document.getElementById('email').value.trim();
-        const pass  = document.getElementById('password').value;
+      if (!identifier || !password) {
+        showError('Please fill in all fields.'); return;
+      }
 
-        if (!email || !pass) {
-          showError('Please fill in all fields.'); btn.disabled = false; btn.textContent = 'Sign In'; return;
+      btn.disabled = true; btn.textContent = 'Signing in...';
+
+      try {
+        const res  = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password, role: activeRole })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || 'Login failed. Please try again.');
+          btn.disabled = false; btn.textContent = 'Sign In';
+          return;
         }
-        if (pass.length < 6) {
-          showError('Password must be at least 6 characters.'); btn.disabled = false; btn.textContent = 'Sign In'; return;
-        }
 
-        // Show success
+        // Store session token
+        localStorage.setItem('la_token', data.token);
+        localStorage.setItem('la_role',  data.role);
+        localStorage.setItem('la_user',  JSON.stringify(data.user));
+
+        // Show success screen
+        const name = data.user.full_name || data.user.name || 'Student';
+        document.getElementById('success-name').textContent = name;
         document.getElementById('form-view').style.display = 'none';
         document.getElementById('success-view').classList.add('show');
         setTimeout(() => { window.location.href = 'index.html'; }, 2500);
-      }, 900);
+
+      } catch (err) {
+        showError('Server not reachable. Please make sure the server is running.');
+        btn.disabled = false; btn.textContent = 'Sign In';
+      }
     }
 
     function showForgot(e) {
@@ -398,7 +430,7 @@
     function handleForgot(e) {
       e.preventDefault();
       const btn = e.target.querySelector('button');
-      btn.textContent = '✅ Reset link sent!';
+      btn.textContent = 'Reset link sent!';
       btn.disabled = true;
       setTimeout(showLogin, 2000);
     }

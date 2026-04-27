@@ -7,3 +7,6 @@ node_modules/
 uploads/
 .env.slack
 .env
+.netlify/
+bridge_out.txt
+bridge_err.txt

@@ -40,6 +40,12 @@ ALLOWED_USERS: set[str] = set(
 
 PROJECT_DIR = str(Path(__file__).parent.resolve())
 
+# Claude CLI path — resolved at startup so subprocess inherits it correctly
+CLAUDE_CMD = os.environ.get(
+    "CLAUDE_CMD",
+    r"C:\Users\rajir\AppData\Roaming\npm\claude.cmd"
+)
+
 # Maximum characters to send back to Slack (hard limit is ~4000 per block)
 MAX_OUTPUT = 2800
 
@@ -66,18 +72,17 @@ def is_allowed(user_id: str) -> bool:
 def run_claude(prompt: str) -> str:
     """Run `claude -p <prompt>` in the project directory and return output."""
     try:
+        # On Windows, .cmd files must be invoked via cmd.exe
         result = subprocess.run(
-            [
-                "claude",
-                "--print",
-                "--dangerously-skip-permissions",
-                "--output-format", "text",
-                prompt,
-            ],
+            ["cmd", "/c", CLAUDE_CMD,
+             "--print",
+             "--dangerously-skip-permissions",
+             "--output-format", "text",
+             prompt],
             cwd=PROJECT_DIR,
             capture_output=True,
             text=True,
-            timeout=300,        # 5-minute limit per request
+            timeout=300,
             encoding="utf-8",
             errors="replace",
         )
@@ -89,10 +94,7 @@ def run_claude(prompt: str) -> str:
     except subprocess.TimeoutExpired:
         return ":warning: Timed out after 5 minutes."
     except FileNotFoundError:
-        return (
-            ":x: `claude` CLI not found.\n"
-            "Make sure Claude Code is installed and on your PATH."
-        )
+        return f":x: `claude` CLI not found at `{CLAUDE_CMD}`."
     except Exception as exc:
         return f":x: Unexpected error: {exc}"
 

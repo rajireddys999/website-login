@@ -346,15 +346,23 @@ def status():
 # ── Main ─────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
+    import os, sys
+
     init_db()
-    print("\n  Laxmi Academy server  ->  http://localhost:3000")
-    print("  API endpoints:")
-    print("    POST  /api/login")
-    print("    POST  /api/register")
-    print("    POST  /api/logout")
-    print("    GET   /api/me")
-    print("    POST  /api/enquiry")
-    print("    GET   /api/status")
-    print("    GET   /api/admin/students   (admin only)")
-    print("    GET   /api/admin/enquiries  (admin only)\n")
-    app.run(port=3000, debug=True)
+
+    # Auto-seed if database is empty (needed on Render ephemeral filesystem)
+    conn = get_conn()
+    student_count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
+    admin_count   = conn.execute("SELECT COUNT(*) FROM admins").fetchone()[0]
+    conn.close()
+
+    if student_count == 0 or admin_count == 0:
+        print("  Empty database detected — running seed...")
+        import seed
+        seed.seed()
+
+    port  = int(os.environ.get("PORT", 3000))
+    debug = os.environ.get("FLASK_ENV", "production") == "development"
+
+    print(f"\n  Laxmi Academy server  ->  http://0.0.0.0:{port}")
+    app.run(host="0.0.0.0", port=port, debug=debug)

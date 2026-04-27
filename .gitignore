@@ -1,4 +1,9 @@
 laxmi_academy.db
+laxmi_academy.db-shm
+laxmi_academy.db-wal
 __pycache__/
 *.pyc
 node_modules/
+uploads/
+.env.slack
+.env

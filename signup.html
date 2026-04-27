@@ -154,53 +154,77 @@
       margin-top: 3px;
     }
 
-    /* Plan cards */
-    .plan-options {
+    /* Checkbox option pills */
+    .check-options {
       display: flex;
-      gap: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.45rem;
       margin-top: 0.35rem;
     }
-    .plan-option {
-      flex: 1;
+    .check-option {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.75rem;
       border: 1.5px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 0.55rem 0.4rem;
+      border-radius: 8px;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      text-align: center;
-      position: relative;
-    }
-    .plan-option input[type="radio"] {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .plan-option .plan-name {
-      font-size: 0.72rem;
-      font-weight: 700;
+      font-size: 0.82rem;
+      font-weight: 500;
       color: #374151;
-      display: block;
+      background: #f9fafb;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+      user-select: none;
     }
-    .plan-option .plan-price {
-      font-size: 0.8rem;
-      font-weight: 800;
+    .check-option:hover {
+      border-color: #a5b4fc;
+      background: #f5f3ff;
+    }
+    .check-option input[type="checkbox"] {
+      accent-color: #4f46e5;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+    .check-option:has(input:checked) {
+      border-color: #4f46e5;
+      background: #eef2ff;
       color: #4f46e5;
-      display: block;
-      margin-top: 1px;
+      font-weight: 600;
     }
-    .plan-option .plan-duration {
-      font-size: 0.65rem;
+
+    /* Price display */
+    .price-box {
+      margin-top: 0.35rem;
+      background: #f5f3ff;
+      border: 1.5px solid #c7d2fe;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .price-rate {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+    .price-rate strong {
+      font-size: 1.1rem;
+      color: #4f46e5;
+      font-weight: 800;
+    }
+    .price-total-wrap { text-align: right; }
+    .price-total-label {
+      font-size: 0.72rem;
       color: #9ca3af;
       display: block;
     }
-    .plan-option:hover { border-color: #a5b4fc; background: #f5f3ff; }
-    .plan-option.selected {
-      border-color: #4f46e5;
-      background: #eef2ff;
-      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+    .price-total-amount {
+      font-size: 1.3rem;
+      color: #4f46e5;
+      font-weight: 800;
+      line-height: 1.1;
     }
-    .plan-option.selected .plan-name { color: #4f46e5; }
 
     /* Error */
     .error-msg {
@@ -295,7 +319,6 @@
     /* Responsive */
     @media (max-width: 400px) {
       .grid-2 { grid-template-columns: 1fr; }
-      .plan-options { flex-direction: column; }
     }
   </style>
 </head>
@@ -350,54 +373,35 @@
         </div>
       </div>
 
-      <!-- Exam Type + Course (cascading) -->
-      <div class="grid-2">
-        <div class="field">
-          <label for="exam-type">Exam / Stream</label>
-          <div class="input-wrap">
-            <svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <select id="exam-type" required onchange="updateCourses()">
-              <option value="" disabled selected>Select exam</option>
-              <option value="NEET">NEET</option>
-              <option value="JEE MAINS">JEE MAINS</option>
-              <option value="EAMCET">EAMCET</option>
-              <option value="Intermediate">Intermediate</option>
-            </select>
-          </div>
-        </div>
-        <div class="field">
-          <label for="course">Course</label>
-          <div class="input-wrap">
-            <svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-            <select id="course" required disabled>
-              <option value="" disabled selected>Select exam first</option>
-            </select>
-          </div>
+      <!-- Exam / Stream checkboxes -->
+      <div class="field">
+        <label>Exam / Stream <span style="color:#9ca3af;font-weight:400;font-size:0.74rem">(select all that apply)</span></label>
+        <div class="check-options">
+          <label class="check-option"><input type="checkbox" name="exam" value="NEET" onchange="updateTotal()"> NEET</label>
+          <label class="check-option"><input type="checkbox" name="exam" value="JEE MAINS" onchange="updateTotal()"> JEE MAINS</label>
+          <label class="check-option"><input type="checkbox" name="exam" value="EAMCET" onchange="updateTotal()"> EAMCET</label>
+          <label class="check-option"><input type="checkbox" name="exam" value="Intermediate 1st Year" onchange="updateTotal()"> Intermediate 1st Year</label>
+          <label class="check-option"><input type="checkbox" name="exam" value="Intermediate 2nd Year" onchange="updateTotal()"> Intermediate 2nd Year</label>
         </div>
       </div>
 
-      <!-- Plan selection -->
+      <!-- Course checkboxes -->
+      <div class="field">
+        <label>Course</label>
+        <div class="check-options">
+          <label class="check-option"><input type="checkbox" name="course" value="Physics" checked> Physics</label>
+        </div>
+      </div>
+
+      <!-- Plan / Pricing -->
       <div class="field">
         <label>Select Plan</label>
-        <div class="plan-options">
-          <label class="plan-option selected" id="plan-6m" onclick="selectPlan('6m')">
-            <input type="radio" name="plan" value="6m" checked/>
-            <span class="plan-name">6 Months</span>
-            <span class="plan-price">₹650</span>
-            <span class="plan-duration">per course</span>
-          </label>
-          <label class="plan-option" id="plan-annual" onclick="selectPlan('annual')">
-            <input type="radio" name="plan" value="annual"/>
-            <span class="plan-name">Annual</span>
-            <span class="plan-price">₹1,000</span>
-            <span class="plan-duration">per course</span>
-          </label>
-          <label class="plan-option" id="plan-combo" onclick="selectPlan('combo')">
-            <input type="radio" name="plan" value="combo"/>
-            <span class="plan-name">2-Course</span>
-            <span class="plan-price">₹1,700</span>
-            <span class="plan-duration">combo deal</span>
-          </label>
+        <div class="price-box">
+          <div class="price-rate"><strong>₹99</strong> per course</div>
+          <div class="price-total-wrap">
+            <span class="price-total-label">Total</span>
+            <div class="price-total-amount" id="price-total">₹0</div>
+          </div>
         </div>
       </div>
 
@@ -448,37 +452,9 @@
 </div>
 
 <script>
-  const EXAM_COURSES = {
-    'NEET':         ['BI-PC'],
-    'JEE MAINS':    ['Physics'],
-    'EAMCET':       ['Physics'],
-    'Intermediate': ['1-Year Physics', '2-Year Physics'],
-  };
-
-  function updateCourses() {
-    const exam = document.getElementById('exam-type').value;
-    const sel  = document.getElementById('course');
-    sel.innerHTML = '';
-    const courses = EXAM_COURSES[exam] || [];
-    if (courses.length === 0) {
-      sel.innerHTML = '<option value="" disabled selected>No courses</option>';
-      sel.disabled = true;
-      return;
-    }
-    if (courses.length === 1) {
-      sel.innerHTML = `<option value="${exam} - ${courses[0]}" selected>${courses[0]}</option>`;
-      sel.disabled = true;
-    } else {
-      sel.innerHTML = '<option value="" disabled selected>Select course</option>' +
-        courses.map(c => `<option value="${exam} - ${c}">${c}</option>`).join('');
-      sel.disabled = false;
-    }
-  }
-
-  function selectPlan(id) {
-    ['6m','annual','combo'].forEach(p => {
-      document.getElementById('plan-' + p).classList.toggle('selected', p === id);
-    });
+  function updateTotal() {
+    const count = document.querySelectorAll('input[name="exam"]:checked').length;
+    document.getElementById('price-total').textContent = '₹' + (count * 99);
   }
 
   function togglePwd(inputId, iconId) {
@@ -525,14 +501,20 @@
     const name     = document.getElementById('fullname').value.trim();
     const email    = document.getElementById('email').value.trim();
     const phone    = document.getElementById('phone').value.trim();
-    const course   = document.getElementById('course').value;
-    const plan     = document.querySelector('input[name="plan"]:checked')?.value;
     const password = document.getElementById('password').value;
     const confirm  = document.getElementById('confirmPassword').value;
 
-    if (!course) { showError('Please select an exam and course.'); return; }
-    if (password !== confirm) { showError('Passwords do not match.'); return; }
-    if (password.length < 6)  { showError('Password must be at least 6 characters.'); return; }
+    const exams   = [...document.querySelectorAll('input[name="exam"]:checked')].map(cb => cb.value);
+    const courses = [...document.querySelectorAll('input[name="course"]:checked')].map(cb => cb.value);
+    const total   = exams.length * 99;
+
+    if (exams.length === 0)   { showError('Please select at least one exam/stream.'); return; }
+    if (courses.length === 0) { showError('Please select at least one course.'); return; }
+    if (password !== confirm)  { showError('Passwords do not match.'); return; }
+    if (password.length < 6)   { showError('Password must be at least 6 characters.'); return; }
+
+    const course = exams.join(', ') + ' - ' + courses.join(', ');
+    const plan   = '₹99 per stream (₹' + total + ' total)';
 
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
@@ -559,7 +541,6 @@
       setTimeout(() => window.location.href = 'login.html', 3000);
 
     } catch (err) {
-      // Fallback for when server is not running
       document.getElementById('success-name').textContent = name;
       document.getElementById('form-view').style.display = 'none';
       document.getElementById('success-view').classList.add('show');

@@ -621,10 +621,6 @@
           </div>
           <select class="filter-select" id="course-filter" onchange="filterStudents()">
             <option value="">All Courses</option>
-            <option>Physics Foundation</option>
-            <option>Physics Advanced</option>
-            <option>Physics Crash Course</option>
-            <option>Full Physics Package</option>
           </select>
           <select class="filter-select" id="status-filter" onchange="filterStudents()">
             <option value="">All Status</option>
@@ -834,12 +830,7 @@
       </div>`).join('') || '<p style="color:var(--muted);font-size:.85rem">No data yet.</p>';
   }
 
-  const COURSE_COLORS = {
-    'Physics Foundation':   'badge-indigo',
-    'Physics Advanced':     'badge-purple',
-    'Physics Crash Course': 'badge-orange',
-    'Full Physics Package':  'badge-blue',
-  };
+  const COURSE_COLORS = {};
 
   async function loadStudents() {
     const r = await api('/api/admin/students');

@@ -1,13 +1,21 @@
-import uuid, os, re
+import uuid, os, re, json, base64, hashlib
 import bcrypt
+import requests as http_requests
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
 from db import get_conn, init_db
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
+
+# ── PhonePe config (UAT sandbox by default) ───────────────────────
+PHONEPE_MERCHANT_ID = os.environ.get('PHONEPE_MERCHANT_ID', 'PGTESTPAYUAT86')
+PHONEPE_SALT_KEY    = os.environ.get('PHONEPE_SALT_KEY',    '96434309-7796-489d-8924-ab56988a6076')
+PHONEPE_SALT_INDEX  = os.environ.get('PHONEPE_SALT_INDEX',  '1')
+PHONEPE_BASE_URL    = os.environ.get('PHONEPE_BASE_URL',    'https://api-preprod.phonepe.com/apis/pg-sandbox')
+APP_BASE_URL        = os.environ.get('APP_BASE_URL',        'http://localhost:3000')
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads', 'videos')
 ALLOWED_EXTENSIONS = {'mp4', 'webm', 'mkv', 'mov', 'avi'}
@@ -116,6 +124,12 @@ def login():
     if not user or not bcrypt.checkpw(password.encode(), user['password'].encode()):
         return jsonify({'error': 'Invalid credentials. Please check and try again.'}), 401
 
+    if role == 'student' and not user['is_active']:
+        return jsonify({
+            'error': 'Payment pending. Please complete your payment to activate your account.',
+            'payment_pending': True
+        }), 403
+
     token = create_session(user['id'], role)
     safe  = {k: v for k, v in dict(user).items() if k != 'password'}
     return jsonify({'token': token, 'role': role, 'user': safe})
@@ -157,7 +171,7 @@ def register():
 
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     cursor = conn.execute(
-        "INSERT INTO students (full_name, email, phone, password, course, plan) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO students (full_name, email, phone, password, course, plan, is_active, payment_status) VALUES (?, ?, ?, ?, ?, ?, 0, 'pending')",
         (full_name, email, phone, hashed, course, plan)
     )
     conn.commit()
@@ -165,7 +179,7 @@ def register():
     conn.close()
 
     token = create_session(student_id, 'student')
-    return jsonify({'token': token, 'role': 'student', 'message': 'Account created successfully.'}), 201
+    return jsonify({'token': token, 'role': 'student', 'student_id': student_id, 'message': 'Account created successfully.'}), 201
 
 # ── POST /api/logout ─────────────────────────────────────────────
 
@@ -673,6 +687,181 @@ def status():
     }
     conn.close()
     return jsonify({'status': 'ok', 'database': 'laxmi_academy.db', 'counts': counts})
+
+# ── PhonePe helpers ──────────────────────────────────────────────
+
+def _phonepe_checksum(payload_b64):
+    raw = payload_b64 + '/pg/v1/pay' + PHONEPE_SALT_KEY
+    return hashlib.sha256(raw.encode()).hexdigest() + '###' + PHONEPE_SALT_INDEX
+
+def _phonepe_status_checksum(txn_id):
+    path = f'/pg/v1/status/{PHONEPE_MERCHANT_ID}/{txn_id}'
+    raw  = path + PHONEPE_SALT_KEY
+    return hashlib.sha256(raw.encode()).hexdigest() + '###' + PHONEPE_SALT_INDEX, path
+
+# ── POST /api/payment/initiate ────────────────────────────────────
+
+@app.route('/api/payment/initiate', methods=['POST'])
+def initiate_payment():
+    session, err_resp, err_code = require_auth()
+    if err_resp:
+        return err_resp, err_code
+
+    data   = request.get_json() or {}
+    amount = int(data.get('amount', 0))
+    if amount <= 0:
+        return jsonify({'error': 'Invalid amount.'}), 400
+
+    txn_id = f"LA{session['user_id']}_{uuid.uuid4().hex[:10].upper()}"
+
+    payload = {
+        'merchantId':            PHONEPE_MERCHANT_ID,
+        'merchantTransactionId': txn_id,
+        'merchantUserId':        f"USER{session['user_id']}",
+        'amount':                amount * 100,
+        'redirectUrl':           f"{APP_BASE_URL}/api/payment/callback/{txn_id}",
+        'redirectMode':          'REDIRECT',
+        'callbackUrl':           f"{APP_BASE_URL}/api/payment/webhook",
+        'paymentInstrument':     {'type': 'PAY_PAGE'}
+    }
+
+    payload_b64 = base64.b64encode(json.dumps(payload).encode()).decode()
+    checksum    = _phonepe_checksum(payload_b64)
+
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO payments (student_id, merchant_transaction_id, amount) VALUES (?, ?, ?)",
+        (session['user_id'], txn_id, amount)
+    )
+    conn.commit()
+    conn.close()
+
+    try:
+        resp = http_requests.post(
+            f"{PHONEPE_BASE_URL}/pg/v1/pay",
+            headers={'Content-Type': 'application/json', 'X-VERIFY': checksum, 'accept': 'application/json'},
+            json={'request': payload_b64},
+            timeout=15
+        )
+        resp_data = resp.json()
+        if resp_data.get('success'):
+            redirect_url = resp_data['data']['instrumentResponse']['redirectInfo']['url']
+            return jsonify({'redirect_url': redirect_url, 'txn_id': txn_id})
+        return jsonify({'error': resp_data.get('message', 'PhonePe initiation failed.')}), 502
+    except Exception as ex:
+        return jsonify({'error': f'Payment gateway unreachable: {ex}'}), 503
+
+# ── GET /api/payment/callback/<txn_id> ───────────────────────────
+
+@app.route('/api/payment/callback/<txn_id>', methods=['GET'])
+def payment_callback(txn_id):
+    checksum, url_path = _phonepe_status_checksum(txn_id)
+    success = False
+    resp_json = {}
+    try:
+        resp = http_requests.get(
+            f"{PHONEPE_BASE_URL}{url_path}",
+            headers={'X-VERIFY': checksum, 'X-MERCHANT-ID': PHONEPE_MERCHANT_ID, 'accept': 'application/json'},
+            timeout=15
+        )
+        resp_json = resp.json()
+        success = resp_json.get('success') and resp_json.get('code') == 'PAYMENT_SUCCESS'
+    except Exception:
+        pass
+
+    conn = get_conn()
+    payment = conn.execute(
+        "SELECT * FROM payments WHERE merchant_transaction_id = ?", (txn_id,)
+    ).fetchone()
+
+    if payment:
+        new_status = 'paid' if success else 'failed'
+        conn.execute(
+            "UPDATE payments SET status = ?, phonepe_response = ?, updated_at = datetime('now') WHERE merchant_transaction_id = ?",
+            (new_status, json.dumps(resp_json), txn_id)
+        )
+        if success:
+            conn.execute(
+                "UPDATE students SET is_active = 1, payment_status = 'paid' WHERE id = ?",
+                (payment['student_id'],)
+            )
+        conn.commit()
+
+    conn.close()
+
+    if success:
+        return redirect('/login.html?payment=success')
+    return redirect('/login.html?payment=failed')
+
+# ── POST /api/payment/webhook ─────────────────────────────────────
+
+@app.route('/api/payment/webhook', methods=['POST'])
+def payment_webhook():
+    body = request.get_json(silent=True) or {}
+    encoded = body.get('response', '')
+    try:
+        decoded   = json.loads(base64.b64decode(encoded).decode())
+        txn_id    = decoded.get('data', {}).get('merchantTransactionId', '')
+        pg_success = decoded.get('success') and decoded.get('code') == 'PAYMENT_SUCCESS'
+    except Exception:
+        return jsonify({'status': 'ignored'}), 200
+
+    if txn_id:
+        conn    = get_conn()
+        payment = conn.execute(
+            "SELECT * FROM payments WHERE merchant_transaction_id = ?", (txn_id,)
+        ).fetchone()
+        if payment and payment['status'] == 'pending':
+            new_status = 'paid' if pg_success else 'failed'
+            conn.execute(
+                "UPDATE payments SET status = ?, phonepe_response = ?, updated_at = datetime('now') WHERE merchant_transaction_id = ?",
+                (new_status, json.dumps(decoded), txn_id)
+            )
+            if pg_success:
+                conn.execute(
+                    "UPDATE students SET is_active = 1, payment_status = 'paid' WHERE id = ?",
+                    (payment['student_id'],)
+                )
+            conn.commit()
+        conn.close()
+
+    return jsonify({'status': 'ok'}), 200
+
+# ── GET /api/payment/status/<txn_id> ─────────────────────────────
+
+@app.route('/api/payment/status/<txn_id>', methods=['GET'])
+def payment_status(txn_id):
+    session, err_resp, err_code = require_auth()
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    payment = conn.execute(
+        "SELECT status, amount, created_at FROM payments WHERE merchant_transaction_id = ? AND student_id = ?",
+        (txn_id, session['user_id'])
+    ).fetchone()
+    conn.close()
+
+    if not payment:
+        return jsonify({'error': 'Transaction not found.'}), 404
+    return jsonify(dict(payment))
+
+# ── ADMIN: payments ───────────────────────────────────────────────
+
+@app.route('/api/admin/payments', methods=['GET'])
+def admin_payments():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT p.*, s.full_name, s.email
+        FROM payments p JOIN students s ON p.student_id = s.id
+        ORDER BY p.created_at DESC
+    """).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
 
 # ── Main ─────────────────────────────────────────────────────────
 

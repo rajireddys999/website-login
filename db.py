@@ -73,20 +73,41 @@ def init_db():
             created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS payments (
+            id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id               INTEGER NOT NULL,
+            merchant_transaction_id  TEXT    UNIQUE NOT NULL,
+            amount                   INTEGER NOT NULL,
+            status                   TEXT    NOT NULL DEFAULT 'pending',
+            phonepe_response         TEXT,
+            created_at               TEXT    NOT NULL DEFAULT (datetime('now')),
+            updated_at               TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+        );
+
         CREATE INDEX IF NOT EXISTS idx_students_email    ON students(email);
         CREATE INDEX IF NOT EXISTS idx_students_phone    ON students(phone);
         CREATE INDEX IF NOT EXISTS idx_instructors_email ON instructors(email);
         CREATE INDEX IF NOT EXISTS idx_lessons_topic     ON lessons(topic);
         CREATE INDEX IF NOT EXISTS idx_lessons_instructor ON lessons(instructor_id);
+        CREATE INDEX IF NOT EXISTS idx_payments_txn      ON payments(merchant_transaction_id);
+        CREATE INDEX IF NOT EXISTS idx_payments_student  ON payments(student_id);
     """)
 
     # Migrate sessions table to support instructor role if needed
     _migrate_sessions(conn)
 
+    _migrate_payment_status(conn)
     _migrate_lessons_course(conn)
     conn.commit()
     conn.close()
     print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries")
+
+def _migrate_payment_status(conn):
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()]
+    if 'payment_status' not in cols:
+        conn.execute("ALTER TABLE students ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'paid'")
+        print("  [OK] students.payment_status column added")
 
 def _migrate_lessons_course(conn):
     cols = [r[1] for r in conn.execute("PRAGMA table_info(lessons)").fetchall()]

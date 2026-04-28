@@ -542,7 +542,15 @@
     /* ── Responsive ── */
     @media (max-width: 480px) {
       .grid-2 { grid-template-columns: 1fr; }
-      .signup-card { padding: 2rem 1.25rem; }
+      .signup-card { padding: 1.75rem 1.1rem; border-radius: 20px; }
+      .card-header h2 { font-size: 1.3rem; }
+      body { padding: 1rem 0.75rem; }
+    }
+    @media (max-width: 380px) {
+      .signup-card { padding: 1.5rem 1rem; }
+      .pill-label { font-size: 0.74rem; padding: 0.36rem 0.65rem; }
+      .steps { gap: 0; }
+      .step-label { font-size: 0.6rem; }
     }
 
     @keyframes fadeUp {

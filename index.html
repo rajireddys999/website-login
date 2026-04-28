@@ -34,6 +34,69 @@
     .marquee-track { display:flex; width:max-content; animation:marquee 30s linear infinite; }
     .marquee-track:hover { animation-play-state:paused; }
     @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+    /* ── Mobile nav ── */
+    #mobile-menu {
+      display: none;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.75rem 1.25rem 1.25rem;
+      border-top: 1px solid #f1f5f9;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(12px);
+    }
+    html.dark #mobile-menu {
+      background: rgba(15,12,41,0.97);
+      border-top-color: rgba(255,255,255,0.08);
+    }
+    #mobile-menu.open { display: flex; animation: slideDown .2s ease; }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+
+    #mobile-menu a {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #475569;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    html.dark #mobile-menu a { color: #94a3b8; }
+    #mobile-menu a:hover { background: #f8fafc; color: #f97316; }
+    html.dark #mobile-menu a:hover { background: rgba(255,255,255,0.06); color: #fb923c; }
+
+    #mobile-menu .mob-divider { height: 1px; background: #f1f5f9; margin: 0.25rem 0; }
+    html.dark #mobile-menu .mob-divider { background: rgba(255,255,255,0.07); }
+
+    #mobile-menu .mob-login {
+      border: 1.5px solid #f97316;
+      color: #f97316 !important;
+    }
+    #mobile-menu .mob-login:hover { background: #fff7ed !important; }
+    #mobile-menu .mob-signup {
+      background: linear-gradient(135deg, #f97316, #e11d48) !important;
+      color: #fff !important;
+    }
+
+    #hamburger-btn {
+      display: none;
+      padding: 0.45rem;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: #475569;
+      transition: background 0.15s;
+    }
+    html.dark #hamburger-btn { color: #94a3b8; }
+    #hamburger-btn:hover { background: #f1f5f9; }
+    html.dark #hamburger-btn:hover { background: rgba(255,255,255,0.08); }
+    @media (max-width: 767px) {
+      #hamburger-btn { display: flex; align-items: center; justify-content: center; }
+    }
   </style>
 </head>
 <body class="bg-white text-slate-900 antialiased">
@@ -63,11 +126,11 @@
     <div class="flex items-center justify-between py-3">
       <a href="#" class="flex items-center gap-3">
         <div class="relative p-[3px] rounded-full bg-gradient-to-tr from-orange-400 to-rose-600" style="box-shadow:0 0 18px rgba(255,152,0,.4)">
-          <img src="logo.png.jpeg" alt="Laxmi Academy" class="w-12 h-12 rounded-full object-cover border-2 border-white"/>
+          <img src="logo.png.jpeg" alt="Laxmi Academy" class="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-white"/>
         </div>
         <div class="leading-tight">
-          <span class="block font-extrabold text-xl glow-text">Laxmi Academy</span>
-          <span class="block text-slate-500 text-xs font-semibold uppercase tracking-wider">School of Knowledge</span>
+          <span class="block font-extrabold text-lg md:text-xl glow-text">Laxmi Academy</span>
+          <span class="block text-slate-500 text-xs font-semibold uppercase tracking-wider hidden sm:block">School of Knowledge</span>
         </div>
       </a>
 
@@ -77,12 +140,25 @@
         <a href="#contact" class="hover:text-orange-500 transition">Contact</a>
       </nav>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
         <button id="navbar-theme-btn" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button>
-        <a href="login.html" class="px-4 py-2 rounded-xl border border-orange-400 text-orange-500 font-bold text-sm hover:bg-orange-50 transition">Login</a>
-        <a href="signup.html" class="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold text-sm shadow hover:shadow-md transition">Sign Up Free</a>
+        <a href="login.html" class="hidden sm:inline-flex px-4 py-2 rounded-xl border border-orange-400 text-orange-500 font-bold text-sm hover:bg-orange-50 transition">Login</a>
+        <a href="signup.html" class="hidden sm:inline-flex px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold text-sm shadow hover:shadow-md transition">Sign Up</a>
+        <button id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu" aria-expanded="false">
+          <svg id="hamburger-icon" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
       </div>
     </div>
+  </div>
+
+  <!-- Mobile drawer -->
+  <div id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+    <a href="#how" onclick="closeMobileMenu()">📖 How It Works</a>
+    <a href="#courses" onclick="closeMobileMenu()">🎓 Courses</a>
+    <a href="#contact" onclick="closeMobileMenu()">📞 Contact</a>
+    <div class="mob-divider"></div>
+    <a href="login.html" class="mob-login">🔑 Login</a>
+    <a href="signup.html" class="mob-signup">✨ Sign Up Free</a>
   </div>
 </header>
 
@@ -362,6 +438,27 @@
 
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
+
+  function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    const btn  = document.getElementById('hamburger-btn');
+    const icon = document.getElementById('hamburger-icon');
+    const open = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open);
+    icon.innerHTML = open
+      ? '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>'
+      : '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>';
+  }
+  function closeMobileMenu() {
+    document.getElementById('mobile-menu').classList.remove('open');
+    document.getElementById('hamburger-btn').setAttribute('aria-expanded', 'false');
+    document.getElementById('hamburger-icon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>';
+  }
+  // Close mobile menu on outside click
+  document.addEventListener('click', e => {
+    const header = document.querySelector('header');
+    if (!header.contains(e.target)) closeMobileMenu();
+  });
 
   const revealObserver = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });

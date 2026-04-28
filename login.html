@@ -560,6 +560,13 @@
 </head>
 <body>
 
+  <!-- Payment status banner -->
+  <div id="payment-banner" style="display:none;position:fixed;top:1rem;left:50%;transform:translateX(-50%);z-index:999;padding:0.7rem 1.4rem;border-radius:12px;font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:600;display:none;align-items:center;gap:0.5rem;box-shadow:0 8px 32px rgba(0,0,0,0.3);animation:slideDown 0.4s cubic-bezier(0.16,1,0.3,1) both;">
+  </div>
+  <style>
+    @keyframes slideDown { from { opacity:0; transform:translateX(-50%) translateY(-16px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+  </style>
+
   <div class="bg-orbs">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -723,6 +730,24 @@
   </div><!-- /login-wrapper -->
 
   <script>
+    // Show payment result banner from PhonePe redirect
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const status = params.get('payment');
+      const banner = document.getElementById('payment-banner');
+      if (status === 'success') {
+        banner.style.cssText += ';display:flex;background:#052e16;border:1px solid #16a34a;color:#4ade80;';
+        banner.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Payment successful! Your account is now active. Please sign in.';
+        setTimeout(() => banner.style.opacity = '0', 6000);
+      } else if (status === 'failed') {
+        banner.style.cssText += ';display:flex;background:#450a0a;border:1px solid #b91c1c;color:#f87171;';
+        banner.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Payment was not completed. Please try again or contact support.';
+        setTimeout(() => banner.style.opacity = '0', 8000);
+      }
+      // Clean URL
+      if (status) window.history.replaceState({}, '', window.location.pathname);
+    })();
+
     let activeRole = 'student';
 
     const roleColors = {
@@ -797,7 +822,10 @@
         });
         const data = await res.json();
         if (!res.ok) {
-          showError(data.error || 'Login failed. Please try again.');
+          const msg = data.payment_pending
+            ? '⚠️ Payment pending. Complete your payment to activate your account.'
+            : (data.error || 'Login failed. Please try again.');
+          showError(msg);
           btn.disabled = false; btn.textContent = 'Sign In'; return;
         }
         localStorage.setItem('la_token', data.token);

@@ -10,20 +10,6 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #05060f;
-      --surface: rgba(8,9,28,0.88);
-      --border: rgba(255,255,255,0.08);
-      --text: #f0f2ff;
-      --text-muted: #8891b4;
-      --input-bg: rgba(255,255,255,0.05);
-      --input-border: rgba(255,255,255,0.1);
-      --input-focus: rgba(255,255,255,0.08);
-      --accent: #6366f1;
-      --accent-glow: rgba(99,102,241,0.4);
-      --accent-soft: rgba(99,102,241,0.1);
-    }
-
-    html.light {
       --bg: #eef0ff;
       --surface: rgba(255,255,255,0.95);
       --border: rgba(99,102,241,0.15);
@@ -32,6 +18,20 @@
       --input-bg: rgba(255,255,255,0.9);
       --input-border: rgba(99,102,241,0.2);
       --input-focus: #fff;
+      --accent: #6366f1;
+      --accent-glow: rgba(99,102,241,0.4);
+      --accent-soft: rgba(99,102,241,0.1);
+    }
+
+    html.dark {
+      --bg: #05060f;
+      --surface: rgba(8,9,28,0.88);
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f2ff;
+      --text-muted: #8891b4;
+      --input-bg: rgba(255,255,255,0.05);
+      --input-border: rgba(255,255,255,0.1);
+      --input-focus: rgba(255,255,255,0.08);
     }
 
     body {
@@ -58,9 +58,10 @@
       position: absolute;
       border-radius: 50%;
       filter: blur(90px);
-      opacity: 0.2;
+      opacity: 0.1;
       animation: drift linear infinite;
     }
+    html.dark .orb { opacity: 0.2; }
     .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, #6366f1, transparent); top: -150px; right: -100px; animation-duration: 22s; }
     .orb-2 { width: 350px; height: 350px; background: radial-gradient(circle, #10b981, transparent); bottom: -80px; left: -60px; animation-duration: 28s; animation-direction: reverse; }
     .orb-3 { width: 280px; height: 280px; background: radial-gradient(circle, #a855f7, transparent); top: 50%; left: 50%; animation-duration: 35s; animation-delay: -12s; }
@@ -84,6 +85,9 @@
       padding: 2.5rem 2rem;
       width: 100%;
       max-width: 520px;
+      box-shadow: 0 20px 60px rgba(99,102,241,0.12), 0 0 0 1px var(--border);
+    }
+    html.dark .signup-card {
       box-shadow: 0 40px 100px rgba(0,0,0,0.5);
       animation: cardIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
     }

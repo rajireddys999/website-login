@@ -5,242 +5,514 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Login — Laxmi Academy</title>
   <script src="theme.js"></script>
-  <link rel="stylesheet" href="theme.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg: #05060f;
+      --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f2ff;
+      --text-muted: #8891b4;
+      --input-bg: rgba(255,255,255,0.05);
+      --input-border: rgba(255,255,255,0.1);
+      --input-focus: rgba(255,255,255,0.15);
+
+      --student: #6366f1;
+      --student-glow: rgba(99,102,241,0.4);
+      --student-soft: rgba(99,102,241,0.12);
+
+      --instructor: #10b981;
+      --instructor-glow: rgba(16,185,129,0.4);
+      --instructor-soft: rgba(16,185,129,0.12);
+
+      --admin: #f59e0b;
+      --admin-glow: rgba(245,158,11,0.4);
+      --admin-soft: rgba(245,158,11,0.12);
+
+      --active: var(--student);
+      --active-glow: var(--student-glow);
+      --active-soft: var(--student-soft);
+    }
+
+    html.light {
+      --bg: #f0f2ff;
+      --surface: rgba(255,255,255,0.85);
+      --border: rgba(99,102,241,0.15);
+      --text: #0f1023;
+      --text-muted: #5c6494;
+      --input-bg: rgba(255,255,255,0.9);
+      --input-border: rgba(99,102,241,0.2);
+      --input-focus: rgba(255,255,255,1);
+    }
+
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Outfit', sans-serif;
       min-height: 100vh;
+      background: var(--bg);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
-      padding: 1.5rem;
-      transition: background 0.3s;
+      padding: 1rem;
+      overflow: hidden;
+      position: relative;
     }
 
-    .login-card {
-      background: #fff;
-      border-radius: 20px;
-      padding: 2.5rem 2rem;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-      transition: background 0.3s, box-shadow 0.3s;
+    /* ── Animated orbs background ── */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
     }
-
-    /* Logo / Header */
-    .card-header {
-      text-align: center;
-      margin-bottom: 1.8rem;
-    }
-    .card-header img {
-      width: 70px;
-      height: 70px;
+    .orb {
+      position: absolute;
       border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid #e0e7ff;
-      margin-bottom: 0.8rem;
+      filter: blur(80px);
+      opacity: 0.25;
+      animation: drift linear infinite;
     }
-    .card-header h2 {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: #1e1b4b;
-      transition: color 0.3s;
-    }
-    .card-header p {
-      font-size: 0.85rem;
-      color: #6b7280;
-      margin-top: 0.25rem;
-      transition: color 0.3s;
+    .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, #6366f1, transparent); top: -150px; left: -100px; animation-duration: 20s; }
+    .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, #10b981, transparent); bottom: -100px; right: -50px; animation-duration: 25s; animation-direction: reverse; }
+    .orb-3 { width: 300px; height: 300px; background: radial-gradient(circle, #f59e0b, transparent); top: 40%; left: 40%; animation-duration: 30s; animation-delay: -10s; }
+
+    @keyframes drift {
+      0%   { transform: translate(0, 0) rotate(0deg); }
+      33%  { transform: translate(40px, -30px) rotate(120deg); }
+      66%  { transform: translate(-30px, 40px) rotate(240deg); }
+      100% { transform: translate(0, 0) rotate(360deg); }
     }
 
-    /* Role Tabs */
+    /* ── Main wrapper ── */
+    .login-wrapper {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      width: 100%;
+      max-width: 900px;
+      min-height: 560px;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+      animation: wrapperIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes wrapperIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.97); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ── Left branding panel ── */
+    .brand-panel {
+      width: 42%;
+      background: linear-gradient(155deg, #0f0a2e 0%, #1a1060 45%, #0d1a3a 100%);
+      padding: 3rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .brand-panel::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: -60px;
+      width: 240px; height: 240px;
+      background: radial-gradient(circle, rgba(99,102,241,0.35), transparent 70%);
+      border-radius: 50%;
+    }
+    .brand-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; right: -40px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(16,185,129,0.25), transparent 70%);
+      border-radius: 50%;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.5s 0.2s both;
+    }
+    .brand-logo img {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .brand-logo-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .brand-logo-text span {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .brand-content {
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.5s 0.35s both;
+    }
+    .brand-content h1 {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+    }
+    .brand-content h1 em {
+      font-style: normal;
+      background: linear-gradient(90deg, #a78bfa, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .brand-content p {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .brand-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .brand-features li {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.83rem;
+      color: rgba(255,255,255,0.7);
+    }
+    .feat-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .brand-footer {
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.5s 0.5s both;
+    }
+    .brand-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .brand-pill {
+      padding: 0.3rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* ── Right form panel ── */
+    .form-panel {
+      flex: 1;
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 2.5rem 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    html:not(.light) .form-panel {
+      background: rgba(8,9,28,0.85);
+    }
+    html.light .form-panel {
+      background: rgba(255,255,255,0.92);
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.8rem;
+      animation: fadeUp 0.4s 0.1s both;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--active); }
+
+    /* Theme toggle */
+    #theme-toggle {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+      position: relative;
+    }
+    #theme-toggle:hover { background: var(--input-focus); transform: rotate(20deg); }
+
+    .form-title {
+      text-align: center;
+      margin-bottom: 1.6rem;
+      animation: fadeUp 0.4s 0.2s both;
+    }
+    .form-title h2 {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .form-title p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ── Role Tabs ── */
     .tabs {
       display: flex;
-      background: #f3f4f6;
-      border-radius: 10px;
-      padding: 4px;
-      margin-bottom: 1.5rem;
-      gap: 4px;
-      transition: background 0.3s;
+      gap: 0.4rem;
+      margin-bottom: 1.6rem;
+      padding: 0.3rem;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      position: relative;
+      animation: fadeUp 0.4s 0.3s both;
     }
+
+    .tab-slider {
+      position: absolute;
+      top: 0.3rem;
+      bottom: 0.3rem;
+      border-radius: 10px;
+      transition: all 0.35s cubic-bezier(0.34,1.4,0.64,1);
+      background: var(--active);
+      box-shadow: 0 4px 16px var(--active-glow);
+      z-index: 0;
+    }
+
     .tab {
       flex: 1;
-      padding: 0.5rem;
-      border-radius: 7px;
-      font-size: 0.83rem;
+      padding: 0.55rem 0.4rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
       font-weight: 700;
       border: none;
       cursor: pointer;
-      transition: all 0.2s;
       background: transparent;
-      color: #6b7280;
+      color: var(--text-muted);
+      transition: color 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      position: relative;
+      z-index: 1;
+      letter-spacing: 0.01em;
     }
-    .tab.active {
-      background: #4f46e5;
-      color: #fff;
-      box-shadow: 0 3px 10px rgba(79, 70, 229, 0.4);
-    }
+    .tab svg { width: 14px; height: 14px; transition: transform 0.3s; }
+    .tab.active { color: #fff; }
+    .tab.active svg { transform: scale(1.15); }
 
-    /* Fields */
-    .field { margin-bottom: 1.1rem; }
+    /* ── Inputs ── */
+    .field {
+      margin-bottom: 1rem;
+      animation: fadeUp 0.4s both;
+    }
+    .field:nth-child(1) { animation-delay: 0.35s; }
+    .field:nth-child(2) { animation-delay: 0.4s; }
+
     .field label {
       display: block;
-      font-size: 0.8rem;
+      font-size: 0.79rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--text-muted);
       margin-bottom: 0.4rem;
-      transition: color 0.3s;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
-
     .input-wrap { position: relative; }
-
-    /* Only style DIRECT child SVGs (left icons), not the eye-btn SVG */
     .input-wrap > svg {
       position: absolute;
-      left: 0.85rem;
+      left: 0.9rem;
       top: 50%;
       transform: translateY(-50%);
       width: 16px;
       height: 16px;
-      color: #9ca3af;
+      color: var(--text-muted);
       pointer-events: none;
       transition: color 0.3s;
     }
     .input-wrap input {
       width: 100%;
-      padding: 0.75rem 0.85rem 0.75rem 2.35rem;
-      background: #f9fafb;
-      border: 1.5px solid #e5e7eb;
-      border-radius: 10px;
-      color: #111827;
+      padding: 0.82rem 0.9rem 0.82rem 2.6rem;
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      border-radius: 12px;
+      color: var(--text);
       font-size: 0.9rem;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s, background 0.3s, color 0.3s;
+      transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
     }
-    .input-wrap input.has-eye {
-      padding-right: 2.8rem;
-    }
-    .input-wrap input::placeholder { color: #9ca3af; }
+    .input-wrap input::placeholder { color: var(--text-muted); opacity: 0.6; }
     .input-wrap input:focus {
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-      background: #fff;
+      border-color: var(--active);
+      box-shadow: 0 0 0 3px var(--active-glow);
+      background: var(--input-focus);
     }
+    .input-wrap input:focus + .input-glow,
+    .input-wrap:focus-within > svg { color: var(--active); }
+
+    .input-wrap input.has-eye { padding-right: 3rem; }
 
     .eye-btn {
       position: absolute;
-      right: 0.75rem;
+      right: 0.9rem;
       top: 50%;
       transform: translateY(-50%);
       background: none;
       border: none;
       cursor: pointer;
-      color: #9ca3af;
+      color: var(--text-muted);
       padding: 0.2rem;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: color 0.2s;
       line-height: 0;
+      transition: color 0.2s;
     }
-    .eye-btn:hover { color: #4f46e5; }
-    .eye-btn svg {
-      width: 18px;
-      height: 18px;
-      pointer-events: none;
-    }
+    .eye-btn:hover { color: var(--active); }
+    .eye-btn svg { width: 17px; height: 17px; pointer-events: none; }
 
-    .forgot { text-align: right; margin-top: 0.4rem; }
-    .forgot a {
+    .forgot-row {
+      text-align: right;
+      margin-top: 0.4rem;
+    }
+    .forgot-row a {
       font-size: 0.78rem;
-      color: #4f46e5;
       font-weight: 600;
+      color: var(--active);
       text-decoration: none;
+      transition: opacity 0.2s;
     }
-    .forgot a:hover { text-decoration: underline; }
+    .forgot-row a:hover { opacity: 0.75; }
 
-    /* Error */
+    /* ── Error ── */
     .error-msg {
       display: none;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 8px;
-      padding: 0.6rem 0.85rem;
-      color: #dc2626;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
+      color: #f87171;
       font-size: 0.82rem;
       margin-bottom: 1rem;
+      gap: 0.5rem;
+      align-items: center;
     }
-    .error-msg.show { display: flex; align-items: center; gap: 0.5rem; }
+    .error-msg.show { display: flex; }
 
-    /* Submit */
+    /* ── Submit button ── */
     .btn-submit {
       width: 100%;
-      padding: 0.85rem;
-      background: #4f46e5;
+      padding: 0.9rem;
+      background: var(--active);
       color: #fff;
       font-size: 0.95rem;
       font-weight: 700;
+      font-family: 'Outfit', sans-serif;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
-      transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
-      margin-top: 0.25rem;
+      box-shadow: 0 6px 24px var(--active-glow);
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+      margin-top: 0.2rem;
+      letter-spacing: 0.03em;
+      animation: fadeUp 0.4s 0.45s both;
     }
-    .btn-submit:hover {
-      background: #4338ca;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.45);
+    .btn-submit::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
     }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 32px var(--active-glow); }
+    .btn-submit:hover::after { left: 160%; }
     .btn-submit:active { transform: translateY(0); }
-    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
-    /* Divider + signup */
+    /* ── Divider ── */
     .divider {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      margin: 1.2rem 0;
-      color: #d1d5db;
-      font-size: 0.78rem;
-      transition: color 0.3s;
+      margin: 1rem 0;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      animation: fadeUp 0.4s 0.5s both;
     }
     .divider::before, .divider::after {
-      content: ''; flex: 1; height: 1px; background: #e5e7eb;
-      transition: background 0.3s;
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
     }
 
     .signup-row {
       text-align: center;
       font-size: 0.84rem;
-      color: #6b7280;
-      transition: color 0.3s;
+      color: var(--text-muted);
+      animation: fadeUp 0.4s 0.55s both;
     }
     .signup-row a {
-      color: #4f46e5;
+      color: var(--active);
       font-weight: 700;
       text-decoration: none;
     }
     .signup-row a:hover { text-decoration: underline; }
 
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.78rem;
-      color: #9ca3af;
-      text-decoration: none;
-      margin-bottom: 1.5rem;
-      transition: color 0.2s;
-    }
-    .back-link:hover { color: #4f46e5; }
-
-    /* Success overlay */
+    /* ── Success overlay ── */
     .success-overlay {
       display: none;
       flex-direction: column;
@@ -248,204 +520,243 @@
       justify-content: center;
       text-align: center;
       padding: 2rem 1rem;
+      flex: 1;
     }
     .success-overlay.show { display: flex; }
-    .success-icon {
-      width: 64px;
-      height: 64px;
+    .success-ring {
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       background: linear-gradient(135deg, #10b981, #059669);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
-      color: #fff;
       margin-bottom: 1.2rem;
-      box-shadow: 0 0 24px rgba(16, 185, 129, 0.35);
-      animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 0 40px rgba(16,185,129,0.5);
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
     }
-    @keyframes pop { from { transform: scale(0) } to { transform: scale(1) } }
-    .success-overlay h3 { font-size: 1.3rem; font-weight: 800; color: #111827; margin-bottom: 0.5rem; transition: color 0.3s; }
-    .success-overlay p { color: #6b7280; font-size: 0.88rem; transition: color 0.3s; }
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .success-ring svg { width: 36px; height: 36px; color: #fff; }
+    .success-overlay h3 { font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: 0.4rem; }
+    .success-overlay p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; }
 
-    /* ─── Theme Toggle Button ─── */
-    #theme-toggle {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      cursor: pointer;
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, transform 0.2s, border-color 0.3s;
-      z-index: 1000;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-    }
-    #theme-toggle:hover {
-      background: rgba(255, 255, 255, 0.28);
-      transform: scale(1.1) rotate(15deg);
+    /* ── Forgot view ── */
+    #forgot-view { display: none; }
+    #forgot-view .form-title { text-align: left; }
+
+    /* ── Keyframes ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: none; }
     }
 
-    /* ─── DARK MODE ─── */
-    html.dark {
-      background: linear-gradient(135deg, #0a0818 0%, #1a1740 50%, #0a0818 100%);
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      .brand-panel { display: none; }
+      .login-wrapper { max-width: 420px; border-radius: 24px; }
+      .form-panel { padding: 2rem 1.5rem; }
     }
-    html.dark #theme-toggle {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.15);
-    }
-    html.dark .login-card {
-      background: #1e293b;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-    }
-    html.dark .card-header h2 { color: #f1f5f9; }
-    html.dark .card-header p { color: #94a3b8; }
-    html.dark .tabs { background: #0f172a; }
-    html.dark .tab { color: #94a3b8; }
-    html.dark .tab.active { background: #4f46e5; color: #fff; }
-    html.dark .field label { color: #cbd5e1; }
-    html.dark .input-wrap > svg { color: #64748b; }
-    html.dark .input-wrap input {
-      background: #0f172a;
-      border-color: #334155;
-      color: #f1f5f9;
-    }
-    html.dark .input-wrap input::placeholder { color: #64748b; }
-    html.dark .input-wrap input:focus {
-      border-color: #818cf8;
-      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
-      background: #1e293b;
-    }
-    html.dark .eye-btn { color: #64748b; }
-    html.dark .eye-btn:hover { color: #818cf8; }
-    html.dark .forgot a { color: #818cf8; }
-    html.dark .error-msg {
-      background: #450a0a;
-      border-color: #b91c1c;
-      color: #fca5a5;
-    }
-    html.dark .divider { color: #4b5563; }
-    html.dark .divider::before, html.dark .divider::after { background: #374151; }
-    html.dark .signup-row { color: #94a3b8; }
-    html.dark .signup-row a { color: #818cf8; }
-    html.dark .back-link { color: #475569; }
-    html.dark .back-link:hover { color: #818cf8; }
-    html.dark .success-overlay h3 { color: #f1f5f9; }
-    html.dark .success-overlay p { color: #94a3b8; }
   </style>
 </head>
 <body>
 
-  <!-- Dark / Light mode toggle -->
-  <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode">
-    <span class="theme-icon">🌙</span>
-  </button>
-
-  <div class="login-card">
-    <!-- Normal login view -->
-    <div id="form-view">
-      <a href="index.html" class="back-link">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-        Back to Home
-      </a>
-
-      <div class="card-header">
-        <img src="logo.png.jpeg" alt="Laxmi Academy"/>
-        <h2>Welcome Back</h2>
-        <p>Sign in to your Laxmi Academy portal</p>
-      </div>
-
-      <!-- Role tabs -->
-      <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'student')">Student</button>
-        <button class="tab" onclick="switchTab(this,'instructor')">Instructor</button>
-        <button class="tab" onclick="switchTab(this,'admin')">Admin</button>
-      </div>
-
-      <div class="error-msg" id="error-msg">
-        <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
-        <span id="error-text">Invalid email or password.</span>
-      </div>
-
-      <form id="login-form" onsubmit="handleLogin(event)">
-        <div class="field">
-          <label for="email">Email / Phone</label>
-          <div class="input-wrap">
-            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
-            <input type="text" id="email" placeholder="Enter email or phone" required autocomplete="username"/>
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="password">Password</label>
-          <div class="input-wrap">
-            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            <input type="password" id="password" class="has-eye" placeholder="Enter your password" required autocomplete="current-password"/>
-            <button type="button" class="eye-btn" onclick="togglePassword()" aria-label="Show/hide password">
-              <svg id="eye-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-              </svg>
-            </button>
-          </div>
-          <div class="forgot"><a href="#" onclick="showForgot(event)">Forgot password?</a></div>
-        </div>
-
-        <button type="submit" class="btn-submit" id="submit-btn">Sign In</button>
-      </form>
-
-      <div class="divider">or</div>
-      <div class="signup-row">
-        New student? <a href="signup.html">Create an account</a>
-      </div>
-    </div>
-
-    <!-- Success view -->
-    <div class="success-overlay" id="success-view">
-      <div class="success-icon">✓</div>
-      <h3>Login Successful!</h3>
-      <p>Welcome back, <strong id="success-name"></strong>! Redirecting...</p>
-    </div>
-
-    <!-- Forgot password view -->
-    <div id="forgot-view" style="display:none">
-      <button onclick="showLogin()" class="back-link" style="background:none;border:none;cursor:pointer;margin-bottom:1.5rem">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-        Back to Login
-      </button>
-      <div class="card-header">
-        <h2>Reset Password</h2>
-        <p>Enter your registered email to receive a reset link.</p>
-      </div>
-      <form onsubmit="handleForgot(event)" style="margin-top:1.5rem">
-        <div class="field">
-          <label>Registered Email</label>
-          <div class="input-wrap">
-            <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-            <input type="email" placeholder="you@email.com" required/>
-          </div>
-        </div>
-        <button type="submit" class="btn-submit">Send Reset Link</button>
-      </form>
-    </div>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
   </div>
+
+  <div class="login-wrapper">
+
+    <!-- Left branding panel -->
+    <div class="brand-panel">
+      <div class="brand-logo">
+        <img src="logo.png.jpeg" alt="Laxmi Academy"/>
+        <div class="brand-logo-text">
+          Laxmi Academy
+          <span>Physics Portal</span>
+        </div>
+      </div>
+
+      <div class="brand-content">
+        <h1>Learn Physics<br>Like <em>Never Before</em></h1>
+        <p>India's premier platform for competitive exam preparation with expert-led physics coaching.</p>
+        <ul class="brand-features">
+          <li>
+            <span class="feat-dot" style="background:rgba(99,102,241,0.25);">🎯</span>
+            NEET, JEE & EAMCET focused content
+          </li>
+          <li>
+            <span class="feat-dot" style="background:rgba(16,185,129,0.25);">📊</span>
+            Live tests with instant analytics
+          </li>
+          <li>
+            <span class="feat-dot" style="background:rgba(245,158,11,0.25);">🏆</span>
+            Top-ranked instructors
+          </li>
+          <li>
+            <span class="feat-dot" style="background:rgba(239,68,68,0.25);">⚡</span>
+            Doubt clearing in 30 minutes
+          </li>
+        </ul>
+      </div>
+
+      <div class="brand-footer">
+        <div class="brand-pills">
+          <span class="brand-pill">NEET</span>
+          <span class="brand-pill">JEE Mains</span>
+          <span class="brand-pill">EAMCET</span>
+          <span class="brand-pill">Inter 1st Yr</span>
+          <span class="brand-pill">Inter 2nd Yr</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="form-panel">
+
+      <div id="form-view" style="display:flex;flex-direction:column;flex:1;">
+        <div class="top-bar">
+          <a href="index.html" class="back-link">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Back to Home
+          </a>
+          <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+            <span class="theme-icon">🌙</span>
+          </button>
+        </div>
+
+        <div class="form-title">
+          <h2>Welcome Back 👋</h2>
+          <p>Sign in to continue your learning journey</p>
+        </div>
+
+        <!-- Role tabs -->
+        <div class="tabs" id="tabs">
+          <div class="tab-slider" id="tab-slider"></div>
+          <button class="tab active" data-role="student" onclick="switchTab(this,'student')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            Student
+          </button>
+          <button class="tab" data-role="instructor" onclick="switchTab(this,'instructor')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Instructor
+          </button>
+          <button class="tab" data-role="admin" onclick="switchTab(this,'admin')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            Admin
+          </button>
+        </div>
+
+        <div class="error-msg" id="error-msg">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
+          <span id="error-text">Invalid credentials.</span>
+        </div>
+
+        <form id="login-form" onsubmit="handleLogin(event)" style="flex:1;">
+          <div class="field">
+            <label id="email-label">Email / Phone</label>
+            <div class="input-wrap">
+              <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <input type="text" id="email" placeholder="Enter email or phone" required autocomplete="username"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Password</label>
+            <div class="input-wrap">
+              <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              <input type="password" id="password" class="has-eye" placeholder="Enter your password" required autocomplete="current-password"/>
+              <button type="button" class="eye-btn" onclick="togglePassword()" aria-label="Toggle password">
+                <svg id="eye-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+            </div>
+            <div class="forgot-row"><a href="#" onclick="showForgot(event)">Forgot password?</a></div>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submit-btn">Sign In</button>
+        </form>
+
+        <div class="divider">or</div>
+        <div class="signup-row">
+          New here? <a href="signup.html">Create an account →</a>
+        </div>
+      </div>
+
+      <!-- Success view -->
+      <div class="success-overlay" id="success-view">
+        <div class="success-ring">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h3>Login Successful!</h3>
+        <p>Welcome back, <strong id="success-name"></strong>!<br>Redirecting to your dashboard…</p>
+      </div>
+
+      <!-- Forgot password view -->
+      <div id="forgot-view">
+        <div class="top-bar" style="margin-bottom:1.5rem;">
+          <button onclick="showLogin()" class="back-link" style="background:none;border:none;cursor:pointer;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Back to Login
+          </button>
+        </div>
+        <div class="form-title" style="text-align:left;">
+          <h2>Reset Password 🔐</h2>
+          <p>Enter your registered email to receive a reset link.</p>
+        </div>
+        <form onsubmit="handleForgot(event)" style="margin-top:1.5rem;">
+          <div class="field">
+            <label>Registered Email</label>
+            <div class="input-wrap">
+              <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <input type="email" placeholder="you@email.com" required/>
+            </div>
+          </div>
+          <button type="submit" class="btn-submit">Send Reset Link</button>
+        </form>
+      </div>
+
+    </div><!-- /form-panel -->
+  </div><!-- /login-wrapper -->
 
   <script>
     let activeRole = 'student';
+
+    const roleColors = {
+      student:    { main: '#6366f1', glow: 'rgba(99,102,241,0.4)',  soft: 'rgba(99,102,241,0.12)'  },
+      instructor: { main: '#10b981', glow: 'rgba(16,185,129,0.4)',  soft: 'rgba(16,185,129,0.12)'  },
+      admin:      { main: '#f59e0b', glow: 'rgba(245,158,11,0.4)', soft: 'rgba(245,158,11,0.12)' }
+    };
+
+    function updateSlider() {
+      const active = document.querySelector('.tab.active');
+      const container = document.getElementById('tabs');
+      const slider = document.getElementById('tab-slider');
+      if (!active) return;
+      const cRect = container.getBoundingClientRect();
+      const aRect = active.getBoundingClientRect();
+      slider.style.left   = (aRect.left - cRect.left) + 'px';
+      slider.style.width  = aRect.width + 'px';
+    }
+
+    function applyRoleTheme(role) {
+      const c = roleColors[role];
+      const root = document.documentElement;
+      root.style.setProperty('--active',       c.main);
+      root.style.setProperty('--active-glow',  c.glow);
+      root.style.setProperty('--active-soft',  c.soft);
+    }
 
     function switchTab(btn, role) {
       activeRole = role;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
-      document.querySelector('label[for="email"]').textContent =
+      updateSlider();
+      applyRoleTheme(role);
+      document.getElementById('email-label').textContent =
         role === 'admin' ? 'Admin Email' : role === 'instructor' ? 'Instructor Email' : 'Email / Phone';
       hideError();
     }
@@ -475,13 +786,9 @@
       const btn        = document.getElementById('submit-btn');
       const identifier = document.getElementById('email').value.trim();
       const password   = document.getElementById('password').value;
+      if (!identifier || !password) { showError('Please fill in all fields.'); return; }
 
-      if (!identifier || !password) {
-        showError('Please fill in all fields.'); return;
-      }
-
-      btn.disabled = true; btn.textContent = 'Signing in...';
-
+      btn.disabled = true; btn.textContent = 'Signing in…';
       try {
         const res  = await fetch('/api/login', {
           method: 'POST',
@@ -489,17 +796,13 @@
           body: JSON.stringify({ identifier, password, role: activeRole })
         });
         const data = await res.json();
-
         if (!res.ok) {
           showError(data.error || 'Login failed. Please try again.');
-          btn.disabled = false; btn.textContent = 'Sign In';
-          return;
+          btn.disabled = false; btn.textContent = 'Sign In'; return;
         }
-
         localStorage.setItem('la_token', data.token);
         localStorage.setItem('la_role',  data.role);
         localStorage.setItem('la_user',  JSON.stringify(data.user));
-
         const name = data.user.full_name || data.user.name || 'Student';
         document.getElementById('success-name').textContent = name;
         document.getElementById('form-view').style.display = 'none';
@@ -509,7 +812,6 @@
           else if (data.role === 'instructor') window.location.href = 'instructor-dashboard.html';
           else window.location.href = 'dashboard.html';
         }, 2000);
-
       } catch (err) {
         showError('Server not reachable. Please make sure the server is running.');
         btn.disabled = false; btn.textContent = 'Sign In';
@@ -523,15 +825,21 @@
     }
     function showLogin() {
       document.getElementById('forgot-view').style.display = 'none';
-      document.getElementById('form-view').style.display = 'block';
+      document.getElementById('form-view').style.display = 'flex';
     }
     function handleForgot(e) {
       e.preventDefault();
       const btn = e.target.querySelector('button');
-      btn.textContent = 'Reset link sent!';
+      btn.textContent = 'Reset link sent! ✓';
       btn.disabled = true;
-      setTimeout(showLogin, 2000);
+      setTimeout(showLogin, 2500);
     }
+
+    window.addEventListener('load', () => {
+      updateSlider();
+      applyRoleTheme('student');
+    });
+    window.addEventListener('resize', updateSlider);
   </script>
 </body>
 </html>

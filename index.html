@@ -202,6 +202,10 @@
         <a href="#how" class="hover:text-orange-500 transition">How It Works</a>
         <a href="#courses" class="hover:text-orange-500 transition">Courses</a>
         <a href="#contact" class="hover:text-orange-500 transition">Contact</a>
+        <button onclick="showInstallGuide()" style="display:none" id="nav-install-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-600 font-semibold text-xs hover:bg-indigo-100 transition">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 12l4 4 4-4"/><path d="M20 20H4"/></svg>
+          Install App
+        </button>
       </nav>
 
       <div class="flex items-center gap-2">
@@ -220,6 +224,10 @@
     <a href="#how" onclick="closeMobileMenu()">📖 How It Works</a>
     <a href="#courses" onclick="closeMobileMenu()">🎓 Courses</a>
     <a href="#contact" onclick="closeMobileMenu()">📞 Contact</a>
+    <button id="mob-install-btn" onclick="closeMobileMenu();showInstallGuide()" style="display:none;width:100%;text-align:left" class="flex items-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-indigo-600 bg-indigo-50 border border-indigo-100">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 12l4 4 4-4"/><path d="M20 20H4"/></svg>
+      📲 Install App on Phone
+    </button>
     <div class="mob-divider"></div>
     <a href="login.html" class="mob-login">🔑 Login</a>
     <a href="signup.html" class="mob-signup">✨ Sign Up Free</a>
@@ -569,6 +577,11 @@
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
+    // Show install buttons in nav
+    const nb = document.getElementById('nav-install-btn');
+    const mb = document.getElementById('mob-install-btn');
+    if (nb) nb.style.display = 'flex';
+    if (mb) mb.style.display = 'flex';
     // Show banner after 3 seconds
     setTimeout(() => document.getElementById('pwa-banner').classList.add('show'), 3000);
   });
@@ -593,12 +606,31 @@
   // ── iOS install guide ──
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  const iosDismissed = sessionStorage.getItem('ios-guide-dismissed');
 
-  if (isIOS && !isStandalone && !iosDismissed) {
-    setTimeout(() => {
+  function showInstallGuide() {
+    if (isIOS) {
       document.getElementById('ios-guide').classList.add('show');
-    }, 2500);
+    } else if (deferredPrompt) {
+      deferredPrompt.prompt();
+    } else {
+      // Fallback: show iOS-style guide with generic instructions
+      document.getElementById('ios-guide').classList.add('show');
+    }
+  }
+
+  // Show "Install App" buttons on iOS (not already installed)
+  if (isIOS && !isStandalone) {
+    const nb = document.getElementById('nav-install-btn');
+    const mb = document.getElementById('mob-install-btn');
+    if (nb) nb.style.display = 'flex';
+    if (mb) mb.style.display = 'flex';
+
+    // Auto-popup after 2.5s (only once per session)
+    if (!sessionStorage.getItem('ios-guide-dismissed')) {
+      setTimeout(() => {
+        document.getElementById('ios-guide').classList.add('show');
+      }, 2500);
+    }
   }
 
   document.getElementById('ios-guide-close').addEventListener('click', () => {
@@ -670,7 +702,7 @@
       The app icon will appear on your home screen — no App Store needed!
     </div>
   </div>
-  <div id="ios-guide-backdrop" onclick="document.getElementById('ios-guide').classList.remove('show');sessionStorage.setItem('ios-guide-dismissed','1')"></div>
+  <div id="ios-guide-backdrop" onclick="document.getElementById('ios-guide').classList.remove('show');sessionStorage.setItem('ios-guide-dismissed','1')" aria-hidden="true"></div>
 </div>
 
 <style>

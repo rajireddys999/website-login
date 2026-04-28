@@ -589,9 +589,25 @@
   window.addEventListener('appinstalled', () => {
     document.getElementById('pwa-banner').classList.remove('show');
   });
+
+  // ── iOS install guide ──
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const iosDismissed = sessionStorage.getItem('ios-guide-dismissed');
+
+  if (isIOS && !isStandalone && !iosDismissed) {
+    setTimeout(() => {
+      document.getElementById('ios-guide').classList.add('show');
+    }, 2500);
+  }
+
+  document.getElementById('ios-guide-close').addEventListener('click', () => {
+    document.getElementById('ios-guide').classList.remove('show');
+    sessionStorage.setItem('ios-guide-dismissed', '1');
+  });
 </script>
 
-<!-- PWA Install banner -->
+<!-- Android / Desktop install banner -->
 <div id="pwa-banner" role="complementary" aria-label="Install app">
   <img src="logo.png.jpeg" alt="Laxmi Academy"/>
   <div class="pwa-text">
@@ -601,5 +617,192 @@
   <button id="pwa-install-btn">Install</button>
   <button id="pwa-close-btn" aria-label="Dismiss">✕</button>
 </div>
+
+<!-- iOS Safari install guide -->
+<div id="ios-guide" role="dialog" aria-modal="true" aria-label="Install on iPhone">
+  <div id="ios-guide-sheet">
+    <div id="ios-guide-handle"></div>
+    <div id="ios-guide-header">
+      <img src="logo.png.jpeg" alt="Laxmi Academy" id="ios-guide-icon"/>
+      <div>
+        <div id="ios-guide-title">Install Laxmi Academy</div>
+        <div id="ios-guide-sub">Add to your iPhone home screen</div>
+      </div>
+      <button id="ios-guide-close" aria-label="Close">✕</button>
+    </div>
+
+    <div id="ios-guide-steps">
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <div class="ios-step-body">
+          <div class="ios-step-label">Tap the Share button</div>
+          <div class="ios-step-desc">at the bottom of your Safari browser</div>
+        </div>
+        <div class="ios-step-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <div class="ios-step-body">
+          <div class="ios-step-label">Scroll down &amp; tap</div>
+          <div class="ios-step-desc">"Add to Home Screen"</div>
+        </div>
+        <div class="ios-step-icon" style="font-size:1.5rem;">➕</div>
+      </div>
+
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <div class="ios-step-body">
+          <div class="ios-step-label">Tap <strong>Add</strong></div>
+          <div class="ios-step-desc">in the top-right corner</div>
+        </div>
+        <div class="ios-step-icon" style="font-size:1.5rem;">✅</div>
+      </div>
+    </div>
+
+    <div id="ios-guide-footer">
+      The app icon will appear on your home screen — no App Store needed!
+    </div>
+  </div>
+  <div id="ios-guide-backdrop" onclick="document.getElementById('ios-guide').classList.remove('show');sessionStorage.setItem('ios-guide-dismissed','1')"></div>
+</div>
+
+<style>
+  /* iOS guide overlay */
+  #ios-guide {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  #ios-guide.show { display: flex; }
+
+  #ios-guide-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    animation: fadeIn .3s ease;
+  }
+  #ios-guide-sheet {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    padding: 0 1.25rem 2rem;
+    width: 100%;
+    max-width: 480px;
+    animation: sheetUp .35s cubic-bezier(0.16,1,0.3,1) both;
+    font-family: 'Inter', sans-serif;
+  }
+  html.dark #ios-guide-sheet {
+    background: #1c1a2e;
+    color: #f1f5f9;
+  }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+
+  #ios-guide-handle {
+    width: 40px; height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    margin: 0.75rem auto 1.1rem;
+  }
+  html.dark #ios-guide-handle { background: rgba(255,255,255,0.15); }
+
+  #ios-guide-header {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1.4rem;
+  }
+  #ios-guide-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 2px solid rgba(99,102,241,0.2);
+    flex-shrink: 0;
+  }
+  #ios-guide-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+  }
+  html.dark #ios-guide-title { color: #f1f5f9; }
+  #ios-guide-sub {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.15rem;
+  }
+  html.dark #ios-guide-sub { color: #94a3b8; }
+  #ios-guide-close {
+    margin-left: auto;
+    background: #f1f5f9;
+    border: none;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  html.dark #ios-guide-close { background: rgba(255,255,255,0.1); color: #94a3b8; }
+
+  #ios-guide-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+  .ios-step {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.85rem 1rem;
+    background: #f8fafc;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+  }
+  html.dark .ios-step { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+
+  .ios-step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,#6366f1,#8b5cf6);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ios-step-body { flex: 1; }
+  .ios-step-label { font-size: 0.88rem; font-weight: 700; color: #0f172a; }
+  html.dark .ios-step-label { color: #f1f5f9; }
+  .ios-step-desc { font-size: 0.78rem; color: #64748b; margin-top: 0.1rem; }
+  html.dark .ios-step-desc { color: #94a3b8; }
+  .ios-step-icon { flex-shrink: 0; display:flex; align-items:center; }
+
+  #ios-guide-footer {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    padding: 0 0.5rem;
+  }
+</style>
 </body>
 </html>

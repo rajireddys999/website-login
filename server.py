@@ -105,7 +105,7 @@ def login():
     conn = get_conn()
     if role == 'student':
         user = conn.execute(
-            "SELECT * FROM students WHERE (email = ? OR phone = ?) AND is_active = 1",
+            "SELECT * FROM students WHERE (email = ? OR phone = ?)",
             (identifier, identifier)
         ).fetchone()
     elif role == 'admin':
@@ -124,15 +124,10 @@ def login():
     if not user or not bcrypt.checkpw(password.encode(), user['password'].encode()):
         return jsonify({'error': 'Invalid credentials. Please check and try again.'}), 401
 
-    if role == 'student' and not user['is_active']:
-        return jsonify({
-            'error': 'Payment pending. Please complete your payment to activate your account.',
-            'payment_pending': True
-        }), 403
-
     token = create_session(user['id'], role)
     safe  = {k: v for k, v in dict(user).items() if k != 'password'}
-    return jsonify({'token': token, 'role': role, 'user': safe})
+    payment_pending = role == 'student' and user['payment_status'] != 'paid'
+    return jsonify({'token': token, 'role': role, 'user': safe, 'payment_pending': payment_pending})
 
 # ── POST /api/register ───────────────────────────────────────────
 
@@ -204,7 +199,7 @@ def me():
     conn = get_conn()
     if session['role'] == 'student':
         user = conn.execute(
-            "SELECT id, full_name, email, phone, course, plan, created_at FROM students WHERE id = ?",
+            "SELECT id, full_name, email, phone, course, plan, created_at, payment_status, is_active FROM students WHERE id = ?",
             (session['user_id'],)
         ).fetchone()
     elif session['role'] == 'admin':
@@ -253,8 +248,11 @@ def get_lessons():
 
     if session['role'] == 'student':
         student = conn.execute(
-            "SELECT course FROM students WHERE id = ?", (session['user_id'],)
+            "SELECT course, payment_status FROM students WHERE id = ?", (session['user_id'],)
         ).fetchone()
+        if not student or student['payment_status'] != 'paid':
+            conn.close()
+            return jsonify([])
         student_course = student['course'] if student else None
 
         if student_course:

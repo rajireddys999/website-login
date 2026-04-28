@@ -803,15 +803,17 @@
         });
         const data = await res.json();
         if (!res.ok) {
-          const msg = data.payment_pending
-            ? '⚠️ Payment pending. Complete your payment to activate your account.'
-            : (data.error || 'Login failed. Please try again.');
-          showError(msg);
+          showError(data.error || 'Login failed. Please try again.');
           btn.disabled = false; btn.textContent = 'Sign In'; return;
         }
         localStorage.setItem('la_token', data.token);
         localStorage.setItem('la_role',  data.role);
         localStorage.setItem('la_user',  JSON.stringify(data.user));
+        if (data.payment_pending) {
+          localStorage.setItem('la_payment_pending', '1');
+        } else {
+          localStorage.removeItem('la_payment_pending');
+        }
         const name = data.user.full_name || data.user.name || 'Student';
         document.getElementById('success-name').textContent = name;
         document.getElementById('form-view').style.display = 'none';

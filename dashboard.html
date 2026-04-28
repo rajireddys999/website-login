@@ -574,6 +574,16 @@
     <!-- Content -->
     <div class="content">
 
+      <!-- ── PAYMENT PENDING BANNER ──────────────────────────────── -->
+      <div id="payment-pending-banner" style="display:none;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:1.25rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <div style="font-size:1.6rem;flex-shrink:0;">⚠️</div>
+        <div style="flex:1;min-width:180px;">
+          <div style="font-weight:700;font-size:1rem;margin-bottom:.25rem;">Payment Pending</div>
+          <div style="font-size:.85rem;opacity:.92;">Your account is active but courses are locked until payment is complete.</div>
+        </div>
+        <a id="make-payment-link" href="#" onclick="initiatePayment(event)" style="display:inline-block;background:#fff;color:#e65100;font-weight:700;padding:.55rem 1.2rem;border-radius:8px;text-decoration:none;font-size:.88rem;white-space:nowrap;flex-shrink:0;">Make Payment →</a>
+      </div>
+
       <!-- ── HOME PAGE ──────────────────────────────────────────── -->
       <div class="page active" id="page-home">
         <div class="welcome-banner">
@@ -628,9 +638,12 @@
           <div>
             <div class="course-name" id="course-title">Loading…</div>
             <div class="course-meta" id="course-meta"></div>
-            <div class="plan-badge">
+            <div class="plan-badge" id="enrollment-badge">
               <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
               Active Enrollment
+            </div>
+            <div id="payment-pending-badge" style="display:none;margin-top:.6rem;display:none;align-items:center;gap:.4rem;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.35);color:#ff9800;font-size:.75rem;font-weight:700;padding:.3rem .7rem;border-radius:20px;">
+              ⚠️ Payment Pending — <a href="#" onclick="initiatePayment(event)" style="color:#ff9800;text-decoration:underline;">Pay Now</a>
             </div>
           </div>
         </div>
@@ -757,11 +770,50 @@
       if (!res.ok) { logout(); return; }
       student = data.user;
       renderAll();
+      applyPaymentPendingState();
       loadCourseVideos();
     } catch {
       const stored = localStorage.getItem('la_user');
-      if (stored) { student = JSON.parse(stored); renderAll(); loadCourseVideos(); }
+      if (stored) { student = JSON.parse(stored); renderAll(); applyPaymentPendingState(); loadCourseVideos(); }
       else logout();
+    }
+  }
+
+  function applyPaymentPendingState() {
+    const isPending = student.payment_status && student.payment_status !== 'paid';
+    const banner = document.getElementById('payment-pending-banner');
+    if (isPending) {
+      banner.style.display = 'flex';
+      localStorage.setItem('la_payment_pending', '1');
+    } else {
+      banner.style.display = 'none';
+      localStorage.removeItem('la_payment_pending');
+    }
+  }
+
+  async function initiatePayment(e) {
+    e.preventDefault();
+    const link = document.getElementById('make-payment-link');
+    link.textContent = 'Connecting…';
+    try {
+      const plan = student.plan || '';
+      const allAmounts = [...plan.matchAll(/₹(\d+)/g)];
+      const amount = allAmounts.length ? parseInt(allAmounts[allAmounts.length - 1][1]) : 99;
+      const res = await fetch('/api/payment/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ amount })
+      });
+      const data = await res.json();
+      if (data.redirect_url) {
+        window.location.href = data.redirect_url;
+      } else {
+        link.textContent = 'Make Payment →';
+        alert('Payment gateway unavailable. Please try again later or contact support.');
+      }
+    } catch {
+      link.textContent = 'Make Payment →';
+      alert('Could not connect to payment gateway. Please try again.');
     }
   }
 
@@ -806,12 +858,29 @@
     document.getElementById('course-title').textContent = course;
     document.getElementById('course-meta').textContent  = 'Plan: ' + student.plan;
 
+    const isPending = student.payment_status && student.payment_status !== 'paid';
+    const enrollBadge = document.getElementById('enrollment-badge');
+    const pendingBadge = document.getElementById('payment-pending-badge');
+    if (enrollBadge) enrollBadge.style.display = isPending ? 'none' : '';
+    if (pendingBadge) pendingBadge.style.display = isPending ? 'flex' : 'none';
+
     buildSchedule();
     buildTests();
   }
 
   // ── Load & render course videos ───────────────────────────────
   async function loadCourseVideos() {
+    const isPending = student && student.payment_status && student.payment_status !== 'paid';
+
+    if (isPending) {
+      courseVideos = [];
+      animateValue(document.getElementById('stat-videos'), 0);
+      document.getElementById('course-meta').textContent = 'Payment required · Plan: ' + (student?.plan||'');
+      showPaymentLockedState('home-videos', 'home-videos-loading', 'home-videos-empty');
+      showPaymentLockedState('course-videos-list', 'course-videos-loading', 'course-videos-empty');
+      return;
+    }
+
     try {
       const res = await fetch('/api/lessons', { headers:{'Authorization':'Bearer '+token} });
       if (res.ok) {
@@ -825,6 +894,18 @@
 
     renderVideoList('home-videos', 'home-videos-loading', 'home-videos-empty');
     renderVideoList('course-videos-list', 'course-videos-loading', 'course-videos-empty');
+  }
+
+  function showPaymentLockedState(listId, loadingId, emptyId) {
+    document.getElementById(loadingId).style.display = 'none';
+    document.getElementById(emptyId).style.display = 'none';
+    document.getElementById(listId).innerHTML = `
+      <div style="padding:2.5rem;text-align:center;background:var(--card);border-radius:14px;border:1.5px dashed var(--border);">
+        <div style="font-size:2.5rem;margin-bottom:.75rem;">🔒</div>
+        <p style="font-weight:600;margin-bottom:.4rem;color:var(--text)">Courses Locked</p>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">Complete your payment to unlock all course videos.</p>
+        <a href="#" onclick="initiatePayment(event)" style="display:inline-block;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;font-weight:700;padding:.6rem 1.4rem;border-radius:9px;text-decoration:none;font-size:.9rem;">Make Payment to Unlock</a>
+      </div>`;
   }
 
   function renderVideoList(listId, loadingId, emptyId) {

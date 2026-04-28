@@ -741,10 +741,15 @@
         </svg>
       </div>
       <h3>Account Ready!</h3>
-      <p id="payment-name-msg">Redirecting to PhonePe to complete payment…</p>
-      <div style="margin-top:1.2rem;display:flex;align-items:center;gap:0.5rem;color:var(--text-muted);font-size:0.82rem;">
+      <p id="payment-name-msg">Complete payment to access your courses.</p>
+      <div id="payment-connecting" style="margin-top:1.2rem;display:flex;align-items:center;gap:0.5rem;color:var(--text-muted);font-size:0.82rem;">
         <svg style="animation:spinIcon 1s linear infinite;width:16px;height:16px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         Connecting to payment gateway…
+      </div>
+      <div id="payment-actions" style="display:none;margin-top:1.5rem;display:none;flex-direction:column;gap:.75rem;width:100%;max-width:280px;">
+        <button id="pay-now-btn" onclick="proceedToPayment()" style="padding:.75rem 1.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;">Pay Now — <span id="pay-amount"></span></button>
+        <button onclick="skipPayment()" style="padding:.65rem 1.5rem;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:10px;font-size:.85rem;cursor:pointer;">Skip for now — activate later</button>
+        <p style="font-size:.75rem;color:var(--text-muted);text-align:center;margin:0;">You can pay anytime from your dashboard.</p>
       </div>
     </div>
 
@@ -875,32 +880,32 @@
         localStorage.setItem('la_role',  data.role);
         localStorage.setItem('la_pending_name', name);
 
-        // Step 2: Show payment redirect screen
+        // Step 2: Show payment screen
         document.getElementById('form-view').style.display = 'none';
         document.getElementById('payment-view').classList.add('show');
         document.getElementById('payment-name-msg').textContent =
-          `Hi ${name}! Connecting to PhonePe to complete ₹${total} payment…`;
+          `Hi ${name}! Your account has been created.`;
 
         // Step 3: Initiate PhonePe payment
-        const payRes = await fetch('/api/payment/initiate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + data.token
-          },
-          body: JSON.stringify({ amount: total })
-        });
-        const payData = await payRes.json();
+        let payRedirectUrl = null;
+        try {
+          const payRes = await fetch('/api/payment/initiate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + data.token
+            },
+            body: JSON.stringify({ amount: total })
+          });
+          const payData = await payRes.json();
+          payRedirectUrl = payData.redirect_url || null;
+        } catch { payRedirectUrl = null; }
 
-        if (payData.redirect_url) {
-          window.location.href = payData.redirect_url;
-        } else {
-          // Payment gateway unavailable — show fallback success
-          document.getElementById('payment-view').classList.remove('show');
-          document.getElementById('success-name').textContent = name;
-          document.getElementById('success-view').classList.add('show');
-          setTimeout(() => window.location.href = 'login.html', 3000);
-        }
+        // Show action buttons instead of auto-redirecting
+        document.getElementById('payment-connecting').style.display = 'none';
+        document.getElementById('pay-amount').textContent = '₹' + total;
+        window._payRedirectUrl = payRedirectUrl;
+        document.getElementById('payment-actions').style.display = 'flex';
 
       } catch (err) {
         // Server offline — show fallback
@@ -909,6 +914,22 @@
         document.getElementById('success-view').classList.add('show');
         setTimeout(() => window.location.href = 'login.html', 3000);
       }
+    }
+
+    function proceedToPayment() {
+      if (window._payRedirectUrl) {
+        window.location.href = window._payRedirectUrl;
+      } else {
+        // Gateway unavailable — go to login
+        document.getElementById('payment-view').classList.remove('show');
+        document.getElementById('success-name').textContent = localStorage.getItem('la_pending_name') || '';
+        document.getElementById('success-view').classList.add('show');
+        setTimeout(() => window.location.href = 'login.html', 3000);
+      }
+    }
+
+    function skipPayment() {
+      window.location.href = 'dashboard.html';
     }
   </script>
 </body>

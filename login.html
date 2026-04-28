@@ -269,23 +269,6 @@
     }
     .back-link:hover { color: var(--active); }
 
-    /* Theme toggle */
-    #theme-toggle {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--input-bg);
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, transform 0.2s;
-      position: relative;
-    }
-    #theme-toggle:hover { background: var(--input-focus); transform: rotate(20deg); }
-
     .form-title {
       text-align: center;
       margin-bottom: 1.6rem;
@@ -628,9 +611,6 @@
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             Back to Home
           </a>
-          <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-            <span class="theme-icon">🌙</span>
-          </button>
         </div>
 
         <div class="form-title">

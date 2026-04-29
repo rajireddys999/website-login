@@ -491,7 +491,7 @@ def admin_students():
         return err_resp, err_code
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, full_name, email, phone, course, plan, is_active, created_at FROM students ORDER BY created_at DESC"
+        "SELECT id, full_name, email, phone, course, plan, is_active, payment_status, created_at FROM students ORDER BY created_at DESC"
     ).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
@@ -529,8 +529,13 @@ def admin_stats():
         'courses': [dict(r) for r in conn.execute(
             "SELECT course, COUNT(*) as count FROM students GROUP BY course ORDER BY count DESC"
         ).fetchall()],
+        'pending_students': conn.execute("SELECT COUNT(*) FROM students WHERE payment_status='pending'").fetchone()[0],
+        'total_revenue':    conn.execute("SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='paid'").fetchone()[0],
         'recent_students': [dict(r) for r in conn.execute(
             "SELECT id, full_name, email, course, created_at FROM students ORDER BY created_at DESC LIMIT 5"
+        ).fetchall()],
+        'recent_enquiries': [dict(r) for r in conn.execute(
+            "SELECT id, full_name, phone, course, status, created_at FROM enquiries ORDER BY created_at DESC LIMIT 5"
         ).fetchall()],
     }
     conn.close()

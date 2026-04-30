@@ -1465,6 +1465,16 @@
     const list = document.getElementById('es-enrollments-list');
     const total = esEnrollments.filter(e=>e.status==='active').reduce((s,e)=>s+(e.amount||0),0);
     document.getElementById('es-total-amt').textContent = '₹'+total.toLocaleString('en-IN');
+
+    // Mark already-enrolled courses in the Add dropdown
+    const activeCourses = new Set(esEnrollments.filter(e=>e.status==='active').map(e=>e.course));
+    const courseSelect = document.getElementById('es-new-course');
+    [...courseSelect.options].forEach(opt => {
+      if (!opt.value) return;
+      opt.disabled = activeCourses.has(opt.value);
+      opt.textContent = activeCourses.has(opt.value) ? opt.value + ' ✓ enrolled' : opt.value;
+    });
+
     if (!esEnrollments.length) {
       list.innerHTML = '<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:.6rem">No enrollments yet</div>';
       return;
@@ -1506,6 +1516,11 @@
     const amount  = parseInt(document.getElementById('es-new-amount').value) || 0;
     const errEl   = document.getElementById('es-error');
     if (!course) { errEl.textContent='Please select a course.'; errEl.style.display='block'; return; }
+    const alreadyActive = esEnrollments.find(e => e.course === course && e.status === 'active');
+    if (alreadyActive) {
+      errEl.textContent = `${course} is already an active enrollment. Change its status to Inactive first if you want to re-enrol with a different plan.`;
+      errEl.style.display = 'block'; return;
+    }
     errEl.style.display = 'none';
 
     const addBtn = document.querySelector('#edit-student-modal button[onclick="addEnrollment()"]');

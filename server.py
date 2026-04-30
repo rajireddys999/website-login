@@ -214,6 +214,18 @@ def register():
     conn.commit()
     student_id = cursor.lastrowid
 
+    # Immediately create course_enrollment so admin can see it without waiting for migration
+    if course:
+        pricing = conn.execute(
+            "SELECT amount FROM course_pricing WHERE course=? AND plan=?", (course, plan)
+        ).fetchone()
+        enr_amount = pricing['amount'] if pricing else 99
+        conn.execute(
+            "INSERT INTO course_enrollments (student_id, course, plan, amount, status) VALUES (?,?,?,?,'active')",
+            (student_id, course, plan, enr_amount)
+        )
+        conn.commit()
+
     # Create verification token (24-hour expiry)
     verify_token = secrets.token_urlsafe(32)
     expires_at   = (datetime.utcnow() + timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
@@ -1400,6 +1412,15 @@ def add_student_enrollment(sid):
     student = conn.execute("SELECT id, course FROM students WHERE id=?", (sid,)).fetchone()
     if not student:
         conn.close(); return jsonify({'error': 'Student not found.'}), 404
+
+    # Block duplicate active enrollment for the same course
+    dup = conn.execute(
+        "SELECT id FROM course_enrollments WHERE student_id=? AND course=? AND status='active'",
+        (sid, course)
+    ).fetchone()
+    if dup:
+        conn.close()
+        return jsonify({'error': f'Student is already actively enrolled in {course}. Remove or deactivate the existing enrollment first.'}), 409
 
     cur = conn.execute(
         "INSERT INTO course_enrollments (student_id, course, plan, amount) VALUES (?,?,?,?)",

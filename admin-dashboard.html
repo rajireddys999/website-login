@@ -1476,6 +1476,7 @@
   function closeEditStudent() {
     document.getElementById('edit-student-modal').classList.remove('show');
     editStudentId = null; esEnrollments = [];
+    loadStudents(); // always sync table from server on close
   }
 
   function renderEnrollments() {

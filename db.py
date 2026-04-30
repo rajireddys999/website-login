@@ -99,6 +99,7 @@ def init_db():
 
     _migrate_payment_status(conn)
     _migrate_lessons_course(conn)
+    _migrate_email_verification(conn)
     conn.commit()
     conn.close()
     print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries")
@@ -114,6 +115,28 @@ def _migrate_lessons_course(conn):
     if 'course' not in cols:
         conn.execute("ALTER TABLE lessons ADD COLUMN course TEXT NOT NULL DEFAULT 'all'")
         print("  [OK] lessons.course column added")
+
+def _migrate_email_verification(conn):
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()]
+    if 'email_verified' not in cols:
+        conn.execute("ALTER TABLE students ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
+        # Mark existing students as already verified so they aren't locked out
+        conn.execute("UPDATE students SET email_verified = 1")
+        print("  [OK] students.email_verified column added")
+
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS email_verifications (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            token      TEXT    UNIQUE NOT NULL,
+            expires_at TEXT    NOT NULL,
+            used       INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_ev_token      ON email_verifications(token);
+        CREATE INDEX IF NOT EXISTS idx_ev_student    ON email_verifications(student_id);
+    """)
 
 def _migrate_sessions(conn):
     # Check if sessions table exists with old constraint (student|admin only)

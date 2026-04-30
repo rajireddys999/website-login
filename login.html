@@ -794,7 +794,7 @@
 
     function showError(msg) {
       const el = document.getElementById('error-msg');
-      document.getElementById('error-text').textContent = msg;
+      document.getElementById('error-text').innerHTML = msg;
       el.classList.add('show');
     }
     function hideError() { document.getElementById('error-msg').classList.remove('show'); }
@@ -816,7 +816,13 @@
         });
         const data = await res.json();
         if (!res.ok) {
-          showError(data.error || 'Login failed. Please try again.');
+          if (res.status === 429) {
+            showError('Too many login attempts. Please wait a minute and try again.');
+          } else if (data.email_unverified) {
+            showError(data.error + ' <a href="verify-email.html" style="color:#a5b4fc;text-decoration:underline">Resend link</a>');
+          } else {
+            showError(data.error || 'Login failed. Please try again.');
+          }
           btn.disabled = false; btn.textContent = 'Sign In'; return;
         }
         localStorage.setItem('la_token', data.token);

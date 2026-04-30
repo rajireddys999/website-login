@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Verify Email — Laxmi Academy</title>
+  <link rel="icon" href="logo.png"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;
+         background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);font-family:'Inter',sans-serif;padding:1rem}
+    .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+          border-radius:20px;padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center;
+          backdrop-filter:blur(20px)}
+    .logo{width:60px;height:60px;border-radius:50%;margin:0 auto 1.2rem;display:block}
+    .icon{font-size:3rem;margin-bottom:1rem}
+    h1{color:#fff;font-size:1.4rem;margin-bottom:.6rem}
+    p{color:rgba(255,255,255,.65);font-size:.9rem;line-height:1.6;margin-bottom:1.5rem}
+    .btn{display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+         color:#fff;font-weight:700;padding:.75rem 2rem;border-radius:10px;
+         text-decoration:none;font-size:.95rem;transition:.2s}
+    .btn:hover{opacity:.88;transform:translateY(-1px)}
+    .btn-ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+               color:rgba(255,255,255,.8);font-size:.85rem;padding:.6rem 1.4rem;
+               border-radius:8px;cursor:pointer;margin-top:.8rem;display:inline-block}
+    .btn-ghost:hover{background:rgba(255,255,255,.14)}
+    .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);
+             border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 1.2rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .resend-form{margin-top:1.5rem;border-top:1px solid rgba(255,255,255,.1);padding-top:1.5rem}
+    .resend-form input{width:100%;padding:.7rem 1rem;border-radius:8px;border:1px solid rgba(255,255,255,.2);
+                       background:rgba(255,255,255,.07);color:#fff;font-size:.9rem;margin-bottom:.7rem}
+    .resend-form input::placeholder{color:rgba(255,255,255,.35)}
+    .msg{font-size:.82rem;margin-top:.5rem;padding:.5rem .8rem;border-radius:6px}
+    .msg.ok{background:rgba(34,197,94,.15);color:#4ade80}
+    .msg.err{background:rgba(239,68,68,.15);color:#f87171}
+  </style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="spinner" id="spinner"></div>
+  <h1 id="title">Verifying your email…</h1>
+  <p id="subtitle">Please wait a moment.</p>
+</div>
+
+<script>
+(async () => {
+  const token = new URLSearchParams(location.search).get('token');
+  const card  = document.getElementById('card');
+
+  if (!token) {
+    showResult('error');
+    return;
+  }
+
+  try {
+    const res  = await fetch(`/api/verify-email?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (res.ok) {
+      showResult('success');
+    } else {
+      showResult('error', data.error);
+    }
+  } catch {
+    showResult('error', 'Network error. Please try again.');
+  }
+})();
+
+function showResult(type, msg) {
+  const spinner  = document.getElementById('spinner');
+  const title    = document.getElementById('title');
+  const subtitle = document.getElementById('subtitle');
+  spinner.style.display = 'none';
+
+  if (type === 'success') {
+    document.getElementById('card').innerHTML = `
+      <div class="icon">✅</div>
+      <h1>Email Verified!</h1>
+      <p>Your account is now active. You can log in and start learning.</p>
+      <a href="login.html" class="btn">Go to Login →</a>`;
+  } else {
+    document.getElementById('card').innerHTML = `
+      <div class="icon">⚠️</div>
+      <h1>Verification Failed</h1>
+      <p>${msg || 'This link is invalid or has expired.'}</p>
+      <div class="resend-form">
+        <p style="margin-bottom:.8rem;font-size:.85rem">Request a new verification link:</p>
+        <input type="email" id="resend-email" placeholder="Enter your email address"/>
+        <button class="btn" onclick="resend()" style="width:100%;cursor:pointer;border:none">Resend Link</button>
+        <div id="resend-msg"></div>
+      </div>
+      <a href="login.html" style="display:block;margin-top:1rem;color:rgba(255,255,255,.45);font-size:.82rem;text-decoration:none">← Back to Login</a>`;
+  }
+}
+
+async function resend() {
+  const email = document.getElementById('resend-email')?.value?.trim();
+  const msgEl = document.getElementById('resend-msg');
+  if (!email) { msgEl.innerHTML = '<div class="msg err">Please enter your email.</div>'; return; }
+  try {
+    const res  = await fetch('/api/resend-verification', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.innerHTML = `<div class="msg ok">${data.message}</div>`;
+    } else {
+      msgEl.innerHTML = `<div class="msg err">${data.error}</div>`;
+    }
+  } catch {
+    msgEl.innerHTML = '<div class="msg err">Network error. Please try again.</div>';
+  }
+}
+</script>
+</body>
+</html>

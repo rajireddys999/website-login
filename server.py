@@ -1,14 +1,52 @@
-import uuid, os, re, json, base64, hashlib
+import uuid, os, re, json, base64, hashlib, secrets, smtplib
+from email.mime.text import MIMEText
 import bcrypt
 import requests as http_requests
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from db import get_conn, init_db
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
+
+limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[])
+
+# ── Email config ─────────────────────────────────────────────────
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SMTP_USER = os.environ.get('SMTP_USER', '')
+SMTP_PASS = os.environ.get('SMTP_PASS', '')
+FROM_EMAIL = os.environ.get('FROM_EMAIL', SMTP_USER)
+
+def send_email(to_addr, subject, body_html):
+    if not SMTP_USER or not SMTP_PASS:
+        app.logger.warning("SMTP not configured — skipping email to %s", to_addr)
+        return
+    msg = MIMEText(body_html, 'html')
+    msg['Subject'] = subject
+    msg['From']    = f"Laxmi Academy <{FROM_EMAIL}>"
+    msg['To']      = to_addr
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
+            s.starttls()
+            s.login(SMTP_USER, SMTP_PASS)
+            s.sendmail(FROM_EMAIL, [to_addr], msg.as_string())
+    except Exception as exc:
+        app.logger.error("Email send failed to %s: %s", to_addr, exc)
+
+def send_verification_email(email, full_name, token):
+    verify_url = f"{APP_BASE_URL}/verify-email.html?token={token}"
+    body = f"""
+    <p>Hi {full_name},</p>
+    <p>Please verify your email address to activate your Laxmi Academy account:</p>
+    <p><a href="{verify_url}" style="background:#6366f1;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Verify Email</a></p>
+    <p>This link expires in 24 hours. If you did not sign up, ignore this email.</p>
+    """
+    send_email(email, "Verify your Laxmi Academy account", body)
 
 # ── PhonePe config (UAT sandbox by default) ───────────────────────
 PHONEPE_MERCHANT_ID = os.environ.get('PHONEPE_MERCHANT_ID', 'PGTESTPAYUAT86')
@@ -93,6 +131,7 @@ def static_files(filename):
 # ── POST /api/login ──────────────────────────────────────────────
 
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def login():
     data       = request.get_json() or {}
     identifier = data.get('identifier', '').strip()
@@ -123,6 +162,9 @@ def login():
 
     if not user or not bcrypt.checkpw(password.encode(), user['password'].encode()):
         return jsonify({'error': 'Invalid credentials. Please check and try again.'}), 401
+
+    if role == 'student' and not user.get('email_verified', 1):
+        return jsonify({'error': 'Please verify your email before logging in. Check your inbox for the verification link.', 'email_unverified': True}), 403
 
     token = create_session(user['id'], role)
     safe  = {k: v for k, v in dict(user).items() if k != 'password'}
@@ -166,15 +208,93 @@ def register():
 
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     cursor = conn.execute(
-        "INSERT INTO students (full_name, email, phone, password, course, plan, is_active, payment_status) VALUES (?, ?, ?, ?, ?, ?, 0, 'pending')",
+        "INSERT INTO students (full_name, email, phone, password, course, plan, is_active, payment_status, email_verified) VALUES (?, ?, ?, ?, ?, ?, 0, 'pending', 0)",
         (full_name, email, phone, hashed, course, plan)
     )
     conn.commit()
     student_id = cursor.lastrowid
+
+    # Create verification token (24-hour expiry)
+    verify_token = secrets.token_urlsafe(32)
+    expires_at   = (datetime.utcnow() + timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+    conn.execute(
+        "INSERT INTO email_verifications (student_id, token, expires_at) VALUES (?, ?, ?)",
+        (student_id, verify_token, expires_at)
+    )
+    conn.commit()
     conn.close()
 
-    token = create_session(student_id, 'student')
-    return jsonify({'token': token, 'role': 'student', 'student_id': student_id, 'message': 'Account created successfully.'}), 201
+    send_verification_email(email, full_name, verify_token)
+
+    session_token = create_session(student_id, 'student')
+    return jsonify({
+        'token': session_token, 'role': 'student', 'student_id': student_id,
+        'message': 'Account created. Please check your email to verify your account.',
+        'email_verification_required': True
+    }), 201
+
+# ── GET /api/verify-email?token= ────────────────────────────────
+
+@app.route('/api/verify-email', methods=['GET'])
+def verify_email():
+    token = request.args.get('token', '').strip()
+    if not token:
+        return jsonify({'error': 'Verification token is required.'}), 400
+
+    conn = get_conn()
+    row  = conn.execute(
+        "SELECT * FROM email_verifications WHERE token = ? AND used = 0 AND expires_at > datetime('now')",
+        (token,)
+    ).fetchone()
+
+    if not row:
+        conn.close()
+        return jsonify({'error': 'Invalid or expired verification link. Please request a new one.'}), 400
+
+    conn.execute("UPDATE students SET email_verified = 1 WHERE id = ?", (row['student_id'],))
+    conn.execute("UPDATE email_verifications SET used = 1 WHERE id = ?", (row['id'],))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Email verified successfully. You can now log in.'})
+
+# ── POST /api/resend-verification ────────────────────────────────
+
+@app.route('/api/resend-verification', methods=['POST'])
+@limiter.limit("3 per hour")
+def resend_verification():
+    data  = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'error': 'email is required.'}), 400
+
+    conn    = get_conn()
+    student = conn.execute(
+        "SELECT id, full_name, email_verified FROM students WHERE email = ?", (email,)
+    ).fetchone()
+
+    if not student:
+        conn.close()
+        # Don't reveal whether email exists
+        return jsonify({'message': 'If that email is registered, a new verification link has been sent.'})
+
+    if student['email_verified']:
+        conn.close()
+        return jsonify({'error': 'This email is already verified.'}), 409
+
+    # Invalidate previous tokens
+    conn.execute("UPDATE email_verifications SET used = 1 WHERE student_id = ?", (student['id'],))
+
+    verify_token = secrets.token_urlsafe(32)
+    expires_at   = (datetime.utcnow() + timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+    conn.execute(
+        "INSERT INTO email_verifications (student_id, token, expires_at) VALUES (?, ?, ?)",
+        (student['id'], verify_token, expires_at)
+    )
+    conn.commit()
+    conn.close()
+
+    send_verification_email(email, student['full_name'] if student else '', verify_token)
+    return jsonify({'message': 'If that email is registered, a new verification link has been sent.'})
 
 # ── POST /api/logout ─────────────────────────────────────────────
 
@@ -800,8 +920,17 @@ def payment_callback(txn_id):
 
 @app.route('/api/payment/webhook', methods=['POST'])
 def payment_webhook():
-    body = request.get_json(silent=True) or {}
+    body    = request.get_json(silent=True) or {}
     encoded = body.get('response', '')
+
+    # Verify PhonePe X-VERIFY signature
+    x_verify = request.headers.get('X-VERIFY', '')
+    if x_verify:
+        expected = hashlib.sha256((encoded + PHONEPE_SALT_KEY).encode()).hexdigest() + '###' + PHONEPE_SALT_INDEX
+        if not secrets.compare_digest(x_verify, expected):
+            app.logger.warning("PhonePe webhook signature mismatch — possible spoofing attempt")
+            return jsonify({'error': 'Invalid signature.'}), 400
+
     try:
         decoded   = json.loads(base64.b64decode(encoded).decode())
         txn_id    = decoded.get('data', {}).get('merchantTransactionId', '')

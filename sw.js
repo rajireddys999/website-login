@@ -1,10 +1,11 @@
-const CACHE = 'laxmi-academy-v1';
+const CACHE = 'laxmi-academy-v2';
 
 const PRECACHE = [
   '/',
   '/index.html',
   '/login.html',
   '/signup.html',
+  '/verify-email.html',
   '/dashboard.html',
   '/instructor-dashboard.html',
   '/admin-dashboard.html',

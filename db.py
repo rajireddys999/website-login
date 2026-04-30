@@ -241,33 +241,33 @@ def _migrate_enrollments(conn):
     count = conn.execute("SELECT COUNT(*) FROM course_pricing").fetchone()[0]
     if count == 0:
         defaults = [
-            ('Physics Foundation', '1 Month',    99),
+            ('Physics Foundation', '1 Month',  2500),
             ('Physics Foundation', '3 Months', 6500),
-            ('Physics Foundation', '6 Months', 11000),
+            ('Physics Foundation', '6 Months',   99),
             ('Physics Foundation', '12 Months',18000),
-            ('JEE Mains',          '1 Month',    99),
+            ('JEE Mains',          '1 Month',  3000),
             ('JEE Mains',          '3 Months', 8000),
-            ('JEE Mains',          '6 Months', 14000),
+            ('JEE Mains',          '6 Months',   99),
             ('JEE Mains',          '12 Months',22000),
-            ('JEE Advanced',       '1 Month',    99),
+            ('JEE Advanced',       '1 Month',  3500),
             ('JEE Advanced',       '3 Months', 9500),
-            ('JEE Advanced',       '6 Months', 16500),
+            ('JEE Advanced',       '6 Months',   99),
             ('JEE Advanced',       '12 Months',26000),
-            ('NEET',               '1 Month',    99),
+            ('NEET',               '1 Month',  3000),
             ('NEET',               '3 Months', 8000),
-            ('NEET',               '6 Months', 14000),
+            ('NEET',               '6 Months',   99),
             ('NEET',               '12 Months',22000),
-            ('EAMCET',             '1 Month',    99),
+            ('EAMCET',             '1 Month',  2500),
             ('EAMCET',             '3 Months', 6500),
-            ('EAMCET',             '6 Months', 11000),
+            ('EAMCET',             '6 Months',   99),
             ('EAMCET',             '12 Months',18000),
-            ('Class 11 Physics',   '1 Month',    99),
+            ('Class 11 Physics',   '1 Month',  2000),
             ('Class 11 Physics',   '3 Months', 5500),
-            ('Class 11 Physics',   '6 Months', 9500),
+            ('Class 11 Physics',   '6 Months',   99),
             ('Class 11 Physics',   '12 Months',15000),
-            ('Class 12 Physics',   '1 Month',    99),
+            ('Class 12 Physics',   '1 Month',  2000),
             ('Class 12 Physics',   '3 Months', 5500),
-            ('Class 12 Physics',   '6 Months', 9500),
+            ('Class 12 Physics',   '6 Months',   99),
             ('Class 12 Physics',   '12 Months',15000),
         ]
         conn.executemany(
@@ -276,9 +276,15 @@ def _migrate_enrollments(conn):
         )
         print("  [OK] Default course pricing seeded")
     else:
-        # Ensure all 1-Month plans are ₹99 (sync with signup page pricing)
-        conn.execute("UPDATE course_pricing SET amount = 99 WHERE plan = '1 Month' AND amount != 99")
-        print("  [OK] 1-Month pricing synced to ₹99")
+        # Sync 6-Month to ₹99 and restore 1-Month to original prices
+        conn.executescript("""
+            UPDATE course_pricing SET amount = 99 WHERE plan = '6 Months';
+            UPDATE course_pricing SET amount = 2500 WHERE plan = '1 Month' AND course IN ('Physics Foundation','EAMCET');
+            UPDATE course_pricing SET amount = 3000 WHERE plan = '1 Month' AND course IN ('JEE Mains','NEET');
+            UPDATE course_pricing SET amount = 3500 WHERE plan = '1 Month' AND course = 'JEE Advanced';
+            UPDATE course_pricing SET amount = 2000 WHERE plan = '1 Month' AND course IN ('Class 11 Physics','Class 12 Physics');
+        """)
+        print("  [OK] 6-Month pricing synced to ₹99")
 
     # Migrate existing students into course_enrollments if not already there
     students = conn.execute("SELECT id, course, plan FROM students").fetchall()

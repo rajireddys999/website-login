@@ -777,6 +777,9 @@
       applyRoleTheme(role);
       document.getElementById('email-label').textContent =
         role === 'admin' ? 'Admin Email' : role === 'instructor' ? 'Instructor Email' : 'Email / Phone';
+      // Clear fields and error when switching role tabs
+      document.getElementById('email').value    = '';
+      document.getElementById('password').value = '';
       hideError();
     }
 
@@ -868,6 +871,9 @@
     window.addEventListener('load', () => {
       updateSlider();
       applyRoleTheme('student');
+      // Clear any browser-autofilled credentials on page load
+      document.getElementById('email').value    = '';
+      document.getElementById('password').value = '';
     });
     window.addEventListener('resize', updateSlider);
   </script>

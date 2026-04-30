@@ -1565,7 +1565,6 @@
           allStudents[idx].enrolled_courses = existing.join(' | ');
           filterStudents();
         }
-        loadStudents(); // background sync
       } else {
         errEl.textContent = d.error || 'Failed to add enrollment.'; errEl.style.display = 'block';
       }
@@ -1594,7 +1593,6 @@
         allStudents[idx].enrolled_courses = existing.join(' | ');
         filterStudents();
       }
-      loadStudents(); // background sync
     }
   }
 
@@ -1647,7 +1645,6 @@
         closeEditStudent();
         filterStudents();
         showToast('Student updated');
-        loadStudents(); // background sync
       } else {
         errEl.textContent = d.error || 'Update failed'; errEl.style.display = 'block';
         btn.disabled = false; btn.textContent = 'Save Basic Info';

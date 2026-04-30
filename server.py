@@ -1330,6 +1330,104 @@ def student_get_progress():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+# ── PUBLIC: website chatbot (RAJ-new) ────────────────────────────
+
+@app.route('/api/chat', methods=['POST'])
+@limiter.limit("30 per hour")
+def public_chat():
+    data    = request.get_json() or {}
+    message = (data.get('message') or '').strip()
+    history = data.get('history', [])
+
+    if not message:
+        return jsonify({'error': 'Message is required.'}), 400
+    if not ANTHROPIC_API_KEY:
+        return jsonify({'reply': 'The AI assistant is not configured yet. Please contact us directly via WhatsApp or the enquiry form.'}), 200
+
+    conn = get_conn()
+    try:
+        # Safe public context — no PII, no payment data
+        courses_rows = conn.execute("""
+            SELECT course, COUNT(*) as lesson_count
+            FROM lessons WHERE is_published = 1
+            GROUP BY course ORDER BY lesson_count DESC
+        """).fetchall()
+
+        topics_rows = conn.execute("""
+            SELECT topic, COUNT(*) as lesson_count
+            FROM lessons WHERE is_published = 1
+            GROUP BY topic ORDER BY lesson_count DESC
+        """).fetchall()
+
+        total_lessons = conn.execute("SELECT COUNT(*) FROM lessons WHERE is_published=1").fetchone()[0]
+        total_instructors = conn.execute("SELECT COUNT(*) FROM instructors WHERE is_active=1").fetchone()[0]
+
+        courses_info = '\n'.join([f"  - {r['course']}: {r['lesson_count']} lessons" for r in courses_rows]) or '  - Physics Foundation'
+        topics_info  = '\n'.join([f"  - {r['topic']}: {r['lesson_count']} lessons" for r in topics_rows]) or '  - Various physics topics'
+    except Exception:
+        courses_info  = '  - Physics Foundation, JEE Mains, JEE Advanced, NEET, EAMCET'
+        topics_info   = '  - Mechanics, Thermodynamics, Electromagnetism, Optics, Modern Physics'
+        total_lessons = 'multiple'
+        total_instructors = 'experienced'
+    finally:
+        conn.close()
+
+    system = f"""You are the friendly AI assistant for Laxmi Academy — a physics coaching centre in Hyderabad, India, specialising in JEE, NEET, EAMCET, and Intermediate Physics.
+
+ACADEMY INFORMATION (use this to answer questions):
+- Name: Laxmi Academy
+- Location: Hyderabad, India
+- Specialisation: Physics — JEE Mains, JEE Advanced, NEET, EAMCET, Class 11 & 12
+- Total published lessons: {total_lessons}
+- Active faculty: {total_instructors} instructors
+
+AVAILABLE COURSES:
+{courses_info}
+
+TOPICS COVERED:
+{topics_info}
+
+PLANS OFFERED: 1 Month, 3 Months, 6 Months, 12 Months
+PAYMENT METHODS: UPI (Google Pay, PhonePe, Paytm), Debit/Credit card, Net banking via PhonePe gateway
+REFUND POLICY: Eligible within 7 days if less than 20% of course content watched. See /refund.html for full details.
+HOW TO ENROLL: Visit the Sign Up page, fill in details, choose a plan, and complete payment.
+CONTACT: Use the enquiry form on the website or reach us via WhatsApp.
+
+RULES — NEVER share or discuss:
+- Student names, emails, phone numbers, or personal data
+- Payment transaction IDs or amounts of any specific student
+- Admin credentials, passwords, or security details
+- Internal system architecture or API endpoints
+- Any instructor's personal contact details
+
+YOUR STYLE:
+- Be warm, helpful, and encouraging — like a knowledgeable academic counsellor
+- Keep answers concise (2–4 sentences) unless a detailed explanation is genuinely needed
+- If you don't know something specific (like exact fees), say "Please contact us for the latest pricing" and direct them to the enquiry form
+- Encourage students to sign up or ask a question via the form when appropriate"""
+
+    messages = [{'role': m['role'], 'content': m['content']} for m in history[-8:] if m.get('role') in ('user','assistant')]
+    messages.append({'role': 'user', 'content': message})
+
+    try:
+        resp = http_requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers={
+                'x-api-key': ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json'
+            },
+            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 400,
+                  'system': system, 'messages': messages},
+            timeout=25
+        )
+        d = resp.json()
+        if resp.ok:
+            return jsonify({'reply': d['content'][0]['text']})
+        return jsonify({'reply': 'Sorry, I'm having trouble responding right now. Please use the enquiry form below and we'll get back to you shortly.'}), 200
+    except Exception:
+        return jsonify({'reply': 'I'm offline at the moment. Please fill in the enquiry form and our team will contact you soon!'}), 200
+
 # ── ADMIN: edit student (full edit) ──────────────────────────────
 
 @app.route('/api/admin/students/<int:sid>', methods=['PATCH'])

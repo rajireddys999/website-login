@@ -2,7 +2,7 @@ import sqlite3
 import os
 import bcrypt
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'laxmi_academy.db')
+DB_PATH = os.environ.get('DATABASE_PATH', os.path.join(os.path.dirname(__file__), 'laxmi_academy.db'))
 
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
@@ -104,10 +104,23 @@ def init_db():
     _migrate_password_resets(conn)
     _migrate_lesson_progress(conn)
     _migrate_enrollments(conn)
+    _migrate_invoice_numbers(conn)
     _seed_default_admin(conn)
     conn.commit()
     conn.close()
     print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing")
+
+def _migrate_invoice_numbers(conn):
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(payments)").fetchall()]
+    if 'invoice_number' not in cols:
+        conn.execute("ALTER TABLE payments ADD COLUMN invoice_number TEXT")
+        # Back-fill existing rows with invoice numbers
+        rows = conn.execute("SELECT id, created_at FROM payments").fetchall()
+        for r in rows:
+            ym = (r['created_at'] or '2026-01')[:7].replace('-', '')
+            inv = f"INV-{ym}-{r['id']:04d}"
+            conn.execute("UPDATE payments SET invoice_number=? WHERE id=?", (inv, r['id']))
+        print("  [OK] payments.invoice_number column added")
 
 def _seed_default_admin(conn):
     existing = conn.execute("SELECT id FROM admins WHERE email='admin@laxmiacademy.com'").fetchone()

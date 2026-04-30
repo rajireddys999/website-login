@@ -37,9 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
   btn.title = isDesktopMode ? 'Switch to Mobile View' : 'Switch to Desktop View';
   btn.style.cssText = [
     'position:fixed',
-    'top:72px',
-    'right:14px',
-    'z-index:9998',
+    'bottom:20px',
+    'right:16px',
+    'z-index:10000',
     'display:flex',
     'align-items:center',
     'gap:5px',

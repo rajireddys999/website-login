@@ -3,8 +3,31 @@ services:
     name: laxmi-academy-api
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python server.py
+    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT server:app
+    healthCheckPath: /health
+    plan: free
     envVars:
       - key: FLASK_ENV
         value: production
-    plan: free
+      - key: APP_BASE_URL
+        value: https://website-login-wyxt.onrender.com
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: PHONEPE_BASE_URL
+        value: https://api.phonepe.com/apis/hermes
+      - key: PHONEPE_MERCHANT_ID
+        sync: false
+      - key: PHONEPE_SALT_KEY
+        sync: false
+      - key: PHONEPE_SALT_INDEX
+        value: "1"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: LINEAR_API_KEY
+        sync: false

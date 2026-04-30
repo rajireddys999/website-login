@@ -53,7 +53,7 @@ PHONEPE_MERCHANT_ID = os.environ.get('PHONEPE_MERCHANT_ID', 'PGTESTPAYUAT86')
 PHONEPE_SALT_KEY    = os.environ.get('PHONEPE_SALT_KEY',    '96434309-7796-489d-8924-ab56988a6076')
 PHONEPE_SALT_INDEX  = os.environ.get('PHONEPE_SALT_INDEX',  '1')
 PHONEPE_BASE_URL    = os.environ.get('PHONEPE_BASE_URL',    'https://api-preprod.phonepe.com/apis/pg-sandbox')
-APP_BASE_URL        = os.environ.get('APP_BASE_URL',        'http://localhost:3000')
+APP_BASE_URL        = os.environ.get('APP_BASE_URL',        'https://website-login-wyxt.onrender.com')
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads', 'videos')
 ALLOWED_EXTENSIONS = {'mp4', 'webm', 'mkv', 'mov', 'avi'}
@@ -113,6 +113,17 @@ def require_role(*roles):
 
 def row_to_dict(row):
     return dict(row) if row else None
+
+# ── Public health check (no auth — used by Render & uptime monitors) ──
+@app.route('/health')
+def health():
+    try:
+        conn = get_conn()
+        conn.execute("SELECT 1").fetchone()
+        conn.close()
+        return jsonify({'status': 'ok', 'db': 'ok', 'timestamp': datetime.utcnow().isoformat()})
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 503
 
 # ── Static files ──────────────────────────────────────────────────
 
@@ -1197,6 +1208,115 @@ def admin_payment_status(pid):
     updated = conn.execute("SELECT * FROM payments WHERE id = ?", (pid,)).fetchone()
     conn.close()
     return jsonify({'success': True, 'payment': dict(updated)})
+
+# ── Invoice PDF ──────────────────────────────────────────────────
+
+@app.route('/api/invoice/<int:payment_id>', methods=['GET'])
+def download_invoice(payment_id):
+    from fpdf import FPDF
+    session_data, err_resp, err_code = require_auth()
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    row = conn.execute("""
+        SELECT p.*, s.full_name, s.email, s.phone, s.course, s.plan
+        FROM payments p JOIN students s ON p.student_id = s.id
+        WHERE p.id = ?
+    """, (payment_id,)).fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({'error': 'Payment not found.'}), 404
+
+    # Students can only download their own invoices
+    if session_data['role'] == 'student' and row['student_id'] != session_data['user_id']:
+        return jsonify({'error': 'Access denied.'}), 403
+
+    p = dict(row)
+    inv_num = p.get('invoice_number') or f"INV-{(p['created_at'] or '2026-01')[:7].replace('-','')}-{payment_id:04d}"
+    status  = (p.get('status') or 'pending').upper()
+    amount  = p.get('amount', 0)
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # Header bar
+    pdf.set_fill_color(30, 20, 60)
+    pdf.rect(0, 0, 210, 28, 'F')
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font('Helvetica', 'B', 18)
+    pdf.set_xy(10, 7)
+    pdf.cell(0, 12, 'Laxmi Academy', ln=True)
+    pdf.set_font('Helvetica', '', 9)
+    pdf.set_xy(10, 19)
+    pdf.cell(0, 6, 'Physics Excellence — Payment Invoice')
+
+    # Status badge (top-right)
+    badge_color = (34, 197, 94) if status == 'PAID' else (234, 179, 8) if status == 'PENDING' else (239, 68, 68)
+    pdf.set_fill_color(*badge_color)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font('Helvetica', 'B', 10)
+    pdf.set_xy(155, 9)
+    pdf.cell(45, 10, status, align='C', fill=True)
+
+    pdf.set_text_color(30, 20, 60)
+    pdf.set_xy(10, 35)
+
+    # Invoice meta
+    pdf.set_font('Helvetica', 'B', 13)
+    pdf.cell(0, 8, f'Invoice  {inv_num}', ln=True)
+    pdf.set_font('Helvetica', '', 9)
+    pdf.set_text_color(100, 100, 120)
+    pdf.cell(0, 6, f"Issued: {(p.get('created_at') or '')[:10]}    Transaction: {p.get('merchant_transaction_id','—')}", ln=True)
+
+    pdf.ln(6)
+    pdf.set_draw_color(200, 200, 220)
+    pdf.set_line_width(0.3)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(6)
+
+    # Student details
+    pdf.set_text_color(30, 20, 60)
+    pdf.set_font('Helvetica', 'B', 10)
+    pdf.cell(0, 6, 'Bill To', ln=True)
+    pdf.set_font('Helvetica', '', 10)
+    pdf.cell(0, 6, p.get('full_name', '—'), ln=True)
+    pdf.cell(0, 6, p.get('email', '—'), ln=True)
+    if p.get('phone'):
+        pdf.cell(0, 6, p['phone'], ln=True)
+
+    pdf.ln(6)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(6)
+
+    # Line items table
+    pdf.set_fill_color(240, 238, 255)
+    pdf.set_font('Helvetica', 'B', 9)
+    pdf.cell(100, 8, 'Description', fill=True, border=1)
+    pdf.cell(45, 8, 'Plan', fill=True, border=1)
+    pdf.cell(45, 8, 'Amount', fill=True, border=1, align='R', ln=True)
+
+    pdf.set_font('Helvetica', '', 9)
+    pdf.cell(100, 8, p.get('course') or p.get('plan') or 'Course Enrollment', border=1)
+    pdf.cell(45, 8, p.get('plan') or '—', border=1)
+    pdf.cell(45, 8, f"Rs. {amount:,}", border=1, align='R', ln=True)
+
+    pdf.ln(4)
+    pdf.set_font('Helvetica', 'B', 11)
+    pdf.cell(145, 9, 'Total Amount', align='R')
+    pdf.cell(45, 9, f"Rs. {amount:,}", align='R', ln=True)
+
+    pdf.ln(10)
+    pdf.set_font('Helvetica', 'I', 8)
+    pdf.set_text_color(130, 130, 150)
+    pdf.cell(0, 6, 'Thank you for choosing Laxmi Academy. This is a computer-generated invoice.', align='C', ln=True)
+
+    pdf_bytes = bytes(pdf.output())
+    response = app.response_class(pdf_bytes, mimetype='application/pdf')
+    response.headers['Content-Disposition'] = f'attachment; filename="invoice-{inv_num}.pdf"'
+    return response
 
 # ── Linear proxy ─────────────────────────────────────────────────
 

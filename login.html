@@ -654,12 +654,12 @@
           <span id="error-text">Invalid credentials.</span>
         </div>
 
-        <form id="login-form" onsubmit="handleLogin(event)" style="flex:1;">
+        <form id="login-form" onsubmit="handleLogin(event)" autocomplete="off" style="flex:1;">
           <div class="field">
             <label id="email-label">Email / Phone</label>
             <div class="input-wrap">
               <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-              <input type="text" id="email" placeholder="Enter email or phone" required autocomplete="username"/>
+              <input type="text" id="email" placeholder="Enter email or phone" required autocomplete="off"/>
             </div>
           </div>
 
@@ -667,7 +667,7 @@
             <label>Password</label>
             <div class="input-wrap">
               <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <input type="password" id="password" class="has-eye" placeholder="Enter your password" required autocomplete="current-password"/>
+              <input type="password" id="password" class="has-eye" placeholder="Enter your password" required autocomplete="new-password"/>
               <button type="button" class="eye-btn" onclick="togglePassword()" aria-label="Toggle password">
                 <svg id="eye-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>

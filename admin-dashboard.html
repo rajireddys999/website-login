@@ -208,8 +208,10 @@
       border-radius:16px; padding:1.1rem; position:relative; overflow:hidden;
       transition:transform .22s, box-shadow .22s;
     }
+    .stat-card[onclick] { cursor:pointer; }
     .stat-card:hover { transform:translateY(-3px); box-shadow:0 12px 36px rgba(0,0,0,.1); }
     html.dark .stat-card:hover { box-shadow:0 12px 36px rgba(0,0,0,.4); }
+    .stat-card[onclick]:hover .stat-sub::after { content:' → View'; opacity:.65; font-style:italic; }
     .stat-card::before { content:''; position:absolute; right:-8px; top:-8px; width:64px; height:64px; border-radius:50%; opacity:.12; }
     .stat-card::after  { content:''; position:absolute; top:0; left:0; right:0; height:2.5px; border-radius:16px 16px 0 0; }
     .stat-card.indigo::before { background:#6366f1; }
@@ -791,25 +793,25 @@
 
         <!-- Row 1: 4 primary stats -->
         <div class="stats-grid" style="margin-bottom:.8rem">
-          <div class="stat-card indigo" style="animation:fadeInUp .3s .03s ease both">
+          <div class="stat-card indigo" style="animation:fadeInUp .3s .03s ease both" onclick="showPage('students')" title="View Students">
             <div class="stat-label">Total Students</div>
             <div class="stat-value" id="s-total">—</div>
             <div class="stat-sub">All enrolled</div>
             <div class="stat-icon">👥</div>
           </div>
-          <div class="stat-card green" style="animation:fadeInUp .3s .06s ease both">
+          <div class="stat-card green" style="animation:fadeInUp .3s .06s ease both" onclick="showPage('students')" title="View Active Students">
             <div class="stat-label">Active Students</div>
             <div class="stat-value" id="s-active">—</div>
             <div class="stat-sub">Access granted</div>
             <div class="stat-icon">✅</div>
           </div>
-          <div class="stat-card teal" style="animation:fadeInUp .3s .09s ease both">
+          <div class="stat-card teal" style="animation:fadeInUp .3s .09s ease both" onclick="showPage('payments')" title="View Payments">
             <div class="stat-label">Total Revenue</div>
             <div class="stat-value" id="s-revenue" style="font-size:1.5rem">—</div>
             <div class="stat-sub">Confirmed payments</div>
             <div class="stat-icon">💰</div>
           </div>
-          <div class="stat-card orange" style="animation:fadeInUp .3s .12s ease both">
+          <div class="stat-card orange" style="animation:fadeInUp .3s .12s ease both" onclick="showPage('enquiries')" title="View Enquiries">
             <div class="stat-label">New Enquiries</div>
             <div class="stat-value" id="s-enq">—</div>
             <div class="stat-sub">Awaiting follow-up</div>
@@ -819,25 +821,25 @@
 
         <!-- Row 2: 4 secondary stats -->
         <div class="stats-grid">
-          <div class="stat-card blue" style="animation:fadeInUp .3s .15s ease both">
+          <div class="stat-card blue" style="animation:fadeInUp .3s .15s ease both" onclick="showPage('lessons')" title="View Lessons">
             <div class="stat-label">Published Lessons</div>
             <div class="stat-value" id="s-lessons">—</div>
             <div class="stat-sub">Live content</div>
             <div class="stat-icon">🎬</div>
           </div>
-          <div class="stat-card purple" style="animation:fadeInUp .3s .18s ease both">
+          <div class="stat-card purple" style="animation:fadeInUp .3s .18s ease both" onclick="showPage('instructors')" title="View Instructors">
             <div class="stat-label">Instructors</div>
             <div class="stat-value" id="s-instructors">—</div>
             <div class="stat-sub">Active faculty</div>
             <div class="stat-icon">👨‍🏫</div>
           </div>
-          <div class="stat-card red" style="animation:fadeInUp .3s .21s ease both">
+          <div class="stat-card red" style="animation:fadeInUp .3s .21s ease both" onclick="showPage('payments')" title="View Pending Payments">
             <div class="stat-label">Pending Payment</div>
             <div class="stat-value" id="s-pending">—</div>
             <div class="stat-sub">Awaiting payment</div>
             <div class="stat-icon">⏳</div>
           </div>
-          <div class="stat-card pink" style="animation:fadeInUp .3s .24s ease both">
+          <div class="stat-card pink" style="animation:fadeInUp .3s .24s ease both" onclick="showPage('sessions')" title="View Sessions">
             <div class="stat-label">Active Sessions</div>
             <div class="stat-value" id="s-sessions">—</div>
             <div class="stat-sub">Live logins</div>
@@ -865,11 +867,15 @@
           </div>
           <div class="card">
             <div class="card-title">⚡ Quick Actions</div>
-            <div style="display:grid;gap:.5rem">
-              <button class="btn-export" onclick="showPage('students');loadStudents()" style="justify-content:flex-start">👥 Manage Students</button>
-              <button class="btn-export" onclick="showPage('enquiries');loadEnquiries()" style="justify-content:flex-start">📩 Review Enquiries</button>
-              <button class="btn-export" onclick="showPage('payments');loadPayments()" style="justify-content:flex-start">💳 View Payments</button>
-              <button class="btn-export" onclick="exportCSV('students_'+isoDate()+'.csv', allStudents, studentsCSVCols)" style="justify-content:flex-start">⬇ Export Students CSV</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+              <button class="btn-export" onclick="showPage('students')" style="justify-content:flex-start">👥 Students</button>
+              <button class="btn-export" onclick="showPage('enquiries')" style="justify-content:flex-start">📩 Enquiries</button>
+              <button class="btn-export" onclick="showPage('payments')" style="justify-content:flex-start">💳 Payments</button>
+              <button class="btn-export" onclick="showPage('instructors')" style="justify-content:flex-start">👨‍🏫 Instructors</button>
+              <button class="btn-export" onclick="showPage('lessons')" style="justify-content:flex-start">🎬 Lessons</button>
+              <button class="btn-export" onclick="showPage('sessions')" style="justify-content:flex-start">🔑 Sessions</button>
+              <button class="btn-export" onclick="exportCSV('students_'+isoDate()+'.csv', allStudents, studentsCSVCols)" style="justify-content:flex-start;grid-column:span 2">⬇ Export Students CSV</button>
+              <a href="/health" target="_blank" class="btn-export" style="justify-content:flex-start;grid-column:span 2;text-decoration:none">🏥 Health Check</a>
             </div>
           </div>
         </div>
@@ -2057,12 +2063,17 @@
         <td style="font-family:monospace;font-size:.75rem;color:var(--muted)" title="${escHtml(p.merchant_transaction_id||'')}">${(p.merchant_transaction_id||'—').slice(0,20)}…</td>
         <td style="color:var(--muted);font-size:.76rem">${fmtDate(p.created_at)}</td>
         <td>
-          <select onchange="overridePayment(${p.id},this.value,this)"
-            style="font-size:.72rem;padding:.2rem .4rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">
-            <option value="paid"    ${p.status==='paid'   ?'selected':''}>Paid</option>
-            <option value="pending" ${p.status==='pending'?'selected':''}>Pending</option>
-            <option value="failed"  ${p.status==='failed' ?'selected':''}>Failed</option>
-          </select>
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+            <select onchange="overridePayment(${p.id},this.value,this)"
+              style="font-size:.72rem;padding:.2rem .4rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">
+              <option value="paid"    ${p.status==='paid'   ?'selected':''}>Paid</option>
+              <option value="pending" ${p.status==='pending'?'selected':''}>Pending</option>
+              <option value="failed"  ${p.status==='failed' ?'selected':''}>Failed</option>
+            </select>
+            <a href="/api/invoice/${p.id}" target="_blank"
+              style="font-size:.72rem;padding:.2rem .6rem;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;white-space:nowrap"
+              title="Download Invoice PDF">📄 Invoice</a>
+          </div>
         </td>
       </tr>`;
     }).join('');

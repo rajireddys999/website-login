@@ -995,6 +995,108 @@ def admin_payments():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+# ── Linear proxy ─────────────────────────────────────────────────
+
+LINEAR_API_KEY  = os.environ.get('LINEAR_API_KEY', '')
+LINEAR_TEAM_ID  = os.environ.get('LINEAR_TEAM_ID', '4c267af7-bd36-43cf-8e6c-1d1d29522c21')
+
+@app.route('/api/admin/linear', methods=['GET'])
+def admin_linear():
+    session, err, code = require_role('admin')
+    if err: return err, code
+    try:
+        resp = http_requests.post(
+            'https://api.linear.app/graphql',
+            headers={'Authorization': LINEAR_API_KEY, 'Content-Type': 'application/json'},
+            json={'query': f'''{{
+              team(id: "{LINEAR_TEAM_ID}") {{
+                states {{ nodes {{ id name type position }} }}
+                issues {{
+                  nodes {{
+                    id identifier title priority createdAt
+                    state {{ name type }}
+                    assignee {{ name }}
+                  }}
+                }}
+              }}
+            }}'''},
+            timeout=10
+        )
+        return jsonify(resp.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 503
+
+# ── AI assist ─────────────────────────────────────────────────────
+
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+
+@app.route('/api/admin/ai-assist', methods=['POST'])
+def ai_assist():
+    session, err, code = require_role('admin')
+    if err: return err, code
+
+    data    = request.get_json() or {}
+    prompt  = data.get('prompt', '').strip()
+    context = data.get('context', {})
+    history = data.get('history', [])
+
+    if not prompt:
+        return jsonify({'error': 'prompt is required.'}), 400
+    if not ANTHROPIC_API_KEY:
+        return jsonify({'error': 'ANTHROPIC_API_KEY not set. Add it to your Render environment variables.'}), 503
+
+    system = f"""You are an AI operations assistant embedded in the Mission Control dashboard for Laxmi Academy — a physics coaching centre in Hyderabad, India.
+
+Live academy stats right now:
+{json.dumps(context, indent=2)}
+
+Your job: help the admin understand their data, answer operational questions, spot trends, and suggest actions.
+Be concise (2–4 sentences unless detail is needed). Use numbers from the stats above when relevant."""
+
+    messages = [{'role': m['role'], 'content': m['content']} for m in history[-6:]]
+    messages.append({'role': 'user', 'content': prompt})
+
+    try:
+        resp = http_requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers={
+                'x-api-key': ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json'
+            },
+            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 512,
+                  'system': system, 'messages': messages},
+            timeout=30
+        )
+        d = resp.json()
+        if resp.ok:
+            return jsonify({'response': d['content'][0]['text'], 'model': d.get('model', '')})
+        return jsonify({'error': d.get('error', {}).get('message', 'AI request failed')}), 502
+    except Exception as e:
+        return jsonify({'error': str(e)}), 503
+
+# ── Website health ────────────────────────────────────────────────
+
+@app.route('/api/admin/health', methods=['GET'])
+def admin_health():
+    session, err, code = require_role('admin')
+    if err: return err, code
+    conn = get_conn()
+    try:
+        student_count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
+        db_ok = True
+    except Exception:
+        student_count = 0
+        db_ok = False
+    finally:
+        conn.close()
+    return jsonify({
+        'status': 'ok',
+        'db': db_ok,
+        'student_count': student_count,
+        'ts': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    })
+
 # ── Main ─────────────────────────────────────────────────────────
 
 if __name__ == '__main__':

@@ -1330,6 +1330,53 @@ def student_get_progress():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+# ── ADMIN: edit student (full edit) ──────────────────────────────
+
+@app.route('/api/admin/students/<int:sid>', methods=['PATCH'])
+def admin_edit_student(sid):
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    data           = request.get_json() or {}
+    full_name      = data.get('full_name', '').strip()
+    phone          = data.get('phone', '').strip()
+    course         = data.get('course', '').strip()
+    plan           = data.get('plan', '').strip()
+    payment_status = data.get('payment_status', '')
+    is_active      = data.get('is_active')
+
+    updates, params = [], []
+    if full_name:
+        updates.append("full_name = ?"); params.append(full_name)
+    if phone:
+        conn_chk = get_conn()
+        dup = conn_chk.execute("SELECT id FROM students WHERE phone=? AND id!=?", (phone, sid)).fetchone()
+        conn_chk.close()
+        if dup:
+            return jsonify({'error': 'Phone number already used by another student.'}), 409
+        updates.append("phone = ?"); params.append(phone)
+    if course:
+        updates.append("course = ?"); params.append(course)
+    if plan:
+        updates.append("plan = ?"); params.append(plan)
+    if payment_status in ('paid', 'pending', 'failed'):
+        updates.append("payment_status = ?"); params.append(payment_status)
+    if is_active is not None:
+        updates.append("is_active = ?"); params.append(1 if is_active else 0)
+
+    if not updates:
+        return jsonify({'error': 'Nothing to update.'}), 400
+
+    conn = get_conn()
+    conn.execute(f"UPDATE students SET {', '.join(updates)} WHERE id = ?", params + [sid])
+    conn.commit()
+    row = conn.execute("SELECT id,full_name,email,phone,course,plan,is_active,payment_status,created_at FROM students WHERE id=?", (sid,)).fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'error': 'Student not found.'}), 404
+    return jsonify(dict(row))
+
 # ── STUDENT: profile update (RAJ-15) ─────────────────────────────
 
 @app.route('/api/student/profile', methods=['PATCH'])

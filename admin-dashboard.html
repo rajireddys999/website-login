@@ -628,6 +628,64 @@
   </div>
 </div>
 
+<!-- Edit Student Modal -->
+<div class="modal-overlay" id="edit-student-modal">
+  <div class="modal modal-lg">
+    <h3>Edit Student</h3>
+    <div class="form-grid">
+      <div class="form-field">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="es-name" type="text" placeholder="Full name"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="es-phone" type="tel" placeholder="Phone number"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Course</label>
+        <select class="form-input" id="es-course">
+          <option value="Physics Foundation">Physics Foundation</option>
+          <option value="JEE Mains">JEE Mains</option>
+          <option value="JEE Advanced">JEE Advanced</option>
+          <option value="NEET">NEET</option>
+          <option value="EAMCET">EAMCET</option>
+          <option value="Class 11 Physics">Class 11 Physics</option>
+          <option value="Class 12 Physics">Class 12 Physics</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Plan</label>
+        <select class="form-input" id="es-plan">
+          <option value="1 Month">1 Month</option>
+          <option value="3 Months">3 Months</option>
+          <option value="6 Months">6 Months</option>
+          <option value="12 Months">12 Months</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Payment Status</label>
+        <select class="form-input" id="es-payment">
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Access Status</label>
+        <select class="form-input" id="es-active">
+          <option value="1">Active</option>
+          <option value="0">Revoked</option>
+        </select>
+      </div>
+    </div>
+    <div id="es-error" style="display:none;margin-top:.7rem;font-size:.8rem;color:#dc2626;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:.5rem .8rem"></div>
+    <div class="modal-actions" style="margin-top:1.2rem">
+      <button class="btn-cancel" onclick="closeEditStudent()">Cancel</button>
+      <button class="btn-primary" id="es-submit-btn" onclick="saveEditStudent()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"><span id="toast-icon">✓</span><span id="toast-msg"></span></div>
 
@@ -1313,6 +1371,7 @@
         <td>${statusBadge}</td>
         <td>
           <div class="action-group">
+            <button class="action-btn btn-view" onclick="openEditStudent(${s.id})">✏️ Edit</button>
             ${toggleBtn}
             <button class="action-btn btn-delete" onclick="confirmDelete(${s.id},'${escHtml(s.full_name)}')">Delete</button>
           </div>
@@ -1320,6 +1379,66 @@
       </tr>`;
     }).join('');
     updateBulkBar();
+  }
+
+  // ── Edit student ────────────────────────────────────────────────
+  let editStudentId = null;
+
+  function openEditStudent(id) {
+    const s = allStudents.find(x => x.id === id);
+    if (!s) return;
+    editStudentId = id;
+    document.getElementById('es-name').value    = s.full_name || '';
+    document.getElementById('es-phone').value   = s.phone || '';
+    document.getElementById('es-course').value  = s.course || 'Physics Foundation';
+    document.getElementById('es-plan').value    = s.plan || '6 Months';
+    document.getElementById('es-payment').value = s.payment_status || 'pending';
+    document.getElementById('es-active').value  = s.is_active ? '1' : '0';
+    document.getElementById('es-error').style.display = 'none';
+    const btn = document.getElementById('es-submit-btn');
+    btn.textContent = 'Save Changes'; btn.disabled = false;
+    document.getElementById('edit-student-modal').classList.add('show');
+  }
+
+  function closeEditStudent() {
+    document.getElementById('edit-student-modal').classList.remove('show');
+    editStudentId = null;
+  }
+
+  async function saveEditStudent() {
+    const btn = document.getElementById('es-submit-btn');
+    const errEl = document.getElementById('es-error');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    errEl.style.display = 'none';
+
+    const body = {
+      full_name:      document.getElementById('es-name').value.trim(),
+      phone:          document.getElementById('es-phone').value.trim(),
+      course:         document.getElementById('es-course').value,
+      plan:           document.getElementById('es-plan').value,
+      payment_status: document.getElementById('es-payment').value,
+      is_active:      document.getElementById('es-active').value === '1'
+    };
+
+    try {
+      const r = await fetch(`/api/admin/students/${editStudentId}`, {
+        method:'PATCH',
+        headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      const d = await r.json();
+      if (r.ok) {
+        closeEditStudent();
+        showToast('Student updated successfully');
+        loadStudents();
+      } else {
+        errEl.textContent = d.error || 'Update failed'; errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Save Changes';
+      }
+    } catch {
+      errEl.textContent = 'Network error'; errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Save Changes';
+    }
   }
 
   function onStudentCheckboxChange(cb) {
@@ -1721,8 +1840,35 @@
         <td>${statusBadge}</td>
         <td style="font-family:monospace;font-size:.75rem;color:var(--muted)" title="${escHtml(p.merchant_transaction_id||'')}">${(p.merchant_transaction_id||'—').slice(0,20)}…</td>
         <td style="color:var(--muted);font-size:.76rem">${fmtDate(p.created_at)}</td>
+        <td>
+          <select onchange="overridePayment(${p.id},this.value,this)"
+            style="font-size:.72rem;padding:.2rem .4rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">
+            <option value="paid"    ${p.status==='paid'   ?'selected':''}>Paid</option>
+            <option value="pending" ${p.status==='pending'?'selected':''}>Pending</option>
+            <option value="failed"  ${p.status==='failed' ?'selected':''}>Failed</option>
+          </select>
+        </td>
       </tr>`;
     }).join('');
+  }
+
+  async function overridePayment(id, status, sel) {
+    sel.disabled = true;
+    try {
+      const r = await fetch(`/api/admin/payments/${id}/status`, {
+        method:'PATCH',
+        headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
+        body: JSON.stringify({status})
+      });
+      if (r.ok) {
+        showToast(`Payment marked as ${status}`);
+        loadPayments();
+      } else {
+        const d = await r.json();
+        showToast(d.error || 'Update failed', 'error');
+        sel.disabled = false;
+      }
+    } catch { sel.disabled = false; }
   }
 
   let _lastPaymentFiltered = [];

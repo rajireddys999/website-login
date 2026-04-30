@@ -630,9 +630,15 @@
 
 <!-- Edit Student Modal -->
 <div class="modal-overlay" id="edit-student-modal">
-  <div class="modal modal-lg">
-    <h3>Edit Student</h3>
-    <div class="form-grid">
+  <div class="modal" style="width:min(660px,96vw);max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3 style="margin:0" id="es-modal-title">Edit Student</h3>
+      <button class="btn-cancel" onclick="closeEditStudent()" style="padding:.3rem .7rem">✕</button>
+    </div>
+
+    <!-- Basic info -->
+    <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(99,102,241,.6);margin-bottom:.6rem">Basic Info</div>
+    <div class="form-grid" style="margin-bottom:1rem">
       <div class="form-field">
         <label class="form-label">Full Name</label>
         <input class="form-input" id="es-name" type="text" placeholder="Full name"/>
@@ -640,27 +646,6 @@
       <div class="form-field">
         <label class="form-label">Phone</label>
         <input class="form-input" id="es-phone" type="tel" placeholder="Phone number"/>
-      </div>
-      <div class="form-field">
-        <label class="form-label">Course</label>
-        <select class="form-input" id="es-course">
-          <option value="Physics Foundation">Physics Foundation</option>
-          <option value="JEE Mains">JEE Mains</option>
-          <option value="JEE Advanced">JEE Advanced</option>
-          <option value="NEET">NEET</option>
-          <option value="EAMCET">EAMCET</option>
-          <option value="Class 11 Physics">Class 11 Physics</option>
-          <option value="Class 12 Physics">Class 12 Physics</option>
-        </select>
-      </div>
-      <div class="form-field">
-        <label class="form-label">Plan</label>
-        <select class="form-input" id="es-plan">
-          <option value="1 Month">1 Month</option>
-          <option value="3 Months">3 Months</option>
-          <option value="6 Months">6 Months</option>
-          <option value="12 Months">12 Months</option>
-        </select>
       </div>
       <div class="form-field">
         <label class="form-label">Payment Status</label>
@@ -678,10 +663,54 @@
         </select>
       </div>
     </div>
-    <div id="es-error" style="display:none;margin-top:.7rem;font-size:.8rem;color:#dc2626;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:.5rem .8rem"></div>
-    <div class="modal-actions" style="margin-top:1.2rem">
+
+    <!-- Enrolled Courses -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+      <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(16,185,129,.6)">Enrolled Courses</div>
+      <div style="font-size:.78rem;font-weight:700;color:var(--muted)">Total: <span id="es-total-amt" style="color:#34d399">₹0</span></div>
+    </div>
+    <div id="es-enrollments-list" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.9rem;min-height:36px">
+      <div style="color:var(--muted);font-size:.8rem;text-align:center;padding:.6rem">Loading…</div>
+    </div>
+
+    <!-- Add new course -->
+    <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,158,11,.6);margin-bottom:.6rem">Add Course Enrollment</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem;align-items:end;margin-bottom:1rem">
+      <div>
+        <label class="form-label">Course</label>
+        <select class="form-input" id="es-new-course" onchange="autoFillPrice()">
+          <option value="">— select —</option>
+          <option>Physics Foundation</option>
+          <option>JEE Mains</option>
+          <option>JEE Advanced</option>
+          <option>NEET</option>
+          <option>EAMCET</option>
+          <option>Class 11 Physics</option>
+          <option>Class 12 Physics</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Plan</label>
+        <select class="form-input" id="es-new-plan" onchange="autoFillPrice()">
+          <option>1 Month</option>
+          <option>3 Months</option>
+          <option selected>6 Months</option>
+          <option>12 Months</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Amount (₹)</label>
+        <input class="form-input" id="es-new-amount" type="number" min="0" placeholder="Auto-fill"/>
+      </div>
+      <div>
+        <button class="btn-primary" onclick="addEnrollment()" style="height:38px;padding:0 .9rem;white-space:nowrap">+ Add</button>
+      </div>
+    </div>
+
+    <div id="es-error" style="display:none;margin-bottom:.7rem;font-size:.8rem;color:#dc2626;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:.5rem .8rem"></div>
+    <div class="modal-actions">
       <button class="btn-cancel" onclick="closeEditStudent()">Cancel</button>
-      <button class="btn-primary" id="es-submit-btn" onclick="saveEditStudent()">Save Changes</button>
+      <button class="btn-primary" id="es-submit-btn" onclick="saveEditStudent()">Save Basic Info</button>
     </div>
   </div>
 </div>
@@ -1381,63 +1410,168 @@
     updateBulkBar();
   }
 
-  // ── Edit student ────────────────────────────────────────────────
-  let editStudentId = null;
+  // ── Edit student + multi-course enrollments ──────────────────────
+  let editStudentId  = null;
+  let coursePricing  = [];   // [{course, plan, amount}]
+  let esEnrollments  = [];   // current enrollments for this student
 
-  function openEditStudent(id) {
+  async function openEditStudent(id) {
     const s = allStudents.find(x => x.id === id);
     if (!s) return;
     editStudentId = id;
+    document.getElementById('es-modal-title').textContent = `Edit — ${s.full_name}`;
     document.getElementById('es-name').value    = s.full_name || '';
     document.getElementById('es-phone').value   = s.phone || '';
-    document.getElementById('es-course').value  = s.course || 'Physics Foundation';
-    document.getElementById('es-plan').value    = s.plan || '6 Months';
     document.getElementById('es-payment').value = s.payment_status || 'pending';
     document.getElementById('es-active').value  = s.is_active ? '1' : '0';
     document.getElementById('es-error').style.display = 'none';
-    const btn = document.getElementById('es-submit-btn');
-    btn.textContent = 'Save Changes'; btn.disabled = false;
+    document.getElementById('es-submit-btn').disabled = false;
+    document.getElementById('es-submit-btn').textContent = 'Save Basic Info';
     document.getElementById('edit-student-modal').classList.add('show');
+
+    // Load pricing and enrollments in parallel
+    const tok = localStorage.getItem('la_token');
+    const hdr = {'Authorization':'Bearer '+tok,'Content-Type':'application/json'};
+    const [pricingResp, enrResp] = await Promise.all([
+      fetch('/api/admin/course-pricing', {headers:hdr}),
+      fetch(`/api/admin/students/${id}/enrollments`, {headers:hdr})
+    ]);
+    coursePricing  = pricingResp.ok ? await pricingResp.json() : [];
+    esEnrollments  = enrResp.ok ? await enrResp.json() : [];
+    renderEnrollments();
+    autoFillPrice();
   }
 
   function closeEditStudent() {
     document.getElementById('edit-student-modal').classList.remove('show');
-    editStudentId = null;
+    editStudentId = null; esEnrollments = [];
+  }
+
+  function renderEnrollments() {
+    const list = document.getElementById('es-enrollments-list');
+    const total = esEnrollments.filter(e=>e.status==='active').reduce((s,e)=>s+(e.amount||0),0);
+    document.getElementById('es-total-amt').textContent = '₹'+total.toLocaleString('en-IN');
+    if (!esEnrollments.length) {
+      list.innerHTML = '<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:.6rem">No enrollments yet</div>';
+      return;
+    }
+    list.innerHTML = esEnrollments.map(e => {
+      const statusBadge = e.status==='active'
+        ? '<span class="badge badge-green">Active</span>'
+        : '<span class="badge badge-red">Inactive</span>';
+      return `<div style="display:flex;align-items:center;gap:.6rem;padding:.55rem .8rem;background:var(--surface);border:1px solid var(--border);border-radius:9px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.82rem">${escHtml(e.course)}</div>
+          <div style="font-size:.7rem;color:var(--muted)">${escHtml(e.plan)} · ₹${(e.amount||0).toLocaleString('en-IN')}</div>
+        </div>
+        ${statusBadge}
+        <select onchange="updateEnrollmentStatus(${e.id},this.value)"
+          style="font-size:.7rem;padding:.2rem .4rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text)">
+          <option value="active"   ${e.status==='active'  ?'selected':''}>Active</option>
+          <option value="inactive" ${e.status==='inactive'?'selected':''}>Inactive</option>
+        </select>
+        <input type="number" value="${e.amount||0}" min="0"
+          style="width:80px;font-size:.75rem;padding:.25rem .5rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);text-align:right"
+          onchange="updateEnrollmentAmount(${e.id},this.value)" title="Edit amount"/>
+        <button onclick="removeEnrollment(${e.id})"
+          style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:#f87171;border-radius:6px;padding:.25rem .5rem;font-size:.72rem;cursor:pointer">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  function autoFillPrice() {
+    const course = document.getElementById('es-new-course').value;
+    const plan   = document.getElementById('es-new-plan').value;
+    const match  = coursePricing.find(p => p.course===course && p.plan===plan);
+    if (match) document.getElementById('es-new-amount').value = match.amount;
+  }
+
+  async function addEnrollment() {
+    const course  = document.getElementById('es-new-course').value;
+    const plan    = document.getElementById('es-new-plan').value;
+    const amount  = parseInt(document.getElementById('es-new-amount').value) || 0;
+    const errEl   = document.getElementById('es-error');
+    if (!course) { errEl.textContent='Please select a course.'; errEl.style.display='block'; return; }
+    errEl.style.display = 'none';
+
+    const r = await fetch(`/api/admin/students/${editStudentId}/enrollments`, {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
+      body: JSON.stringify({course, plan, amount})
+    });
+    const d = await r.json();
+    if (r.ok) {
+      esEnrollments.unshift(d);
+      document.getElementById('es-new-course').value  = '';
+      document.getElementById('es-new-amount').value  = '';
+      renderEnrollments();
+      showToast('Course added');
+      loadStudents();
+    } else {
+      errEl.textContent = d.error || 'Failed to add'; errEl.style.display = 'block';
+    }
+  }
+
+  async function removeEnrollment(eid) {
+    if (!confirm('Remove this enrollment?')) return;
+    const r = await fetch(`/api/admin/enrollments/${eid}`, {
+      method:'DELETE',
+      headers:{'Authorization':'Bearer '+localStorage.getItem('la_token')}
+    });
+    if (r.ok) {
+      esEnrollments = esEnrollments.filter(e=>e.id!==eid);
+      renderEnrollments();
+      showToast('Enrollment removed');
+      loadStudents();
+    }
+  }
+
+  async function updateEnrollmentStatus(eid, status) {
+    const idx = esEnrollments.findIndex(e=>e.id===eid);
+    await fetch(`/api/admin/enrollments/${eid}`, {
+      method:'PATCH',
+      headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
+      body: JSON.stringify({status})
+    });
+    if (idx>=0) { esEnrollments[idx].status = status; renderEnrollments(); }
+  }
+
+  async function updateEnrollmentAmount(eid, amount) {
+    const idx = esEnrollments.findIndex(e=>e.id===eid);
+    await fetch(`/api/admin/enrollments/${eid}`, {
+      method:'PATCH',
+      headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
+      body: JSON.stringify({amount: parseInt(amount)||0})
+    });
+    if (idx>=0) { esEnrollments[idx].amount = parseInt(amount)||0; renderEnrollments(); }
   }
 
   async function saveEditStudent() {
-    const btn = document.getElementById('es-submit-btn');
+    const btn   = document.getElementById('es-submit-btn');
     const errEl = document.getElementById('es-error');
     btn.disabled = true; btn.textContent = 'Saving…';
     errEl.style.display = 'none';
-
-    const body = {
-      full_name:      document.getElementById('es-name').value.trim(),
-      phone:          document.getElementById('es-phone').value.trim(),
-      course:         document.getElementById('es-course').value,
-      plan:           document.getElementById('es-plan').value,
-      payment_status: document.getElementById('es-payment').value,
-      is_active:      document.getElementById('es-active').value === '1'
-    };
-
     try {
       const r = await fetch(`/api/admin/students/${editStudentId}`, {
         method:'PATCH',
         headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
-        body: JSON.stringify(body)
+        body: JSON.stringify({
+          full_name:      document.getElementById('es-name').value.trim(),
+          phone:          document.getElementById('es-phone').value.trim(),
+          payment_status: document.getElementById('es-payment').value,
+          is_active:      document.getElementById('es-active').value === '1'
+        })
       });
       const d = await r.json();
       if (r.ok) {
-        closeEditStudent();
-        showToast('Student updated successfully');
-        loadStudents();
+        closeEditStudent(); showToast('Student updated'); loadStudents();
       } else {
         errEl.textContent = d.error || 'Update failed'; errEl.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Save Changes';
+        btn.disabled = false; btn.textContent = 'Save Basic Info';
       }
     } catch {
       errEl.textContent = 'Network error'; errEl.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Save Changes';
+      btn.disabled = false; btn.textContent = 'Save Basic Info';
     }
   }
 

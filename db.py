@@ -102,9 +102,10 @@ def init_db():
     _migrate_email_verification(conn)
     _migrate_password_resets(conn)
     _migrate_lesson_progress(conn)
+    _migrate_enrollments(conn)
     conn.commit()
     conn.close()
-    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress")
+    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing")
 
 def _migrate_payment_status(conn):
     cols = [r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()]
@@ -210,3 +211,85 @@ def _migrate_sessions(conn):
             CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
         """)
         print("  [OK] Sessions table migrated to support instructor role")
+
+def _migrate_enrollments(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS course_pricing (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            course      TEXT    NOT NULL,
+            plan        TEXT    NOT NULL,
+            amount      INTEGER NOT NULL DEFAULT 0,
+            created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(course, plan)
+        );
+
+        CREATE TABLE IF NOT EXISTS course_enrollments (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id  INTEGER NOT NULL,
+            course      TEXT    NOT NULL,
+            plan        TEXT    NOT NULL DEFAULT '6 Months',
+            amount      INTEGER NOT NULL DEFAULT 0,
+            status      TEXT    NOT NULL DEFAULT 'active',
+            enrolled_at TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_ce_student ON course_enrollments(student_id);
+        CREATE INDEX IF NOT EXISTS idx_ce_course  ON course_enrollments(course);
+    """)
+
+    # Seed default pricing if empty
+    count = conn.execute("SELECT COUNT(*) FROM course_pricing").fetchone()[0]
+    if count == 0:
+        defaults = [
+            ('Physics Foundation', '1 Month',  2500),
+            ('Physics Foundation', '3 Months', 6500),
+            ('Physics Foundation', '6 Months', 11000),
+            ('Physics Foundation', '12 Months',18000),
+            ('JEE Mains',          '1 Month',  3000),
+            ('JEE Mains',          '3 Months', 8000),
+            ('JEE Mains',          '6 Months', 14000),
+            ('JEE Mains',          '12 Months',22000),
+            ('JEE Advanced',       '1 Month',  3500),
+            ('JEE Advanced',       '3 Months', 9500),
+            ('JEE Advanced',       '6 Months', 16500),
+            ('JEE Advanced',       '12 Months',26000),
+            ('NEET',               '1 Month',  3000),
+            ('NEET',               '3 Months', 8000),
+            ('NEET',               '6 Months', 14000),
+            ('NEET',               '12 Months',22000),
+            ('EAMCET',             '1 Month',  2500),
+            ('EAMCET',             '3 Months', 6500),
+            ('EAMCET',             '6 Months', 11000),
+            ('EAMCET',             '12 Months',18000),
+            ('Class 11 Physics',   '1 Month',  2000),
+            ('Class 11 Physics',   '3 Months', 5500),
+            ('Class 11 Physics',   '6 Months', 9500),
+            ('Class 11 Physics',   '12 Months',15000),
+            ('Class 12 Physics',   '1 Month',  2000),
+            ('Class 12 Physics',   '3 Months', 5500),
+            ('Class 12 Physics',   '6 Months', 9500),
+            ('Class 12 Physics',   '12 Months',15000),
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO course_pricing (course, plan, amount) VALUES (?,?,?)",
+            defaults
+        )
+        print("  [OK] Default course pricing seeded")
+
+    # Migrate existing students into course_enrollments if not already there
+    students = conn.execute("SELECT id, course, plan FROM students").fetchall()
+    for s in students:
+        existing = conn.execute(
+            "SELECT id FROM course_enrollments WHERE student_id=? AND course=?",
+            (s['id'], s['course'])
+        ).fetchone()
+        if not existing and s['course']:
+            pricing = conn.execute(
+                "SELECT amount FROM course_pricing WHERE course=? AND plan=?",
+                (s['course'], s['plan'])
+            ).fetchone()
+            amount = pricing['amount'] if pricing else 0
+            conn.execute(
+                "INSERT INTO course_enrollments (student_id, course, plan, amount) VALUES (?,?,?,?)",
+                (s['id'], s['course'], s['plan'], amount)
+            )

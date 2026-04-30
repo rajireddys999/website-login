@@ -1330,6 +1330,143 @@ def student_get_progress():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+# ── ADMIN: course pricing ─────────────────────────────────────────
+
+@app.route('/api/admin/course-pricing', methods=['GET'])
+def get_course_pricing():
+    session, err, code = require_role('admin')
+    if err: return err, code
+    conn = get_conn()
+    rows = conn.execute("SELECT * FROM course_pricing ORDER BY course, plan").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/course-pricing', methods=['POST'])
+def upsert_course_pricing():
+    session, err, code = require_role('admin')
+    if err: return err, code
+    data   = request.get_json() or {}
+    course = (data.get('course') or '').strip()
+    plan   = (data.get('plan') or '').strip()
+    amount = int(data.get('amount', 0))
+    if not course or not plan or amount < 0:
+        return jsonify({'error': 'course, plan, and amount required.'}), 400
+    conn = get_conn()
+    conn.execute("""
+        INSERT INTO course_pricing (course, plan, amount)
+        VALUES (?,?,?)
+        ON CONFLICT(course, plan) DO UPDATE SET amount=excluded.amount
+    """, (course, plan, amount))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/admin/course-pricing/<int:pid>', methods=['DELETE'])
+def delete_course_pricing(pid):
+    session, err, code = require_role('admin')
+    if err: return err, code
+    conn = get_conn()
+    conn.execute("DELETE FROM course_pricing WHERE id=?", (pid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# ── ADMIN: student enrollments ────────────────────────────────────
+
+@app.route('/api/admin/students/<int:sid>/enrollments', methods=['GET'])
+def get_student_enrollments(sid):
+    session, err, code = require_role('admin')
+    if err: return err, code
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM course_enrollments WHERE student_id=? ORDER BY enrolled_at DESC", (sid,)
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/students/<int:sid>/enrollments', methods=['POST'])
+def add_student_enrollment(sid):
+    session, err, code = require_role('admin')
+    if err: return err, code
+    data   = request.get_json() or {}
+    course = (data.get('course') or '').strip()
+    plan   = (data.get('plan') or '6 Months').strip()
+    amount = int(data.get('amount', 0))
+    if not course:
+        return jsonify({'error': 'course is required.'}), 400
+
+    conn = get_conn()
+    # Check student exists
+    student = conn.execute("SELECT id, course FROM students WHERE id=?", (sid,)).fetchone()
+    if not student:
+        conn.close(); return jsonify({'error': 'Student not found.'}), 404
+
+    cur = conn.execute(
+        "INSERT INTO course_enrollments (student_id, course, plan, amount) VALUES (?,?,?,?)",
+        (sid, course, plan, amount)
+    )
+    eid = cur.lastrowid
+
+    # Sync students.course to this new enrollment if it's their first
+    existing_count = conn.execute(
+        "SELECT COUNT(*) FROM course_enrollments WHERE student_id=?", (sid,)
+    ).fetchone()[0]
+    if existing_count == 1:
+        conn.execute("UPDATE students SET course=?, plan=? WHERE id=?", (course, plan, sid))
+
+    # Record payment entry
+    txn_id = f"ADM-{sid}-{secrets.token_hex(6).upper()}"
+    conn.execute(
+        "INSERT INTO payments (student_id, merchant_transaction_id, amount, status) VALUES (?,?,?,?)",
+        (sid, txn_id, amount, 'paid')
+    )
+    conn.commit()
+    row = conn.execute("SELECT * FROM course_enrollments WHERE id=?", (eid,)).fetchone()
+    conn.close()
+    return jsonify(dict(row)), 201
+
+@app.route('/api/admin/enrollments/<int:eid>', methods=['PATCH'])
+def update_enrollment(eid):
+    session, err, code = require_role('admin')
+    if err: return err, code
+    data   = request.get_json() or {}
+    plan   = data.get('plan')
+    amount = data.get('amount')
+    status = data.get('status')
+    updates, params = [], []
+    if plan:   updates.append("plan=?");   params.append(plan)
+    if amount is not None: updates.append("amount=?"); params.append(int(amount))
+    if status: updates.append("status=?"); params.append(status)
+    if not updates:
+        return jsonify({'error': 'Nothing to update.'}), 400
+    conn = get_conn()
+    conn.execute(f"UPDATE course_enrollments SET {','.join(updates)} WHERE id=?", params+[eid])
+    conn.commit()
+    row = conn.execute("SELECT * FROM course_enrollments WHERE id=?", (eid,)).fetchone()
+    conn.close()
+    return jsonify(dict(row) if row else {})
+
+@app.route('/api/admin/enrollments/<int:eid>', methods=['DELETE'])
+def delete_enrollment(eid):
+    session, err, code = require_role('admin')
+    if err: return err, code
+    conn = get_conn()
+    enr = conn.execute("SELECT student_id FROM course_enrollments WHERE id=?", (eid,)).fetchone()
+    if not enr:
+        conn.close(); return jsonify({'error': 'Enrollment not found.'}), 404
+    sid = enr['student_id']
+    conn.execute("DELETE FROM course_enrollments WHERE id=?", (eid,))
+    # Update students.course to remaining first enrollment
+    remaining = conn.execute(
+        "SELECT course, plan FROM course_enrollments WHERE student_id=? ORDER BY enrolled_at LIMIT 1", (sid,)
+    ).fetchone()
+    if remaining:
+        conn.execute("UPDATE students SET course=?, plan=? WHERE id=?",
+                     (remaining['course'], remaining['plan'], sid))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
 # ── PUBLIC: website chatbot (RAJ-new) ────────────────────────────
 
 @app.route('/api/chat', methods=['POST'])
@@ -1424,9 +1561,9 @@ YOUR STYLE:
         d = resp.json()
         if resp.ok:
             return jsonify({'reply': d['content'][0]['text']})
-        return jsonify({'reply': 'Sorry, I'm having trouble responding right now. Please use the enquiry form below and we'll get back to you shortly.'}), 200
+        return jsonify({'reply': "Sorry, I'm having trouble responding right now. Please use the enquiry form below and we'll get back to you shortly."}), 200
     except Exception:
-        return jsonify({'reply': 'I'm offline at the moment. Please fill in the enquiry form and our team will contact you soon!'}), 200
+        return jsonify({'reply': "I'm offline at the moment. Please fill in the enquiry form and our team will contact you soon!"}), 200
 
 # ── ADMIN: edit student (full edit) ──────────────────────────────
 

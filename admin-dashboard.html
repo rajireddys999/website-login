@@ -1551,7 +1551,8 @@
         headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
         body: JSON.stringify({course, plan, amount})
       });
-      const d = await r.json();
+      let d = {};
+      try { d = await r.json(); } catch(_) {}
       if (r.ok) {
         esEnrollments.unshift(d);
         document.getElementById('es-new-course').value  = '';
@@ -1570,7 +1571,7 @@
         errEl.textContent = d.error || 'Failed to add enrollment.'; errEl.style.display = 'block';
       }
     } catch(e) {
-      errEl.textContent = 'Network error. Is the server running?'; errEl.style.display = 'block';
+      errEl.textContent = 'Could not reach server. Check your connection and try again.'; errEl.style.display = 'block';
     } finally {
       if (addBtn) { addBtn.disabled = false; addBtn.textContent = '+ Add'; }
     }

@@ -15,6 +15,18 @@ CORS(app)
 
 limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[])
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    app.logger.error("Unhandled exception: %s", e, exc_info=True)
+    return jsonify({'error': 'Internal server error. Please try again.'}), 500
+
+@app.errorhandler(404)
+def handle_404(e):
+    # Only return JSON for /api/ paths; let static files 404 normally
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Not found.'}), 404
+    return send_from_directory('.', '404.html') if os.path.exists('404.html') else ('Not found', 404)
+
 # ── Email config ─────────────────────────────────────────────────
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
@@ -1409,7 +1421,7 @@ def add_student_enrollment(sid):
     data   = request.get_json() or {}
     course = (data.get('course') or '').strip()
     plan   = (data.get('plan') or '6 Months').strip()
-    amount = int(data.get('amount', 0))
+    raw_amt = data.get('amount', None)
     if not course:
         return jsonify({'error': 'course is required.'}), 400
 
@@ -1428,6 +1440,15 @@ def add_student_enrollment(sid):
         conn.close()
         return jsonify({'error': f'Student is already actively enrolled in {course}. Remove or deactivate the existing enrollment first.'}), 409
 
+    # Auto-fill amount from pricing table if not provided or zero
+    if raw_amt is None or int(raw_amt or 0) == 0:
+        pricing = conn.execute(
+            "SELECT amount FROM course_pricing WHERE course=? AND plan=?", (course, plan)
+        ).fetchone()
+        amount = pricing['amount'] if pricing else 99
+    else:
+        amount = int(raw_amt)
+
     cur = conn.execute(
         "INSERT INTO course_enrollments (student_id, course, plan, amount) VALUES (?,?,?,?)",
         (sid, course, plan, amount)
@@ -1441,12 +1462,14 @@ def add_student_enrollment(sid):
     if existing_count == 1:
         conn.execute("UPDATE students SET course=?, plan=? WHERE id=?", (course, plan, sid))
 
-    # Record payment entry
+    # Record payment entry for this new enrollment only (not re-charging existing courses)
     txn_id = f"ADM-{sid}-{secrets.token_hex(6).upper()}"
     conn.execute(
         "INSERT INTO payments (student_id, merchant_transaction_id, amount, status) VALUES (?,?,?,?)",
         (sid, txn_id, amount, 'paid')
     )
+    # Mark student payment_status as paid since admin is manually adding this enrollment
+    conn.execute("UPDATE students SET payment_status='paid' WHERE id=?", (sid,))
     conn.commit()
     row = conn.execute("SELECT * FROM course_enrollments WHERE id=?", (eid,)).fetchone()
     conn.close()

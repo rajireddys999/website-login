@@ -703,10 +703,16 @@ def admin_students():
     conn = get_conn()
 
     if page_param is None:
-        # Backward-compatible: return plain list
-        rows = conn.execute(
-            "SELECT id, full_name, email, phone, course, plan, is_active, payment_status, created_at FROM students ORDER BY created_at DESC"
-        ).fetchall()
+        # Backward-compatible: return plain list with all active enrolled courses
+        rows = conn.execute("""
+            SELECT s.id, s.full_name, s.email, s.phone, s.course, s.plan,
+                   s.is_active, s.payment_status, s.created_at,
+                   GROUP_CONCAT(ce.course, ' | ') as enrolled_courses
+            FROM students s
+            LEFT JOIN course_enrollments ce ON ce.student_id = s.id AND ce.status = 'active'
+            GROUP BY s.id
+            ORDER BY s.created_at DESC
+        """).fetchall()
         conn.close()
         return jsonify([dict(r) for r in rows])
 

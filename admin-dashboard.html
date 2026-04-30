@@ -692,8 +692,6 @@
       <div>
         <label class="form-label">Plan</label>
         <select class="form-input" id="es-new-plan" onchange="autoFillPrice()">
-          <option>1 Month</option>
-          <option>3 Months</option>
           <option selected>6 Months</option>
           <option>12 Months</option>
         </select>
@@ -1373,7 +1371,10 @@
       const payStatus = s.payment_status || 'pending';
       const statusBadge  = active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-red">Revoked</span>';
       const payBadge     = `<span class="badge ${PAY_BADGES[payStatus]||'badge-gray'}">${payStatus}</span>`;
-      const courseBadge  = `<span class="badge ${COURSE_COLORS[s.course]||'badge-gray'}" style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${escHtml(s.course||'—')}</span>`;
+      const enrolledList = (s.enrolled_courses || s.course || '').split(' | ').filter(Boolean);
+      const courseBadge  = enrolledList.length
+        ? enrolledList.map(c => `<span class="badge ${COURSE_COLORS[c]||'badge-gray'}" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;display:inline-block;margin:.1rem .1rem .1rem 0">${escHtml(c)}</span>`).join('')
+        : '<span style="color:var(--muted);font-size:.78rem">—</span>';
       const toggleBtn    = active
         ? `<button class="action-btn btn-revoke"  onclick="confirmRevoke(${s.id},'${escHtml(s.full_name)}')">Revoke</button>`
         : `<button class="action-btn btn-restore" onclick="confirmRestore(${s.id},'${escHtml(s.full_name)}')">Restore</button>`;
@@ -1506,8 +1507,10 @@
   function autoFillPrice() {
     const course = document.getElementById('es-new-course').value;
     const plan   = document.getElementById('es-new-plan').value;
-    const match  = coursePricing.find(p => p.course===course && p.plan===plan);
-    if (match) document.getElementById('es-new-amount').value = match.amount;
+    if (!course) return;
+    const sixMonth = coursePricing.find(p => p.course === course && p.plan === '6 Months');
+    const base = sixMonth ? sixMonth.amount : 99;
+    document.getElementById('es-new-amount').value = plan === '12 Months' ? base * 2 : base;
   }
 
   async function addEnrollment() {

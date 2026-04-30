@@ -1,4 +1,4 @@
-import uuid, os, re, json, base64, hashlib, secrets, smtplib
+import uuid, os, re, json, base64, hashlib, secrets, smtplib, math
 from email.mime.text import MIMEText
 import bcrypt
 import requests as http_requests
@@ -295,6 +295,83 @@ def resend_verification():
 
     send_verification_email(email, student['full_name'] if student else '', verify_token)
     return jsonify({'message': 'If that email is registered, a new verification link has been sent.'})
+
+# ── POST /api/forgot-password ────────────────────────────────────
+
+@app.route('/api/forgot-password', methods=['POST'])
+@limiter.limit("5 per hour")
+def forgot_password():
+    data  = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'error': 'email is required.'}), 400
+
+    conn    = get_conn()
+    student = conn.execute(
+        "SELECT id, full_name FROM students WHERE email = ?", (email,)
+    ).fetchone()
+
+    # Always return the same message so we don't reveal whether an account exists
+    generic_msg = 'If that email is registered, a password reset link has been sent.'
+
+    if not student:
+        conn.close()
+        return jsonify({'message': generic_msg})
+
+    # Invalidate previous unused tokens for this student
+    conn.execute(
+        "UPDATE password_resets SET used = 1 WHERE student_id = ? AND used = 0",
+        (student['id'],)
+    )
+
+    reset_token = secrets.token_urlsafe(32)
+    expires_at  = (datetime.utcnow() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+    conn.execute(
+        "INSERT INTO password_resets (student_id, token, expires_at) VALUES (?, ?, ?)",
+        (student['id'], reset_token, expires_at)
+    )
+    conn.commit()
+    conn.close()
+
+    reset_url = f"{APP_BASE_URL}/reset-password.html?token={reset_token}"
+    body = f"""
+    <p>Hi {student['full_name']},</p>
+    <p>We received a request to reset your Laxmi Academy password. Click the button below to choose a new password:</p>
+    <p><a href="{reset_url}" style="background:#6366f1;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Reset Password</a></p>
+    <p>This link expires in <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email.</p>
+    """
+    send_email(email, "Reset your Laxmi Academy password", body)
+    return jsonify({'message': generic_msg})
+
+# ── POST /api/reset-password ──────────────────────────────────────
+
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    data         = request.get_json() or {}
+    token        = data.get('token', '').strip()
+    new_password = data.get('new_password', '')
+
+    if not token or not new_password:
+        return jsonify({'error': 'token and new_password are required.'}), 400
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
+
+    conn = get_conn()
+    row  = conn.execute(
+        "SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expires_at > datetime('now')",
+        (token,)
+    ).fetchone()
+
+    if not row:
+        conn.close()
+        return jsonify({'error': 'Invalid or expired reset link. Please request a new one.'}), 400
+
+    hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+    conn.execute("UPDATE students SET password = ? WHERE id = ?", (hashed, row['student_id']))
+    conn.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (row['id'],))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Password reset successfully. You can now log in with your new password.'})
 
 # ── POST /api/logout ─────────────────────────────────────────────
 
@@ -609,12 +686,27 @@ def admin_students():
     session, err_resp, err_code = require_role('admin')
     if err_resp:
         return err_resp, err_code
+
+    page_param = request.args.get('page')
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT id, full_name, email, phone, course, plan, is_active, payment_status, created_at FROM students ORDER BY created_at DESC"
+
+    if page_param is None:
+        # Backward-compatible: return plain list
+        rows = conn.execute(
+            "SELECT id, full_name, email, phone, course, plan, is_active, payment_status, created_at FROM students ORDER BY created_at DESC"
+        ).fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    page  = max(1, int(page_param))
+    limit = max(1, min(200, int(request.args.get('limit', 50))))
+    total = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
+    rows  = conn.execute(
+        "SELECT id, full_name, email, phone, course, plan, is_active, payment_status, created_at FROM students ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (limit, (page - 1) * limit)
     ).fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify({'data': [dict(r) for r in rows], 'total': total, 'page': page, 'pages': math.ceil(total / limit) if total else 1})
 
 # ── ADMIN: enquiries ─────────────────────────────────────────────
 
@@ -623,10 +715,24 @@ def admin_enquiries():
     session, err_resp, err_code = require_role('admin')
     if err_resp:
         return err_resp, err_code
+
+    page_param = request.args.get('page')
     conn = get_conn()
-    rows = conn.execute("SELECT * FROM enquiries ORDER BY created_at DESC").fetchall()
+
+    if page_param is None:
+        rows = conn.execute("SELECT * FROM enquiries ORDER BY created_at DESC").fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    page  = max(1, int(page_param))
+    limit = max(1, min(200, int(request.args.get('limit', 50))))
+    total = conn.execute("SELECT COUNT(*) FROM enquiries").fetchone()[0]
+    rows  = conn.execute(
+        "SELECT * FROM enquiries ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (limit, (page - 1) * limit)
+    ).fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify({'data': [dict(r) for r in rows], 'total': total, 'page': page, 'pages': math.ceil(total / limit) if total else 1})
 
 # ── ADMIN: stats ─────────────────────────────────────────────────
 
@@ -743,6 +849,21 @@ def admin_sessions():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+# ── ADMIN: DELETE /api/admin/sessions/cleanup ────────────────────
+
+@app.route('/api/admin/sessions/cleanup', methods=['DELETE'])
+def admin_sessions_cleanup():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    conn    = get_conn()
+    cursor  = conn.execute("DELETE FROM sessions WHERE expires_at < datetime('now')")
+    deleted = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return jsonify({'deleted': deleted})
+
 # ── ADMIN: instructors ───────────────────────────────────────────
 
 @app.route('/api/admin/instructors', methods=['GET'])
@@ -764,14 +885,29 @@ def admin_lessons():
     session, err_resp, err_code = require_role('admin')
     if err_resp:
         return err_resp, err_code
+
+    page_param = request.args.get('page')
     conn = get_conn()
-    rows = conn.execute("""
+
+    if page_param is None:
+        rows = conn.execute("""
+            SELECT l.*, i.name as instructor_name
+            FROM lessons l JOIN instructors i ON l.instructor_id = i.id
+            ORDER BY l.created_at DESC
+        """).fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    page  = max(1, int(page_param))
+    limit = max(1, min(200, int(request.args.get('limit', 50))))
+    total = conn.execute("SELECT COUNT(*) FROM lessons").fetchone()[0]
+    rows  = conn.execute("""
         SELECT l.*, i.name as instructor_name
         FROM lessons l JOIN instructors i ON l.instructor_id = i.id
-        ORDER BY l.created_at DESC
-    """).fetchall()
+        ORDER BY l.created_at DESC LIMIT ? OFFSET ?
+    """, (limit, (page - 1) * limit)).fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify({'data': [dict(r) for r in rows], 'total': total, 'page': page, 'pages': math.ceil(total / limit) if total else 1})
 
 # ── ADMIN: toggle instructor ─────────────────────────────────────
 
@@ -986,14 +1122,63 @@ def admin_payments():
     if err_resp:
         return err_resp, err_code
 
+    page_param = request.args.get('page')
     conn = get_conn()
-    rows = conn.execute("""
+
+    if page_param is None:
+        rows = conn.execute("""
+            SELECT p.*, s.full_name, s.email
+            FROM payments p JOIN students s ON p.student_id = s.id
+            ORDER BY p.created_at DESC
+        """).fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    page  = max(1, int(page_param))
+    limit = max(1, min(200, int(request.args.get('limit', 50))))
+    total = conn.execute("SELECT COUNT(*) FROM payments").fetchone()[0]
+    rows  = conn.execute("""
         SELECT p.*, s.full_name, s.email
         FROM payments p JOIN students s ON p.student_id = s.id
-        ORDER BY p.created_at DESC
-    """).fetchall()
+        ORDER BY p.created_at DESC LIMIT ? OFFSET ?
+    """, (limit, (page - 1) * limit)).fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify({'data': [dict(r) for r in rows], 'total': total, 'page': page, 'pages': math.ceil(total / limit) if total else 1})
+
+# ── ADMIN: PATCH /api/admin/payments/<id>/status ─────────────────
+
+@app.route('/api/admin/payments/<int:pid>/status', methods=['PATCH'])
+def admin_payment_status(pid):
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    data       = request.get_json() or {}
+    new_status = data.get('status', '')
+    if new_status not in ('paid', 'pending', 'failed'):
+        return jsonify({'error': 'status must be paid, pending, or failed.'}), 400
+
+    conn    = get_conn()
+    payment = conn.execute("SELECT * FROM payments WHERE id = ?", (pid,)).fetchone()
+    if not payment:
+        conn.close()
+        return jsonify({'error': 'Payment not found.'}), 404
+
+    conn.execute(
+        "UPDATE payments SET status = ?, updated_at = datetime('now') WHERE id = ?",
+        (new_status, pid)
+    )
+
+    if new_status == 'paid':
+        conn.execute(
+            "UPDATE students SET is_active = 1, payment_status = 'paid' WHERE id = ?",
+            (payment['student_id'],)
+        )
+
+    conn.commit()
+    updated = conn.execute("SELECT * FROM payments WHERE id = ?", (pid,)).fetchone()
+    conn.close()
+    return jsonify({'success': True, 'payment': dict(updated)})
 
 # ── Linear proxy ─────────────────────────────────────────────────
 
@@ -1096,6 +1281,497 @@ def admin_health():
         'student_count': student_count,
         'ts': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
     })
+
+# ── STUDENT: POST /api/student/progress ──────────────────────────
+
+@app.route('/api/student/progress', methods=['POST'])
+def student_post_progress():
+    session, err_resp, err_code = require_role('student')
+    if err_resp:
+        return err_resp, err_code
+
+    data            = request.get_json() or {}
+    lesson_id       = data.get('lesson_id')
+    watched_seconds = int(data.get('watched_seconds', 0))
+    completed       = 1 if data.get('completed') else 0
+
+    if lesson_id is None:
+        return jsonify({'error': 'lesson_id is required.'}), 400
+
+    watched = 1 if watched_seconds > 0 or completed else 0
+
+    conn = get_conn()
+    conn.execute("""
+        INSERT INTO lesson_progress (student_id, lesson_id, watched, completed, watched_seconds, updated_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(student_id, lesson_id) DO UPDATE SET
+            watched         = MAX(watched, excluded.watched),
+            completed       = MAX(completed, excluded.completed),
+            watched_seconds = MAX(watched_seconds, excluded.watched_seconds),
+            updated_at      = datetime('now')
+    """, (session['user_id'], lesson_id, watched, completed, watched_seconds))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# ── STUDENT: GET /api/student/progress ───────────────────────────
+
+@app.route('/api/student/progress', methods=['GET'])
+def student_get_progress():
+    session, err_resp, err_code = require_role('student')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT lesson_id, watched, completed, watched_seconds FROM lesson_progress WHERE student_id = ?",
+        (session['user_id'],)
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+# ── STUDENT: profile update (RAJ-15) ─────────────────────────────
+
+@app.route('/api/student/profile', methods=['PATCH'])
+def student_update_profile():
+    session, err_resp, err_code = require_role('student')
+    if err_resp:
+        return err_resp, err_code
+
+    data         = request.get_json() or {}
+    full_name    = data.get('full_name', '').strip()
+    phone        = data.get('phone', '').strip()
+    cur_pw       = data.get('current_password', '')
+    new_pw       = data.get('new_password', '')
+
+    conn = get_conn()
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (session['user_id'],)).fetchone()
+    if not student:
+        conn.close(); return jsonify({'error': 'Student not found.'}), 404
+
+    updates, params = [], []
+    if full_name:
+        updates.append("full_name = ?"); params.append(full_name)
+    if phone:
+        existing = conn.execute("SELECT id FROM students WHERE phone = ? AND id != ?", (phone, session['user_id'])).fetchone()
+        if existing:
+            conn.close(); return jsonify({'error': 'Phone number already in use.'}), 409
+        updates.append("phone = ?"); params.append(phone)
+
+    if new_pw:
+        if not cur_pw or not bcrypt.checkpw(cur_pw.encode(), student['password'].encode()):
+            conn.close(); return jsonify({'error': 'Current password is incorrect.'}), 400
+        if len(new_pw) < 8:
+            conn.close(); return jsonify({'error': 'New password must be at least 8 characters.'}), 400
+        updates.append("password = ?"); params.append(bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode())
+
+    if updates:
+        params.append(session['user_id'])
+        conn.execute(f"UPDATE students SET {', '.join(updates)} WHERE id = ?", params)
+        conn.commit()
+
+    updated = conn.execute("SELECT id, full_name, email, phone, course, plan FROM students WHERE id = ?", (session['user_id'],)).fetchone()
+    conn.close()
+    return jsonify({'message': 'Profile updated.', 'student': dict(updated)})
+
+# ── STUDENT: payment history (RAJ-20) ────────────────────────────
+
+@app.route('/api/student/payments', methods=['GET'])
+def student_payments():
+    session, err_resp, err_code = require_role('student')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, merchant_transaction_id, amount, status, created_at, updated_at FROM payments WHERE student_id = ? ORDER BY created_at DESC",
+        (session['user_id'],)
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+# ── STUDENT / INSTRUCTOR: Doubts Q&A (RAJ-14 / RAJ-25) ───────────
+
+def _migrate_doubts(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS doubts (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id   INTEGER NOT NULL,
+            lesson_id    INTEGER,
+            question     TEXT    NOT NULL,
+            answer       TEXT,
+            status       TEXT    NOT NULL DEFAULT 'open',
+            answered_by  INTEGER,
+            created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+            answered_at  TEXT,
+            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+            FOREIGN KEY (lesson_id)  REFERENCES lessons(id)  ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_doubts_student    ON doubts(student_id);
+        CREATE INDEX IF NOT EXISTS idx_doubts_lesson     ON doubts(lesson_id);
+        CREATE INDEX IF NOT EXISTS idx_doubts_status     ON doubts(status);
+    """)
+
+@app.route('/api/student/doubts', methods=['POST'])
+def student_post_doubt():
+    session, err_resp, err_code = require_role('student')
+    if err_resp:
+        return err_resp, err_code
+
+    data      = request.get_json() or {}
+    lesson_id = data.get('lesson_id')
+    question  = (data.get('question') or '').strip()
+    if not question:
+        return jsonify({'error': 'Question is required.'}), 400
+
+    conn = get_conn()
+    _migrate_doubts(conn)
+    cur = conn.execute(
+        "INSERT INTO doubts (student_id, lesson_id, question) VALUES (?, ?, ?)",
+        (session['user_id'], lesson_id or None, question)
+    )
+    conn.commit()
+    doubt_id = cur.lastrowid
+    conn.close()
+    return jsonify({'success': True, 'id': doubt_id}), 201
+
+@app.route('/api/student/doubts', methods=['GET'])
+def student_get_doubts():
+    session, err_resp, err_code = require_role('student')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    _migrate_doubts(conn)
+    rows = conn.execute("""
+        SELECT d.id, d.lesson_id, l.title as lesson_title,
+               d.question, d.answer, d.status, d.created_at, d.answered_at
+        FROM doubts d
+        LEFT JOIN lessons l ON l.id = d.lesson_id
+        WHERE d.student_id = ?
+        ORDER BY d.created_at DESC
+    """, (session['user_id'],)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/instructor/doubts', methods=['GET'])
+def instructor_get_doubts():
+    session, err_resp, err_code = require_role('instructor')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    _migrate_doubts(conn)
+    rows = conn.execute("""
+        SELECT d.id, d.lesson_id, l.title as lesson_title,
+               d.question, d.answer, d.status, d.created_at, d.answered_at,
+               s.full_name as student_name
+        FROM doubts d
+        LEFT JOIN lessons l ON l.id = d.lesson_id
+        LEFT JOIN students s ON s.id = d.student_id
+        WHERE l.instructor_id = ? OR d.lesson_id IS NULL
+        ORDER BY d.status ASC, d.created_at DESC
+    """, (session['user_id'],)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/instructor/doubts/<int:did>/answer', methods=['PATCH'])
+def instructor_answer_doubt(did):
+    session, err_resp, err_code = require_role('instructor')
+    if err_resp:
+        return err_resp, err_code
+
+    data   = request.get_json() or {}
+    answer = (data.get('answer') or '').strip()
+    if not answer:
+        return jsonify({'error': 'Answer is required.'}), 400
+
+    conn = get_conn()
+    _migrate_doubts(conn)
+    conn.execute("""
+        UPDATE doubts SET answer = ?, status = 'answered',
+               answered_by = ?, answered_at = datetime('now')
+        WHERE id = ?
+    """, (answer, session['user_id'], did))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# ── ADMIN: bulk student actions (RAJ-29) ─────────────────────────
+
+@app.route('/api/admin/students/bulk-revoke', methods=['PATCH'])
+def admin_bulk_revoke():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    ids = (request.get_json() or {}).get('ids', [])
+    if not ids:
+        return jsonify({'error': 'No ids provided.'}), 400
+
+    conn = get_conn()
+    conn.execute(f"UPDATE students SET is_active = 0 WHERE id IN ({','.join('?'*len(ids))})", ids)
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'updated': len(ids)})
+
+@app.route('/api/admin/students/bulk', methods=['DELETE'])
+def admin_bulk_delete():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    ids = (request.get_json() or {}).get('ids', [])
+    if not ids:
+        return jsonify({'error': 'No ids provided.'}), 400
+
+    conn = get_conn()
+    conn.execute(f"DELETE FROM students WHERE id IN ({','.join('?'*len(ids))})", ids)
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'deleted': len(ids)})
+
+# ── ADMIN: create instructor (RAJ-33) ─────────────────────────────
+
+@app.route('/api/admin/instructors', methods=['POST'])
+def admin_create_instructor():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    data    = request.get_json() or {}
+    name    = (data.get('name') or '').strip()
+    email   = (data.get('email') or '').strip().lower()
+    phone   = (data.get('phone') or '').strip()
+    subject = (data.get('subject') or 'Physics').strip()
+    password= (data.get('password') or '')
+    bio     = (data.get('bio') or '').strip()
+
+    if not all([name, email, password]):
+        return jsonify({'error': 'name, email, and password are required.'}), 400
+    if len(password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters.'}), 400
+
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            "INSERT INTO instructors (name, email, phone, subject, password, bio) VALUES (?,?,?,?,?,?)",
+            (name, email, phone or None, subject, hashed, bio or None)
+        )
+        conn.commit()
+        iid = cur.lastrowid
+        row = conn.execute("SELECT id,name,email,phone,subject,bio,is_active,created_at FROM instructors WHERE id=?", (iid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 201
+    except Exception as e:
+        conn.close()
+        if 'UNIQUE' in str(e):
+            return jsonify({'error': 'Email already in use.'}), 409
+        return jsonify({'error': str(e)}), 500
+
+# ── INSTRUCTOR: analytics (RAJ-24) ───────────────────────────────
+
+@app.route('/api/instructor/analytics', methods=['GET'])
+def instructor_analytics():
+    session, err_resp, err_code = require_role('instructor')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    lessons = conn.execute(
+        "SELECT id, title, topic FROM lessons WHERE instructor_id = ? AND is_published = 1",
+        (session['user_id'],)
+    ).fetchall()
+    lesson_ids = [l['id'] for l in lessons]
+
+    progress_rows = []
+    if lesson_ids:
+        ph = ','.join('?' * len(lesson_ids))
+        progress_rows = conn.execute(f"""
+            SELECT lesson_id,
+                   COUNT(DISTINCT student_id)       as view_count,
+                   SUM(watched_seconds)             as total_watch_seconds,
+                   SUM(CASE WHEN completed=1 THEN 1 ELSE 0 END) as completions
+            FROM lesson_progress
+            WHERE lesson_id IN ({ph})
+            GROUP BY lesson_id
+        """, lesson_ids).fetchall()
+
+    progress_map = {r['lesson_id']: dict(r) for r in progress_rows}
+    total_students = conn.execute("SELECT COUNT(*) FROM students WHERE is_active=1").fetchone()[0]
+    conn.close()
+
+    result = []
+    for l in lessons:
+        p = progress_map.get(l['id'], {'view_count':0,'total_watch_seconds':0,'completions':0})
+        result.append({
+            'lesson_id':   l['id'],
+            'title':       l['title'],
+            'topic':       l['topic'],
+            'views':       p['view_count'],
+            'watch_hours': round((p['total_watch_seconds'] or 0) / 3600, 1),
+            'completions': p['completions'],
+            'completion_rate': round(p['completions'] / max(p['view_count'],1) * 100)
+        })
+    return jsonify({'lessons': result, 'total_active_students': total_students})
+
+# ── INSTRUCTOR: student roster (RAJ-28) ──────────────────────────
+
+@app.route('/api/instructor/students', methods=['GET'])
+def instructor_students():
+    session, err_resp, err_code = require_role('instructor')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT s.id, s.full_name, s.email, s.phone, s.course, s.plan,
+               s.is_active, s.payment_status, s.created_at,
+               COUNT(DISTINCT lp.lesson_id) as lessons_watched
+        FROM students s
+        LEFT JOIN lesson_progress lp ON lp.student_id = s.id
+        WHERE s.is_active = 1
+        GROUP BY s.id
+        ORDER BY s.full_name
+    """).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+# ── ADMIN: enquiry notes (RAJ-34) ────────────────────────────────
+
+@app.route('/api/admin/enquiries/<int:eid>/notes', methods=['PATCH'])
+def admin_enquiry_note(eid):
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    data   = request.get_json() or {}
+    notes  = data.get('notes', '')
+    status = data.get('status')
+
+    conn = get_conn()
+    cols = conn.execute("PRAGMA table_info(enquiries)").fetchall()
+    col_names = [c[1] for c in cols]
+    if 'notes' not in col_names:
+        conn.execute("ALTER TABLE enquiries ADD COLUMN notes TEXT")
+        conn.commit()
+
+    updates, params = ["notes = ?"], [notes]
+    if status:
+        updates.append("status = ?"); params.append(status)
+    params.append(eid)
+    conn.execute(f"UPDATE enquiries SET {', '.join(updates)} WHERE id = ?", params)
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# ── ADMIN: lesson bulk actions (RAJ-27) ──────────────────────────
+
+@app.route('/api/admin/lessons/bulk', methods=['PATCH'])
+def admin_bulk_lessons():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    data   = request.get_json() or {}
+    ids    = data.get('ids', [])
+    action = data.get('action', '')
+    if not ids or action not in ('publish', 'unpublish', 'delete'):
+        return jsonify({'error': 'ids and action (publish/unpublish/delete) required.'}), 400
+
+    ph = ','.join('?' * len(ids))
+    conn = get_conn()
+    if action == 'delete':
+        conn.execute(f"DELETE FROM lessons WHERE id IN ({ph})", ids)
+    else:
+        val = 1 if action == 'publish' else 0
+        conn.execute(f"UPDATE lessons SET is_published = ? WHERE id IN ({ph})", [val]+list(ids))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'affected': len(ids)})
+
+# ── ADMIN: discount codes (RAJ-22) ───────────────────────────────
+
+@app.route('/api/admin/discount-codes', methods=['GET'])
+def admin_get_discount_codes():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    _migrate_discount_codes(conn)
+    rows = conn.execute("SELECT * FROM discount_codes ORDER BY created_at DESC").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/discount-codes', methods=['POST'])
+def admin_create_discount_code():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    data    = request.get_json() or {}
+    code    = (data.get('code') or '').strip().upper()
+    pct     = int(data.get('discount_percent', 0))
+    max_use = int(data.get('max_uses', 100))
+    expires = data.get('expires_at', '')
+    if not code or not (1 <= pct <= 100):
+        return jsonify({'error': 'code and discount_percent (1-100) required.'}), 400
+
+    conn = get_conn()
+    _migrate_discount_codes(conn)
+    try:
+        conn.execute(
+            "INSERT INTO discount_codes (code, discount_percent, max_uses, expires_at) VALUES (?,?,?,?)",
+            (code, pct, max_use, expires or None)
+        )
+        conn.commit()
+    except Exception as e:
+        conn.close()
+        if 'UNIQUE' in str(e):
+            return jsonify({'error': 'Code already exists.'}), 409
+        return jsonify({'error': str(e)}), 500
+    conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/apply-discount', methods=['POST'])
+def apply_discount():
+    session, err_resp, err_code = require_role('student')
+    if err_resp:
+        return err_resp, err_code
+
+    code = (request.get_json() or {}).get('code', '').strip().upper()
+    if not code:
+        return jsonify({'error': 'Code required.'}), 400
+
+    conn = get_conn()
+    _migrate_discount_codes(conn)
+    row = conn.execute("""
+        SELECT * FROM discount_codes
+        WHERE code = ? AND is_active = 1
+          AND (expires_at IS NULL OR expires_at > datetime('now'))
+          AND times_used < max_uses
+    """, (code,)).fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'error': 'Invalid or expired discount code.'}), 404
+    return jsonify({'discount_percent': row['discount_percent'], 'code': code})
+
+def _migrate_discount_codes(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS discount_codes (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            code             TEXT    UNIQUE NOT NULL,
+            discount_percent INTEGER NOT NULL DEFAULT 10,
+            max_uses         INTEGER NOT NULL DEFAULT 100,
+            times_used       INTEGER NOT NULL DEFAULT 0,
+            is_active        INTEGER NOT NULL DEFAULT 1,
+            expires_at       TEXT,
+            created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_dc_code ON discount_codes(code);
+    """)
 
 # ── Main ─────────────────────────────────────────────────────────
 

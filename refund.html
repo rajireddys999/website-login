@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Refund Policy — Laxmi Academy</title>
+  <meta name="theme-color" content="#6366f1">
+  <script src="theme.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f2ff;
+      --surface: rgba(255,255,255,0.95);
+      --surface-alt: rgba(99,102,241,0.06);
+      --border: rgba(99,102,241,0.15);
+      --text: #0f1023;
+      --text-muted: #5c6494;
+      --text-light: #8891b4;
+      --accent: #6366f1;
+      --accent-soft: rgba(99,102,241,0.12);
+      --sidebar-bg: rgba(255,255,255,0.85);
+      --green: #10b981;
+      --green-soft: rgba(16,185,129,0.1);
+      --green-border: rgba(16,185,129,0.25);
+      --red: #ef4444;
+      --red-soft: rgba(239,68,68,0.08);
+      --red-border: rgba(239,68,68,0.2);
+    }
+
+    html.dark {
+      --bg: #05060f;
+      --surface: rgba(255,255,255,0.04);
+      --surface-alt: rgba(99,102,241,0.08);
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f2ff;
+      --text-muted: #8891b4;
+      --text-light: #5c6494;
+      --sidebar-bg: rgba(255,255,255,0.03);
+    }
+
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.7; }
+
+    .topbar { background: linear-gradient(135deg, #0f0a2e 0%, #1a1060 50%, #0d1a3a 100%); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .topbar-logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+    .topbar-logo-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+    .topbar-logo-icon svg { width: 18px; height: 18px; color: #fff; }
+    .topbar-logo-text { font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.1; }
+    .topbar-logo-text span { display: block; font-size: 0.67rem; font-weight: 400; color: rgba(255,255,255,0.5); letter-spacing: 0.07em; text-transform: uppercase; }
+    .topbar-back { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.65); text-decoration: none; transition: color 0.2s; }
+    .topbar-back:hover { color: #a78bfa; }
+
+    .page-wrapper { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+    .page-hero { text-align: center; margin-bottom: 3rem; }
+    .page-hero .badge { display: inline-block; padding: 0.3rem 0.9rem; border-radius: 20px; background: var(--accent-soft); border: 1px solid var(--border); color: var(--accent); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.9rem; }
+    .page-hero h1 { font-size: 2.2rem; font-weight: 900; color: var(--text); line-height: 1.2; }
+    .page-hero p { font-size: 0.92rem; color: var(--text-muted); margin-top: 0.6rem; }
+
+    .layout { display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start; }
+
+    .sidebar { position: sticky; top: 1.5rem; background: var(--sidebar-bg); border: 1px solid var(--border); border-radius: 18px; padding: 1.25rem; backdrop-filter: blur(12px); }
+    .sidebar h3 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); margin-bottom: 0.85rem; }
+    .toc-list { list-style: none; display: flex; flex-direction: column; gap: 0.2rem; }
+    .toc-list a { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.65rem; border-radius: 10px; font-size: 0.83rem; font-weight: 500; color: var(--text-muted); text-decoration: none; transition: background 0.15s, color 0.15s; }
+    .toc-list a:hover, .toc-list a.active { background: var(--accent-soft); color: var(--accent); }
+    .toc-num { width: 20px; height: 20px; border-radius: 6px; background: var(--surface-alt); font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent); }
+    .last-updated { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.73rem; color: var(--text-light); }
+
+    .content section { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2rem 2.25rem; margin-bottom: 1.5rem; scroll-margin-top: 1.5rem; }
+    .section-header { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1.25rem; }
+    .section-num { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-size: 0.82rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .content section h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+    .content section p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 0.85rem; }
+    .content section p:last-child { margin-bottom: 0; }
+    .content section ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+    .content section ul li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; }
+    .content section ul li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 0.55rem; flex-shrink: 0; }
+    .content section strong { color: var(--text); font-weight: 600; }
+
+    .highlight-box { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; font-size: 0.87rem; color: var(--text-muted); }
+    .highlight-box strong { color: var(--accent); }
+
+    /* Eligibility grid */
+    .eligibility-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.25rem; }
+    .elig-card { border-radius: 14px; padding: 1.1rem; }
+    .elig-card.eligible { background: var(--green-soft); border: 1px solid var(--green-border); }
+    .elig-card.ineligible { background: var(--red-soft); border: 1px solid var(--red-border); }
+    .elig-card h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .elig-card.eligible h4 { color: var(--green); }
+    .elig-card.ineligible h4 { color: var(--red); }
+    .elig-card ul { margin: 0; }
+    .elig-card ul li::before { background: currentColor; }
+    .elig-card.eligible ul li::before { background: var(--green); }
+    .elig-card.ineligible ul li::before { background: var(--red); }
+
+    /* Timeline */
+    .timeline { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0; }
+    .timeline-step { display: flex; gap: 1rem; position: relative; padding-bottom: 1.25rem; }
+    .timeline-step:last-child { padding-bottom: 0; }
+    .timeline-left { display: flex; flex-direction: column; align-items: center; }
+    .timeline-dot {
+      width: 32px; height: 32px; flex-shrink: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; font-size: 0.78rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(99,102,241,0.35);
+      z-index: 1;
+    }
+    .timeline-line { flex: 1; width: 2px; background: var(--border); margin-top: 2px; }
+    .timeline-step:last-child .timeline-line { display: none; }
+    .timeline-body { padding-top: 0.2rem; }
+    .timeline-body h4 { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .timeline-body p { font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+    .timeline-tag { display: inline-block; margin-top: 0.3rem; padding: 0.15rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+    .tag-green { background: var(--green-soft); color: var(--green); border: 1px solid var(--green-border); }
+    .tag-blue  { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--border); }
+
+    .page-footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); text-align: center; }
+    .page-footer p { font-size: 0.82rem; color: var(--text-light); }
+    .page-footer a { color: var(--accent); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+
+    @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; } .eligibility-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .page-hero h1 { font-size: 1.7rem; } .content section { padding: 1.5rem 1.25rem; } .topbar { padding: 0.85rem 1rem; } }
+  </style>
+</head>
+<body>
+
+  <nav class="topbar">
+    <a href="index.html" class="topbar-logo">
+      <div class="topbar-logo-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/></svg>
+      </div>
+      <div class="topbar-logo-text">Laxmi Academy<span>Physics Portal</span></div>
+    </a>
+    <a href="index.html" class="topbar-back">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      Back to Home
+    </a>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="page-hero">
+      <div class="badge">Legal</div>
+      <h1>Refund Policy</h1>
+      <p>We want you to feel confident enrolling. Here is exactly how our refund process works.</p>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="toc-list">
+          <li><a href="#overview"><span class="toc-num">1</span>Overview</a></li>
+          <li><a href="#eligibility"><span class="toc-num">2</span>Eligibility</a></li>
+          <li><a href="#process"><span class="toc-num">3</span>How to Request</a></li>
+          <li><a href="#timeline"><span class="toc-num">4</span>Timeline</a></li>
+          <li><a href="#exceptions"><span class="toc-num">5</span>Exceptions</a></li>
+          <li><a href="#contact-us"><span class="toc-num">6</span>Contact Us</a></li>
+        </ul>
+        <div class="last-updated"><strong>Last updated:</strong><br>April 29, 2026</div>
+      </aside>
+
+      <main class="content">
+
+        <section id="overview">
+          <div class="section-header"><div class="section-num">1</div><h2>Overview</h2></div>
+          <p>At Laxmi Academy, we believe in the quality of our Physics courses. We offer a fair refund window to give you confidence in your enrollment decision.</p>
+          <p>Our refund policy is simple: if you are not satisfied within the first <strong>7 days</strong> of enrollment and have watched <strong>less than 20% of the enrolled course</strong>, you are eligible for a full refund of the course fee paid.</p>
+          <div class="highlight-box">
+            <strong>The short version:</strong> Enrolled within 7 days, watched less than 20% of the course — you get a full refund. No questions asked.
+          </div>
+        </section>
+
+        <section id="eligibility">
+          <div class="section-header"><div class="section-num">2</div><h2>Refund Eligibility</h2></div>
+          <p>Before submitting a refund request, verify that you meet all of the following criteria:</p>
+          <ul>
+            <li>Your enrollment date is within <strong>7 calendar days</strong> of the refund request date.</li>
+            <li>Your total watch progress for the enrolled course is <strong>less than 20%</strong> as recorded in the portal.</li>
+            <li>The course fee was paid directly to Laxmi Academy via PhonePe.</li>
+            <li>Your account is in good standing (no violations of our Terms of Service).</li>
+          </ul>
+          <div class="eligibility-grid">
+            <div class="elig-card eligible">
+              <h4>Eligible for Refund</h4>
+              <ul>
+                <li>Within 7 days of payment</li>
+                <li>Less than 20% watched</li>
+                <li>No ToS violations</li>
+                <li>Direct payment via portal</li>
+              </ul>
+            </div>
+            <div class="elig-card ineligible">
+              <h4>Not Eligible</h4>
+              <ul>
+                <li>More than 7 days since payment</li>
+                <li>20% or more of course watched</li>
+                <li>Account suspended or banned</li>
+                <li>Offline / cash payment</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="process">
+          <div class="section-header"><div class="section-num">3</div><h2>How to Request a Refund</h2></div>
+          <p>Refund requests are processed quickly and without hassle. Follow these steps:</p>
+          <ul>
+            <li><strong>Step 1:</strong> Email us at <strong>refunds@laxmiacademy.in</strong> with the subject line: <em>"Refund Request – [Your Full Name]"</em></li>
+            <li><strong>Step 2:</strong> Include your registered email address, phone number, course name, and payment transaction ID.</li>
+            <li><strong>Step 3:</strong> Briefly describe the reason for your refund request (optional but helpful).</li>
+            <li><strong>Step 4:</strong> Our support team will verify eligibility and confirm via email within 2 business days.</li>
+          </ul>
+          <p>You may also contact us via WhatsApp at <strong>+91 72078 98999</strong> or by calling during business hours (10 AM – 6 PM, Monday to Saturday).</p>
+          <div class="highlight-box">
+            <strong>Do not uninstall or delete your account</strong> before the refund is processed — we need your watch progress data to verify eligibility.
+          </div>
+        </section>
+
+        <section id="timeline">
+          <div class="section-header"><div class="section-num">4</div><h2>Refund Timeline</h2></div>
+          <p>Once your refund request is approved, the amount is returned to the original payment method. Here is what to expect:</p>
+
+          <div class="timeline">
+            <div class="timeline-step">
+              <div class="timeline-left">
+                <div class="timeline-dot">1</div>
+                <div class="timeline-line"></div>
+              </div>
+              <div class="timeline-body">
+                <h4>Request Submitted</h4>
+                <p>You email us with your refund request and required details.</p>
+                <span class="timeline-tag tag-blue">Day 0</span>
+              </div>
+            </div>
+            <div class="timeline-step">
+              <div class="timeline-left">
+                <div class="timeline-dot">2</div>
+                <div class="timeline-line"></div>
+              </div>
+              <div class="timeline-body">
+                <h4>Eligibility Verification</h4>
+                <p>Our team verifies your watch progress and payment details. You receive a confirmation email.</p>
+                <span class="timeline-tag tag-blue">Within 1–2 business days</span>
+              </div>
+            </div>
+            <div class="timeline-step">
+              <div class="timeline-left">
+                <div class="timeline-dot">3</div>
+                <div class="timeline-line"></div>
+              </div>
+              <div class="timeline-body">
+                <h4>Refund Initiated</h4>
+                <p>Approved refunds are initiated to your original payment method (PhonePe / UPI / bank account).</p>
+                <span class="timeline-tag tag-blue">Within 3 business days of approval</span>
+              </div>
+            </div>
+            <div class="timeline-step">
+              <div class="timeline-left">
+                <div class="timeline-dot">4</div>
+                <div class="timeline-line"></div>
+              </div>
+              <div class="timeline-body">
+                <h4>Amount Credited</h4>
+                <p>Funds reflect in your bank account or UPI wallet depending on your payment method and bank.</p>
+                <span class="timeline-tag tag-green">5–7 business days after initiation</span>
+              </div>
+            </div>
+          </div>
+
+          <p style="margin-top:1.25rem">Total expected turnaround: <strong>5–7 business days</strong> from approval. Delays beyond this may occur due to bank processing — please contact your bank if the amount has not reflected after 7 business days.</p>
+        </section>
+
+        <section id="exceptions">
+          <div class="section-header"><div class="section-num">5</div><h2>Exceptions &amp; Special Cases</h2></div>
+          <p>The following situations are handled on a case-by-case basis by our support team:</p>
+          <ul>
+            <li><strong>Technical issues:</strong> If you were unable to access course content due to a platform error for an extended period, you may be eligible for a refund or credit regardless of the 7-day window. Please report technical issues immediately.</li>
+            <li><strong>Duplicate payments:</strong> If you were charged twice for the same course, the duplicate charge will be refunded in full within 3 business days of verification.</li>
+            <li><strong>Course cancellation:</strong> In the unlikely event that a course is cancelled by Laxmi Academy after enrollment, a full refund will be issued automatically within 7 business days.</li>
+            <li><strong>Instalment plans:</strong> Refund eligibility for custom instalment arrangements will be governed by the specific agreement made at enrollment.</li>
+          </ul>
+          <p>For exceptional circumstances not covered by this policy, please write to us and we will do our best to find a fair resolution.</p>
+        </section>
+
+        <section id="contact-us">
+          <div class="section-header"><div class="section-num">6</div><h2>Contact Us</h2></div>
+          <p>To initiate a refund or ask questions about this policy:</p>
+          <ul>
+            <li><strong>Email:</strong> refunds@laxmiacademy.in</li>
+            <li><strong>General Support:</strong> support@laxmiacademy.in</li>
+            <li><strong>Phone / WhatsApp:</strong> +91 72078 98999</li>
+            <li><strong>Hours:</strong> Monday to Saturday, 10:00 AM – 6:00 PM IST</li>
+          </ul>
+          <div class="highlight-box">
+            This policy is effective as of <strong>April 29, 2026</strong>. Laxmi Academy reserves the right to amend this policy. Any changes will be communicated to enrolled students via email.
+          </div>
+        </section>
+
+        <div class="page-footer">
+          <div class="footer-links">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+          </div>
+          <p>© <script>document.write(new Date().getFullYear())</script> Laxmi Academy. All rights reserved.</p>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const sections = document.querySelectorAll('.content section');
+    const tocLinks = document.querySelectorAll('.toc-list a');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          tocLinks.forEach(a => a.classList.remove('active'));
+          const active = document.querySelector(`.toc-list a[href="#${entry.target.id}"]`);
+          if (active) active.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px' });
+    sections.forEach(s => observer.observe(s));
+  </script>
+</body>
+</html>

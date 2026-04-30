@@ -100,9 +100,11 @@ def init_db():
     _migrate_payment_status(conn)
     _migrate_lessons_course(conn)
     _migrate_email_verification(conn)
+    _migrate_password_resets(conn)
+    _migrate_lesson_progress(conn)
     conn.commit()
     conn.close()
-    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries")
+    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress")
 
 def _migrate_payment_status(conn):
     cols = [r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()]
@@ -115,6 +117,39 @@ def _migrate_lessons_course(conn):
     if 'course' not in cols:
         conn.execute("ALTER TABLE lessons ADD COLUMN course TEXT NOT NULL DEFAULT 'all'")
         print("  [OK] lessons.course column added")
+
+def _migrate_password_resets(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            token      TEXT    UNIQUE NOT NULL,
+            expires_at TEXT    NOT NULL,
+            used       INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_pr_token   ON password_resets(token);
+        CREATE INDEX IF NOT EXISTS idx_pr_student ON password_resets(student_id);
+    """)
+
+def _migrate_lesson_progress(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS lesson_progress (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id      INTEGER NOT NULL,
+            lesson_id       INTEGER NOT NULL,
+            watched         INTEGER NOT NULL DEFAULT 0,
+            completed       INTEGER NOT NULL DEFAULT 0,
+            watched_seconds INTEGER NOT NULL DEFAULT 0,
+            updated_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(student_id, lesson_id),
+            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+            FOREIGN KEY (lesson_id)  REFERENCES lessons(id)  ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_lp_student ON lesson_progress(student_id);
+        CREATE INDEX IF NOT EXISTS idx_lp_lesson  ON lesson_progress(lesson_id);
+    """)
 
 def _migrate_email_verification(conn):
     cols = [r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()]

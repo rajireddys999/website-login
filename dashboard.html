@@ -403,6 +403,77 @@
     .bottom-nav-item.active { color:var(--accent); }
     .bottom-nav-item.active .bn-icon { transform:scale(1.15); filter:drop-shadow(0 0 5px rgba(255,152,0,.6)); }
 
+    /* ── Search & Filter bar ────────────────────────────────── */
+    .search-filter-bar {
+      display:flex; flex-wrap:wrap; align-items:center; gap:.75rem;
+      margin-bottom:1rem;
+    }
+    .search-input-wrap { position:relative; flex:1; min-width:200px; }
+    .search-input-wrap svg {
+      position:absolute; left:.75rem; top:50%; transform:translateY(-50%);
+      color:var(--muted); pointer-events:none;
+    }
+    .search-input {
+      width:100%; padding:.62rem .9rem .62rem 2.3rem;
+      background:rgba(255,255,255,.07); border:1px solid var(--border);
+      border-radius:10px; color:var(--text); font-family:'Inter',sans-serif;
+      font-size:.87rem; outline:none; transition:border-color .2s, box-shadow .2s;
+    }
+    .search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,152,0,.15); }
+    .topic-pills { display:flex; flex-wrap:wrap; gap:.45rem; align-items:center; }
+    .topic-pill {
+      padding:.32rem .82rem; border-radius:99px; font-size:.75rem; font-weight:700;
+      cursor:pointer; border:1px solid var(--border);
+      background:rgba(255,255,255,.05); color:var(--muted);
+      transition:all .18s; white-space:nowrap;
+    }
+    .topic-pill:hover { border-color:rgba(255,152,0,.4); color:var(--text); background:rgba(255,152,0,.07); }
+    .topic-pill.active {
+      background:linear-gradient(135deg,rgba(255,152,0,.2),rgba(255,87,34,.14));
+      color:var(--accent); border-color:rgba(255,152,0,.45);
+    }
+    .no-results {
+      padding:2.5rem; text-align:center; color:var(--muted); font-size:.9rem;
+      display:none;
+    }
+    .no-results-icon { font-size:2.5rem; margin-bottom:.6rem; }
+
+    /* ── Payments table ──────────────────────────────────────── */
+    .payments-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+    .payments-table th {
+      padding:.65rem .9rem; text-align:left; font-size:.7rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.07em; color:var(--muted);
+      border-bottom:1px solid var(--border);
+    }
+    .payments-table td { padding:.75rem .9rem; border-bottom:1px solid rgba(255,255,255,.05); }
+    .payments-table tr:last-child td { border-bottom:none; }
+    .payments-table tr:hover td { background:rgba(255,255,255,.03); }
+    .badge-red { background:rgba(239,68,68,.12); color:#fca5a5; border:1px solid rgba(239,68,68,.22); }
+
+    /* ── Doubt cards ─────────────────────────────────────────── */
+    .doubt-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:14px; padding:1.1rem 1.2rem; margin-bottom:.7rem;
+      animation:fadeInUp .3s ease both;
+    }
+    .doubt-card-header { display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; margin-bottom:.55rem; }
+    .doubt-lesson { font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.05em; }
+    .doubt-question { font-size:.9rem; font-weight:600; color:var(--text); line-height:1.45; }
+    .doubt-answer {
+      margin-top:.7rem; padding:.7rem .85rem;
+      background:rgba(56,239,125,.07); border:1px solid rgba(56,239,125,.18);
+      border-radius:10px; font-size:.84rem; color:rgba(255,255,255,.75); line-height:1.5;
+    }
+    .doubt-answer-label { font-size:.68rem; font-weight:700; color:#38ef7d; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.3rem; }
+
+    /* ── Inline form messages ────────────────────────────────── */
+    .form-msg {
+      padding:.65rem 1rem; border-radius:10px; font-size:.83rem; font-weight:600;
+      margin-top:.9rem; display:none;
+    }
+    .form-msg.success { background:rgba(56,239,125,.1); color:#38ef7d; border:1px solid rgba(56,239,125,.22); display:block; }
+    .form-msg.error   { background:rgba(239,68,68,.1);  color:#fca5a5; border:1px solid rgba(239,68,68,.22);  display:block; }
+
     /* ── Responsive ──────────────────────────────── */
     @media (max-width: 768px) {
       .sidebar { transform:translateX(-100%); }
@@ -532,6 +603,8 @@
     <button class="nav-link active" id="nav-home"     onclick="showPage('home')">    <span class="nav-icon">🏠</span> Dashboard</button>
     <button class="nav-link"        id="nav-courses"  onclick="showPage('courses')"> <span class="nav-icon">📚</span> My Courses</button>
     <button class="nav-link"        id="nav-schedule" onclick="showPage('schedule')"><span class="nav-icon">🗓️</span> Schedule</button>
+    <button class="nav-link"        id="nav-payments" onclick="showPage('payments')"><span class="nav-icon">💳</span> Payments</button>
+    <button class="nav-link"        id="nav-doubts"   onclick="showPage('doubts')">  <span class="nav-icon">🙋</span> Ask a Doubt</button>
     <button class="nav-link"        id="nav-profile"  onclick="showPage('profile')"> <span class="nav-icon">👤</span> Profile</button>
 
     <div class="nav-section" style="margin-top:.5rem">Help</div>
@@ -624,6 +697,15 @@
         </div>
 
         <div class="section-title">📺 My Course — Videos</div>
+        <!-- RAJ-13: Search + topic filter for home videos -->
+        <div class="search-filter-bar" id="home-search-filter" style="display:none">
+          <div class="search-input-wrap">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-input" id="home-search" type="text" placeholder="Search lessons…" oninput="filterVideos('home')" autocomplete="off"/>
+          </div>
+          <div class="topic-pills" id="home-topic-pills"></div>
+        </div>
+        <div id="home-no-results" class="no-results"><div class="no-results-icon">🔍</div>No lessons found</div>
         <div id="home-videos-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0;display:flex;align-items:center;gap:.6rem">
           <div style="width:18px;height:18px;border:2px solid rgba(255,152,0,.3);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
           Loading videos…
@@ -654,6 +736,15 @@
         </div>
 
         <div class="section-title">📺 Course Videos</div>
+        <!-- RAJ-13: Search + topic filter for course videos -->
+        <div class="search-filter-bar" id="courses-search-filter" style="display:none">
+          <div class="search-input-wrap">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-input" id="courses-search" type="text" placeholder="Search lessons…" oninput="filterVideos('courses')" autocomplete="off"/>
+          </div>
+          <div class="topic-pills" id="courses-topic-pills"></div>
+        </div>
+        <div id="courses-no-results" class="no-results"><div class="no-results-icon">🔍</div>No lessons found</div>
         <div id="course-videos-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0;display:flex;align-items:center;gap:.6rem">
           <div style="width:18px;height:18px;border:2px solid rgba(255,152,0,.3);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
           Loading videos…
@@ -681,10 +772,11 @@
         <div id="tests-list" style="display:grid;gap:.75rem"></div>
       </div>
 
-      <!-- ── PROFILE PAGE ──────────────────────────────────────── -->
+      <!-- ── PROFILE PAGE (RAJ-15) ────────────────────────────── -->
       <div class="page" id="page-profile">
         <div class="section-title">👤 My Profile</div>
-        <div class="card" style="max-width:620px">
+        <div class="card" style="max-width:660px">
+          <!-- Avatar + read-only header -->
           <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding-bottom:1.2rem;border-bottom:1px solid var(--border)">
             <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#ff9800,#ff5722);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.5rem;box-shadow:0 6px 20px rgba(255,152,0,.35)" id="profile-avatar-lg">?</div>
             <div>
@@ -692,18 +784,95 @@
               <div style="font-size:.8rem;color:var(--muted);margin-top:.2rem" id="profile-email-display">…</div>
             </div>
           </div>
+
+          <!-- Editable info section -->
+          <div style="font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.85rem">Account Info</div>
           <div class="profile-grid">
-            <div class="field"><label>Full Name</label><input type="text"  id="p-name"   disabled/></div>
-            <div class="field"><label>Email</label>    <input type="email" id="p-email"  disabled/></div>
-            <div class="field"><label>Phone</label>    <input type="tel"   id="p-phone"  disabled/></div>
+            <div class="field"><label>Full Name</label><input type="text"  id="p-name"  placeholder="Your full name"/></div>
+            <div class="field"><label>Email</label>    <input type="email" id="p-email" disabled/></div>
+            <div class="field"><label>Phone</label>    <input type="tel"   id="p-phone" placeholder="Phone number"/></div>
             <div class="field"><label>Enrolled Course</label><input type="text" id="p-course" disabled/></div>
-            <div class="field"><label>Plan</label>     <input type="text"  id="p-plan"   disabled/></div>
+            <div class="field"><label>Plan</label>     <input type="text"  id="p-plan"  disabled/></div>
             <div class="field"><label>Member Since</label><input type="text" id="p-since" disabled/></div>
           </div>
-          <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
-            <button class="btn btn-ghost" onclick="alert('Password change — contact admin.')">Change Password</button>
+
+          <!-- Password change section -->
+          <div style="font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin:1.35rem 0 .85rem">Change Password <span style="font-weight:500;text-transform:none;font-size:.78rem;color:var(--muted)">(optional)</span></div>
+          <div class="profile-grid">
+            <div class="field"><label>Current Password</label><input type="password" id="p-cur-pw"  placeholder="Enter current password" autocomplete="current-password"/></div>
+            <div class="field" style="grid-column:1/-1"></div>
+            <div class="field"><label>New Password</label>    <input type="password" id="p-new-pw"  placeholder="New password (min 6 chars)" autocomplete="new-password"/></div>
+            <div class="field"><label>Confirm New Password</label><input type="password" id="p-conf-pw" placeholder="Repeat new password" autocomplete="new-password"/></div>
+          </div>
+
+          <div id="profile-form-msg" class="form-msg"></div>
+
+          <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfile()">Save Changes</button>
             <button class="btn btn-danger" onclick="logout()">Logout</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ── PAYMENTS PAGE (RAJ-20) ────────────────────────────── -->
+      <div class="page" id="page-payments">
+        <div class="section-title">💳 Payment History</div>
+        <div id="payments-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0;display:flex;align-items:center;gap:.6rem">
+          <div style="width:18px;height:18px;border:2px solid rgba(255,152,0,.3);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
+          Loading payments…
+        </div>
+        <div id="payments-content" style="display:none">
+          <div class="card" style="padding:0;overflow:hidden">
+            <table class="payments-table">
+              <thead>
+                <tr><th>Date</th><th>Amount</th><th>Status</th><th>Transaction ID</th></tr>
+              </thead>
+              <tbody id="payments-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="payments-empty" style="display:none;padding:3rem;text-align:center;color:var(--muted)">
+          <div style="font-size:3rem;margin-bottom:.8rem">💳</div>
+          <p style="font-weight:600">No payment records found</p>
+          <p style="font-size:.85rem;margin-top:.3rem">Your payment history will appear here.</p>
+        </div>
+        <div id="payments-error" style="display:none;padding:2rem;text-align:center">
+          <div class="form-msg error" style="display:block;max-width:420px;margin:0 auto" id="payments-error-msg"></div>
+        </div>
+      </div>
+
+      <!-- ── DOUBTS PAGE (RAJ-14) ──────────────────────────────── -->
+      <div class="page" id="page-doubts">
+        <div class="section-title">🙋 Ask a Doubt</div>
+
+        <!-- Ask form -->
+        <div class="card" style="max-width:660px;margin-bottom:1.5rem">
+          <div style="font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.9rem">Submit a Question</div>
+          <div class="field" style="margin-bottom:.85rem">
+            <label>Select Lesson</label>
+            <select id="doubt-lesson-select" style="width:100%;padding:.72rem .95rem;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;outline:none;transition:border-color .2s;appearance:auto">
+              <option value="">— Choose a lesson —</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:.9rem">
+            <label>Your Question</label>
+            <textarea id="doubt-question" rows="4" placeholder="Describe your doubt clearly…" style="width:100%;padding:.72rem .95rem;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;outline:none;resize:vertical;transition:border-color .2s,box-shadow .2s;min-height:100px" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(255,152,0,.15)'" onblur="this.style.borderColor='';this.style.boxShadow=''"></textarea>
+          </div>
+          <div id="doubt-form-msg" class="form-msg"></div>
+          <button class="btn btn-primary" id="doubt-submit-btn" onclick="submitDoubt()" style="margin-top:.75rem">Submit Question</button>
+        </div>
+
+        <!-- My Doubts list -->
+        <div class="section-title">📋 My Doubts</div>
+        <div id="doubts-loading" style="color:var(--muted);font-size:.88rem;padding:.75rem 0;display:flex;align-items:center;gap:.6rem">
+          <div style="width:18px;height:18px;border:2px solid rgba(255,152,0,.3);border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite"></div>
+          Loading doubts…
+        </div>
+        <div id="doubts-list"></div>
+        <div id="doubts-empty" style="display:none;padding:2.5rem;text-align:center;color:var(--muted)">
+          <div style="font-size:2.5rem;margin-bottom:.7rem">🙋</div>
+          <p style="font-weight:600">No doubts yet</p>
+          <p style="font-size:.85rem;margin-top:.3rem">Questions you submit will appear here with instructor answers.</p>
         </div>
       </div>
 
@@ -715,7 +884,8 @@
 <nav class="bottom-nav" id="bottom-nav">
   <button class="bottom-nav-item active" data-page="home"     onclick="showPage('home')">    <span class="bn-icon">🏠</span><span>Home</span></button>
   <button class="bottom-nav-item"        data-page="courses"  onclick="showPage('courses')"> <span class="bn-icon">📚</span><span>Courses</span></button>
-  <button class="bottom-nav-item"        data-page="schedule" onclick="showPage('schedule')"><span class="bn-icon">🗓️</span><span>Schedule</span></button>
+  <button class="bottom-nav-item"        data-page="payments" onclick="showPage('payments')"><span class="bn-icon">💳</span><span>Payments</span></button>
+  <button class="bottom-nav-item"        data-page="doubts"   onclick="showPage('doubts')">  <span class="bn-icon">🙋</span><span>Doubts</span></button>
   <button class="bottom-nav-item"        data-page="profile"  onclick="showPage('profile')"> <span class="bn-icon">👤</span><span>Profile</span></button>
 </nav>
 
@@ -723,19 +893,8 @@
   const TOPIC_COLORS = { mechanics:'#4f46e5', thermo:'#ef4444', electro:'#f59e0b', optics:'#06b6d4', modern:'#10b981' };
   const TOPIC_LABELS = { mechanics:'Mechanics', thermo:'Thermodynamics', electro:'Electromagnetism', optics:'Optics & Waves', modern:'Modern Physics' };
 
-  const SCHEDULE = [
-    { day:'Monday',    time:'7:00 – 9:00 AM',  topic:'Mechanics',        chapter:"Newton's Laws",            status:'completed' },
-    { day:'Tuesday',   time:'7:00 – 9:00 AM',  topic:'Mechanics',        chapter:'Work, Energy & Power',     status:'completed' },
-    { day:'Wednesday', time:'7:00 – 9:00 AM',  topic:'Thermodynamics',   chapter:'Kinetic Theory of Gases',  status:'today'     },
-    { day:'Thursday',  time:'7:00 – 9:00 AM',  topic:'Thermodynamics',   chapter:'1st Law of Thermodynamics',status:'upcoming'  },
-    { day:'Friday',    time:'7:00 – 9:00 AM',  topic:'Electromagnetism', chapter:'Electrostatics',           status:'upcoming'  },
-    { day:'Saturday',  time:'9:00 – 11:00 AM', topic:'Weekly Test',      chapter:'Mechanics + Thermo',       status:'upcoming'  },
-  ];
-  const TESTS = [
-    { name:'Chapter Test — Mechanics',     date:'28 Apr 2025', topics:"Newton's Laws, Energy", type:'Chapter' },
-    { name:'Unit Test — Thermodynamics',   date:'5 May 2025',  topics:'All Thermo chapters',   type:'Unit'    },
-    { name:'Full Syllabus Mock — Physics', date:'12 May 2025', topics:'All 5 Physics topics',  type:'Mock'    },
-  ];
+  const SCHEDULE = [];
+  const TESTS    = [];
 
   // ── Auth guard ────────────────────────────────────────────────
   const token = localStorage.getItem('la_token');
@@ -913,6 +1072,71 @@
       </div>`;
   }
 
+  // ── RAJ-13: video card HTML builder ──────────────────────────
+  function videoCardHtml(v, i) {
+    return `<div class="video-item" onclick="openVideo(${i})" data-index="${i}" style="animation:fadeInUp .3s ${i*0.04}s ease both">
+      <div class="video-num">${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.title)}</div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.25rem;flex-wrap:wrap">
+          ${v.topic?`<span style="font-size:.69rem;font-weight:700;padding:.15rem .55rem;border-radius:99px;background:${TOPIC_COLORS[v.topic]||'#666'}22;color:${TOPIC_COLORS[v.topic]||'#aaa'};border:1px solid ${TOPIC_COLORS[v.topic]||'#666'}33">${TOPIC_LABELS[v.topic]||v.topic}</span>`:''}
+          ${v.duration?`<span style="font-size:.73rem;color:var(--muted)">⏱ ${escHtml(v.duration)}</span>`:''}
+          ${v.instructor_name?`<span style="font-size:.73rem;color:var(--muted)">· ${escHtml(v.instructor_name)}</span>`:''}
+        </div>
+      </div>
+      <div class="video-play">${v.video_type==='youtube'?'▶ Play':'🎬 Watch'}</div>
+    </div>`;
+  }
+
+  // context key: 'home' maps to ids home-search, home-topic-pills, home-videos, home-no-results
+  //              'courses' maps to ids courses-search, courses-topic-pills, course-videos-list, courses-no-results
+  const filterCtx = {
+    home:    { searchId:'home-search',    pillsId:'home-topic-pills',    listId:'home-videos',        noResId:'home-no-results',    filterId:'home-search-filter'    },
+    courses: { searchId:'courses-search', pillsId:'courses-topic-pills', listId:'course-videos-list', noResId:'courses-no-results', filterId:'courses-search-filter' },
+  };
+  const activeTopics = { home:'', courses:'' };
+
+  function buildTopicPills(ctx) {
+    const c = filterCtx[ctx];
+    const topics = [...new Set(courseVideos.map(v => v.topic).filter(Boolean))];
+    const pills = document.getElementById(c.pillsId);
+    if (!pills) return;
+    pills.innerHTML = `<button class="topic-pill active" onclick="setTopic('${ctx}','')">All Topics</button>`
+      + topics.map(t => `<button class="topic-pill" onclick="setTopic('${ctx}','${escHtml(t)}')">${escHtml(TOPIC_LABELS[t]||t)}</button>`).join('');
+  }
+
+  function setTopic(ctx, topic) {
+    activeTopics[ctx] = topic;
+    const c = filterCtx[ctx];
+    document.querySelectorAll(`#${c.pillsId} .topic-pill`).forEach(btn => {
+      // btn's onclick contains the topic value — compare data attribute set during build
+      btn.classList.toggle('active', btn.textContent.trim() === (topic ? (TOPIC_LABELS[topic]||topic) : 'All Topics'));
+    });
+    renderFilteredVideos(ctx);
+  }
+
+  function filterVideos(ctx) { renderFilteredVideos(ctx); }
+
+  function renderFilteredVideos(ctx) {
+    const c = filterCtx[ctx];
+    const query = (document.getElementById(c.searchId)?.value || '').toLowerCase().trim();
+    const topic = activeTopics[ctx];
+    const filtered = courseVideos.filter((v, _i) => {
+      const matchTopic = !topic || v.topic === topic;
+      const matchSearch = !query || (v.title||'').toLowerCase().includes(query) || (v.description||'').toLowerCase().includes(query);
+      return matchTopic && matchSearch;
+    });
+    const listEl = document.getElementById(c.listId);
+    const noResEl = document.getElementById(c.noResId);
+    if (!filtered.length) {
+      listEl.innerHTML = '';
+      noResEl.style.display = 'block';
+    } else {
+      noResEl.style.display = 'none';
+      listEl.innerHTML = filtered.map((v) => videoCardHtml(v, courseVideos.indexOf(v))).join('');
+    }
+  }
+
   function renderVideoList(listId, loadingId, emptyId) {
     document.getElementById(loadingId).style.display = 'none';
     if (!courseVideos.length) {
@@ -921,19 +1145,14 @@
       return;
     }
     document.getElementById(emptyId).style.display = 'none';
-    document.getElementById(listId).innerHTML = courseVideos.map((v,i) => `
-      <div class="video-item" onclick="openVideo(${i})" style="animation:fadeInUp .3s ${i*0.04}s ease both">
-        <div class="video-num">${i+1}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.title)}</div>
-          <div style="display:flex;align-items:center;gap:.5rem;margin-top:.25rem;flex-wrap:wrap">
-            ${v.topic?`<span style="font-size:.69rem;font-weight:700;padding:.15rem .55rem;border-radius:99px;background:${TOPIC_COLORS[v.topic]||'#666'}22;color:${TOPIC_COLORS[v.topic]||'#aaa'};border:1px solid ${TOPIC_COLORS[v.topic]||'#666'}33">${TOPIC_LABELS[v.topic]||v.topic}</span>`:''}
-            ${v.duration?`<span style="font-size:.73rem;color:var(--muted)">⏱ ${escHtml(v.duration)}</span>`:''}
-            ${v.instructor_name?`<span style="font-size:.73rem;color:var(--muted)">· ${escHtml(v.instructor_name)}</span>`:''}
-          </div>
-        </div>
-        <div class="video-play">${v.video_type==='youtube'?'▶ Play':'🎬 Watch'}</div>
-      </div>`).join('');
+    // Determine context from listId
+    const ctx = listId === 'home-videos' ? 'home' : 'courses';
+    const c = filterCtx[ctx];
+    // Show search/filter bar
+    document.getElementById(c.filterId).style.display = 'flex';
+    buildTopicPills(ctx);
+    // Render all cards initially
+    document.getElementById(listId).innerHTML = courseVideos.map((v,i) => videoCardHtml(v, i)).join('');
   }
 
   function openVideo(idx) {
@@ -962,12 +1181,16 @@
   }
 
   function buildSchedule() {
-    document.getElementById('schedule-body').innerHTML = SCHEDULE.map(s => {
+    const tbody = document.getElementById('schedule-body');
+    if (!SCHEDULE.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">No schedule configured yet. Check back soon.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = SCHEDULE.map(s => {
       const badge = s.status==='completed'?'<span class="badge badge-green">Done</span>'
                   : s.status==='today'    ?'<span class="badge badge-orange">Today</span>'
                   :                        '<span class="badge badge-blue">Upcoming</span>';
-      const rowClass = s.status==='today'?'today-row':'';
-      return `<tr class="${rowClass}">
+      return `<tr class="${s.status==='today'?'today-row':''}">
         <td style="font-weight:700">${s.day}</td>
         <td style="color:var(--muted);font-size:.83rem">${s.time}</td>
         <td>${s.topic}</td>
@@ -994,7 +1217,7 @@
   }
 
   // ── Navigation ────────────────────────────────────────────────
-  const pageTitles = { home:'Dashboard', courses:'My Courses', schedule:'Schedule', profile:'Profile' };
+  const pageTitles = { home:'Dashboard', courses:'My Courses', schedule:'Schedule', profile:'Profile', payments:'Payments', doubts:'Ask a Doubt' };
 
   function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1006,6 +1229,9 @@
     document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
     document.querySelector(`.bottom-nav-item[data-page="${name}"]`)?.classList.add('active');
     closeSidebar();
+    // Lazy-load data for new pages
+    if (name === 'payments') loadPayments();
+    if (name === 'doubts')   { loadDoubts(); populateDoubtLessonSelect(); }
   }
 
   let currentLesson = -1;
@@ -1069,6 +1295,199 @@
   }
 
   function openWhatsApp() { window.open('https://wa.me/910000000369','_blank'); }
+
+  // ── RAJ-15: Save profile ──────────────────────────────────────
+  async function saveProfile() {
+    const btn = document.getElementById('profile-save-btn');
+    const msgEl = document.getElementById('profile-form-msg');
+    msgEl.className = 'form-msg';
+    msgEl.style.display = 'none';
+
+    const fullName   = document.getElementById('p-name').value.trim();
+    const phone      = document.getElementById('p-phone').value.trim();
+    const curPw      = document.getElementById('p-cur-pw').value;
+    const newPw      = document.getElementById('p-new-pw').value;
+    const confPw     = document.getElementById('p-conf-pw').value;
+
+    if (!fullName) { showFormMsg(msgEl, 'error', 'Full name is required.'); return; }
+    if (newPw || confPw || curPw) {
+      if (!curPw) { showFormMsg(msgEl, 'error', 'Enter your current password to change it.'); return; }
+      if (newPw.length < 6) { showFormMsg(msgEl, 'error', 'New password must be at least 6 characters.'); return; }
+      if (newPw !== confPw) { showFormMsg(msgEl, 'error', 'New passwords do not match.'); return; }
+    }
+
+    const body = { full_name: fullName, phone };
+    if (curPw && newPw) { body.current_password = curPw; body.new_password = newPw; }
+
+    btn.textContent = 'Saving…'; btn.disabled = true;
+    try {
+      const res  = await fetch('/api/student/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        // Update local state
+        if (student) { student.full_name = fullName; student.phone = phone; }
+        document.getElementById('profile-name-display').textContent = fullName;
+        document.getElementById('topbar-name').textContent = fullName.split(' ')[0];
+        document.getElementById('pm-name').textContent = fullName;
+        const initial = fullName.charAt(0).toUpperCase();
+        document.getElementById('topbar-avatar').textContent   = initial;
+        document.getElementById('pm-avatar-lg').textContent    = initial;
+        document.getElementById('profile-avatar-lg').textContent = initial;
+        // Clear password fields
+        ['p-cur-pw','p-new-pw','p-conf-pw'].forEach(id => { document.getElementById(id).value = ''; });
+        showFormMsg(msgEl, 'success', data.message || 'Profile updated successfully!');
+      } else {
+        showFormMsg(msgEl, 'error', data.error || data.message || 'Failed to update profile.');
+      }
+    } catch {
+      showFormMsg(msgEl, 'error', 'Network error — please try again.');
+    }
+    btn.textContent = 'Save Changes'; btn.disabled = false;
+  }
+
+  function showFormMsg(el, type, text) {
+    el.className = 'form-msg ' + type;
+    el.textContent = text;
+  }
+
+  // ── RAJ-20: Load payment history ─────────────────────────────
+  let paymentsLoaded = false;
+  async function loadPayments() {
+    if (paymentsLoaded) return;
+    paymentsLoaded = true;
+    const loadingEl  = document.getElementById('payments-loading');
+    const contentEl  = document.getElementById('payments-content');
+    const emptyEl    = document.getElementById('payments-empty');
+    const errorEl    = document.getElementById('payments-error');
+    const errorMsgEl = document.getElementById('payments-error-msg');
+
+    loadingEl.style.display = 'flex';
+    contentEl.style.display = 'none';
+    emptyEl.style.display   = 'none';
+    errorEl.style.display   = 'none';
+
+    try {
+      const res  = await fetch('/api/student/payments', { headers:{'Authorization':'Bearer '+token} });
+      const data = await res.json().catch(() => []);
+      loadingEl.style.display = 'none';
+      if (!res.ok) throw new Error(data.error || data.message || 'Could not load payments.');
+      const rows = Array.isArray(data) ? data : (data.payments || []);
+      if (!rows.length) { emptyEl.style.display = 'block'; return; }
+      const statusBadge = s => {
+        if (s === 'paid')    return '<span class="badge badge-green">Paid</span>';
+        if (s === 'pending') return '<span class="badge badge-orange">Pending</span>';
+        return '<span class="badge badge-red">Failed</span>';
+      };
+      document.getElementById('payments-tbody').innerHTML = rows.map(p => `
+        <tr>
+          <td>${escHtml(p.date || p.created_at?.slice(0,10) || '—')}</td>
+          <td style="font-weight:700">${escHtml(p.amount ? '₹' + p.amount : '—')}</td>
+          <td>${statusBadge(p.status)}</td>
+          <td style="font-family:monospace;font-size:.8rem;color:var(--muted)">${escHtml(p.transaction_id || p.txn_id || '—')}</td>
+        </tr>`).join('');
+      contentEl.style.display = 'block';
+    } catch (err) {
+      loadingEl.style.display = 'none';
+      errorMsgEl.textContent = err.message || 'Could not load payment records.';
+      errorEl.style.display = 'block';
+      paymentsLoaded = false; // allow retry
+    }
+  }
+
+  // ── RAJ-14: Doubts / Q&A ─────────────────────────────────────
+  let doubtsLoaded = false;
+
+  function populateDoubtLessonSelect() {
+    const sel = document.getElementById('doubt-lesson-select');
+    if (!sel || sel.options.length > 1) return; // already populated
+    courseVideos.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id || v._id || v.title;
+      opt.textContent = v.title;
+      sel.appendChild(opt);
+    });
+  }
+
+  async function submitDoubt() {
+    const btn     = document.getElementById('doubt-submit-btn');
+    const msgEl   = document.getElementById('doubt-form-msg');
+    const lessonId = document.getElementById('doubt-lesson-select').value;
+    const question = document.getElementById('doubt-question').value.trim();
+
+    msgEl.className = 'form-msg'; msgEl.style.display = 'none';
+    if (!lessonId) { showFormMsg(msgEl, 'error', 'Please select a lesson.'); return; }
+    if (!question) { showFormMsg(msgEl, 'error', 'Please enter your question.'); return; }
+
+    btn.textContent = 'Submitting…'; btn.disabled = true;
+    try {
+      const res  = await fetch('/api/student/doubts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ lesson_id: lessonId, question })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        showFormMsg(msgEl, 'success', data.message || 'Question submitted! Your instructor will respond soon.');
+        document.getElementById('doubt-lesson-select').value = '';
+        document.getElementById('doubt-question').value = '';
+        doubtsLoaded = false;
+        loadDoubts();
+      } else {
+        showFormMsg(msgEl, 'error', data.error || data.message || 'Could not submit question.');
+      }
+    } catch {
+      showFormMsg(msgEl, 'error', 'Network error — please try again.');
+    }
+    btn.textContent = 'Submit Question'; btn.disabled = false;
+  }
+
+  async function loadDoubts() {
+    if (doubtsLoaded) return;
+    doubtsLoaded = true;
+    const loadingEl = document.getElementById('doubts-loading');
+    const listEl    = document.getElementById('doubts-list');
+    const emptyEl   = document.getElementById('doubts-empty');
+
+    loadingEl.style.display = 'flex';
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'none';
+
+    try {
+      const res  = await fetch('/api/student/doubts', { headers:{'Authorization':'Bearer '+token} });
+      const data = await res.json().catch(() => []);
+      loadingEl.style.display = 'none';
+      if (!res.ok) { doubtsLoaded = false; emptyEl.style.display = 'block'; return; }
+      const doubts = Array.isArray(data) ? data : (data.doubts || []);
+      if (!doubts.length) { emptyEl.style.display = 'block'; return; }
+      const statusBadge = s => {
+        if (s === 'answered') return '<span class="badge badge-green">Answered</span>';
+        return '<span class="badge badge-orange">Open</span>';
+      };
+      // Build lesson title lookup
+      const lessonMap = {};
+      courseVideos.forEach(v => { lessonMap[v.id || v._id || v.title] = v.title; });
+
+      listEl.innerHTML = doubts.map((d, i) => `
+        <div class="doubt-card" style="animation-delay:${i*0.06}s">
+          <div class="doubt-card-header">
+            <div>
+              <div class="doubt-lesson">${escHtml(lessonMap[d.lesson_id] || d.lesson_title || d.lesson_id || 'General')}</div>
+              <div class="doubt-question">${escHtml(d.question)}</div>
+            </div>
+            ${statusBadge(d.status)}
+          </div>
+          ${d.answer ? `<div class="doubt-answer"><div class="doubt-answer-label">Instructor Answer</div>${escHtml(d.answer)}</div>` : ''}
+        </div>`).join('');
+    } catch {
+      loadingEl.style.display = 'none';
+      doubtsLoaded = false;
+      listEl.innerHTML = '<div class="form-msg error" style="display:block">Could not load doubts. Please try again.</div>';
+    }
+  }
 
   loadStudent();
 </script>

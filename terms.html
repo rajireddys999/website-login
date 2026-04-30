@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Terms of Service — Laxmi Academy</title>
+  <meta name="theme-color" content="#6366f1">
+  <script src="theme.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f2ff;
+      --surface: rgba(255,255,255,0.95);
+      --surface-alt: rgba(99,102,241,0.06);
+      --border: rgba(99,102,241,0.15);
+      --text: #0f1023;
+      --text-muted: #5c6494;
+      --text-light: #8891b4;
+      --accent: #6366f1;
+      --accent-soft: rgba(99,102,241,0.12);
+      --sidebar-bg: rgba(255,255,255,0.85);
+    }
+
+    html.dark {
+      --bg: #05060f;
+      --surface: rgba(255,255,255,0.04);
+      --surface-alt: rgba(99,102,241,0.08);
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f2ff;
+      --text-muted: #8891b4;
+      --text-light: #5c6494;
+      --sidebar-bg: rgba(255,255,255,0.03);
+    }
+
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.7; }
+
+    .topbar {
+      background: linear-gradient(135deg, #0f0a2e 0%, #1a1060 50%, #0d1a3a 100%);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .topbar-logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+    .topbar-logo-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+    }
+    .topbar-logo-icon svg { width: 18px; height: 18px; color: #fff; }
+    .topbar-logo-text { font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.1; }
+    .topbar-logo-text span { display: block; font-size: 0.67rem; font-weight: 400; color: rgba(255,255,255,0.5); letter-spacing: 0.07em; text-transform: uppercase; }
+    .topbar-back { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.65); text-decoration: none; transition: color 0.2s; }
+    .topbar-back:hover { color: #a78bfa; }
+
+    .page-wrapper { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+    .page-hero { text-align: center; margin-bottom: 3rem; }
+    .page-hero .badge { display: inline-block; padding: 0.3rem 0.9rem; border-radius: 20px; background: var(--accent-soft); border: 1px solid var(--border); color: var(--accent); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.9rem; }
+    .page-hero h1 { font-size: 2.2rem; font-weight: 900; color: var(--text); line-height: 1.2; }
+    .page-hero p { font-size: 0.92rem; color: var(--text-muted); margin-top: 0.6rem; }
+
+    .layout { display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start; }
+
+    .sidebar { position: sticky; top: 1.5rem; background: var(--sidebar-bg); border: 1px solid var(--border); border-radius: 18px; padding: 1.25rem; backdrop-filter: blur(12px); }
+    .sidebar h3 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); margin-bottom: 0.85rem; }
+    .toc-list { list-style: none; display: flex; flex-direction: column; gap: 0.2rem; }
+    .toc-list a { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.65rem; border-radius: 10px; font-size: 0.83rem; font-weight: 500; color: var(--text-muted); text-decoration: none; transition: background 0.15s, color 0.15s; }
+    .toc-list a:hover, .toc-list a.active { background: var(--accent-soft); color: var(--accent); }
+    .toc-num { width: 20px; height: 20px; border-radius: 6px; background: var(--surface-alt); font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent); }
+    .last-updated { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.73rem; color: var(--text-light); }
+
+    .content section { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2rem 2.25rem; margin-bottom: 1.5rem; scroll-margin-top: 1.5rem; }
+    .section-header { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1.25rem; }
+    .section-num { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-size: 0.82rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .content section h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+    .content section p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 0.85rem; }
+    .content section p:last-child { margin-bottom: 0; }
+    .content section ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+    .content section ul li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; }
+    .content section ul li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 0.55rem; flex-shrink: 0; }
+    .content section strong { color: var(--text); font-weight: 600; }
+
+    .highlight-box { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; font-size: 0.87rem; color: var(--text-muted); }
+    .highlight-box strong { color: var(--accent); }
+
+    .warning-box { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; font-size: 0.87rem; color: var(--text-muted); }
+    .warning-box strong { color: #f59e0b; }
+
+    .page-footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); text-align: center; }
+    .page-footer p { font-size: 0.82rem; color: var(--text-light); }
+    .page-footer a { color: var(--accent); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+
+    @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; } }
+    @media (max-width: 600px) { .page-hero h1 { font-size: 1.7rem; } .content section { padding: 1.5rem 1.25rem; } .topbar { padding: 0.85rem 1rem; } }
+  </style>
+</head>
+<body>
+
+  <nav class="topbar">
+    <a href="index.html" class="topbar-logo">
+      <div class="topbar-logo-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/></svg>
+      </div>
+      <div class="topbar-logo-text">Laxmi Academy<span>Physics Portal</span></div>
+    </a>
+    <a href="index.html" class="topbar-back">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      Back to Home
+    </a>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="page-hero">
+      <div class="badge">Legal</div>
+      <h1>Terms of Service</h1>
+      <p>Please read these terms carefully before using the Laxmi Academy platform.</p>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="toc-list">
+          <li><a href="#acceptance"><span class="toc-num">1</span>Acceptance</a></li>
+          <li><a href="#services"><span class="toc-num">2</span>Services</a></li>
+          <li><a href="#payments"><span class="toc-num">3</span>Payments</a></li>
+          <li><a href="#conduct"><span class="toc-num">4</span>Student Conduct</a></li>
+          <li><a href="#ip"><span class="toc-num">5</span>Intellectual Property</a></li>
+          <li><a href="#termination"><span class="toc-num">6</span>Termination</a></li>
+          <li><a href="#disclaimer"><span class="toc-num">7</span>Disclaimer</a></li>
+          <li><a href="#contact-us"><span class="toc-num">8</span>Contact</a></li>
+        </ul>
+        <div class="last-updated"><strong>Last updated:</strong><br>April 29, 2026</div>
+      </aside>
+
+      <main class="content">
+
+        <section id="acceptance">
+          <div class="section-header"><div class="section-num">1</div><h2>Acceptance of Terms</h2></div>
+          <p>By registering for, accessing, or using the Laxmi Academy student portal (the "Platform"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree with any part of these Terms, you must not use the Platform.</p>
+          <p>These Terms apply to all users including students, instructors, and administrators. Users who are minors (under 18 years of age) must have their parent or guardian read and agree to these Terms on their behalf.</p>
+          <div class="highlight-box">
+            <strong>By clicking "Sign Up" or "Login", you confirm that you have read, understood, and agree to these Terms.</strong>
+          </div>
+        </section>
+
+        <section id="services">
+          <div class="section-header"><div class="section-num">2</div><h2>Services</h2></div>
+          <p>Laxmi Academy provides online Physics coaching services through the Platform, including:</p>
+          <ul>
+            <li>Video lectures on Physics topics for NEET, JEE Mains, EAMCET, and Intermediate (1st and 2nd Year) courses.</li>
+            <li>Practice tests, quizzes, and assignments within the portal.</li>
+            <li>Progress tracking, analytics, and performance reports.</li>
+            <li>Direct access to instructors via the doubt-clearing feature.</li>
+            <li>Downloadable study materials and notes (where provided).</li>
+          </ul>
+          <p>Access to course content is granted only after successful payment of the applicable course fee. Course access is personal, non-transferable, and tied to the registered account.</p>
+          <p>We reserve the right to modify, update, or discontinue any part of the Platform at any time with reasonable notice to enrolled students.</p>
+        </section>
+
+        <section id="payments">
+          <div class="section-header"><div class="section-num">3</div><h2>Payments</h2></div>
+          <p>All course fees are displayed in Indian Rupees (INR) and are inclusive of applicable taxes unless stated otherwise. Payments are processed securely through PhonePe.</p>
+          <ul>
+            <li>Full payment is required to activate course access unless an instalment plan has been specifically agreed upon in writing.</li>
+            <li>Course fees are subject to change. Changes do not affect students who have already enrolled at the previous fee.</li>
+            <li>You will receive an email confirmation and payment receipt upon successful payment.</li>
+            <li>Any disputes regarding payment must be raised within 7 days of the transaction.</li>
+          </ul>
+          <div class="warning-box">
+            <strong>Important:</strong> If your payment fails or is declined, access to course content will not be granted until payment is successfully completed.
+          </div>
+        </section>
+
+        <section id="conduct">
+          <div class="section-header"><div class="section-num">4</div><h2>Student Conduct</h2></div>
+          <p>All students are expected to maintain respectful and honest conduct while using the Platform. The following are strictly prohibited:</p>
+          <ul>
+            <li>Sharing login credentials with any other person. Each account is for one individual's use only.</li>
+            <li>Recording, downloading, or distributing video course content without explicit written permission.</li>
+            <li>Cheating on tests or submitting another student's work as your own.</li>
+            <li>Using the Platform to harass, abuse, or threaten instructors, staff, or other students.</li>
+            <li>Attempting to hack, scrape, or interfere with the Platform's technical infrastructure.</li>
+            <li>Creating multiple accounts to gain unauthorised access to content or features.</li>
+          </ul>
+          <p>Violation of these conduct standards may result in immediate account suspension or termination without refund.</p>
+        </section>
+
+        <section id="ip">
+          <div class="section-header"><div class="section-num">5</div><h2>Intellectual Property</h2></div>
+          <p>All content on the Laxmi Academy Platform — including but not limited to video lectures, written notes, diagrams, practice questions, test papers, and branding materials — is the intellectual property of Laxmi Academy or its instructors.</p>
+          <ul>
+            <li>Enrolled students are granted a limited, non-exclusive, non-transferable licence to access and watch course content for personal, non-commercial educational purposes.</li>
+            <li>You may not reproduce, distribute, broadcast, or sell any content from the Platform.</li>
+            <li>You may not use the Laxmi Academy name, logo, or branding without prior written permission.</li>
+          </ul>
+          <p>Unauthorised use of our intellectual property may result in legal action under applicable Indian copyright and intellectual property law.</p>
+        </section>
+
+        <section id="termination">
+          <div class="section-header"><div class="section-num">6</div><h2>Termination</h2></div>
+          <p>Laxmi Academy reserves the right to suspend or terminate your account at any time, with or without notice, for:</p>
+          <ul>
+            <li>Violation of these Terms of Service.</li>
+            <li>Non-payment of outstanding course fees.</li>
+            <li>Fraudulent activity or misuse of the Platform.</li>
+            <li>Behaviour that endangers the integrity of the Platform or the experience of other students.</li>
+          </ul>
+          <p>You may close your account at any time by contacting us. Upon account closure, your access to course content will end. Refund eligibility is governed by our Refund Policy.</p>
+        </section>
+
+        <section id="disclaimer">
+          <div class="section-header"><div class="section-num">7</div><h2>Disclaimer &amp; Limitation of Liability</h2></div>
+          <p>Laxmi Academy provides educational content designed to help students prepare for competitive exams. However, we cannot guarantee specific exam results or outcomes, as success depends on individual effort, aptitude, and circumstances beyond our control.</p>
+          <ul>
+            <li>The Platform is provided "as is" without warranties of uninterrupted availability.</li>
+            <li>We are not liable for technical issues, service interruptions, or data loss caused by factors outside our reasonable control.</li>
+            <li>Our total liability to any student shall not exceed the amount paid for the relevant course.</li>
+          </ul>
+          <p>These Terms are governed by the laws of India, and any disputes shall be subject to the exclusive jurisdiction of courts in Hyderabad, Telangana.</p>
+        </section>
+
+        <section id="contact-us">
+          <div class="section-header"><div class="section-num">8</div><h2>Contact Us</h2></div>
+          <p>For questions about these Terms of Service, please contact:</p>
+          <ul>
+            <li><strong>Email:</strong> support@laxmiacademy.in</li>
+            <li><strong>Phone:</strong> +91 72078 98999</li>
+            <li><strong>Address:</strong> Laxmi Academy, Hyderabad, Telangana, India</li>
+          </ul>
+          <div class="highlight-box">
+            These Terms are effective from <strong>April 29, 2026</strong>. We reserve the right to update them periodically. Continued use after updates constitutes acceptance of the revised Terms.
+          </div>
+        </section>
+
+        <div class="page-footer">
+          <div class="footer-links">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="refund.html">Refund Policy</a>
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+          </div>
+          <p>© <script>document.write(new Date().getFullYear())</script> Laxmi Academy. All rights reserved.</p>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const sections = document.querySelectorAll('.content section');
+    const tocLinks = document.querySelectorAll('.toc-list a');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          tocLinks.forEach(a => a.classList.remove('active'));
+          const active = document.querySelector(`.toc-list a[href="#${entry.target.id}"]`);
+          if (active) active.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px' });
+    sections.forEach(s => observer.observe(s));
+  </script>
+</body>
+</html>

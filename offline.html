@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Offline — Laxmi Academy</title>
+  <link rel="icon" href="logo.png"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;
+         background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+         font-family:'Inter',sans-serif;padding:1rem;text-align:center}
+    .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+          border-radius:20px;padding:2.5rem 2rem;max-width:400px;width:100%;
+          backdrop-filter:blur(20px)}
+    .icon{font-size:3.5rem;margin-bottom:1rem}
+    h1{color:#fff;font-size:1.4rem;margin-bottom:.6rem}
+    p{color:rgba(255,255,255,.6);font-size:.9rem;line-height:1.6;margin-bottom:1.5rem}
+    .btn{display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+         color:#fff;font-weight:700;padding:.75rem 2rem;border-radius:10px;
+         text-decoration:none;font-size:.95rem;cursor:pointer;border:none;transition:.2s}
+    .btn:hover{opacity:.88;transform:translateY(-1px)}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">📡</div>
+  <h1>You're Offline</h1>
+  <p>No internet connection. Please check your network and try again. Your progress is saved locally.</p>
+  <button class="btn" onclick="window.location.reload()">Try Again</button>
+</div>
+</body>
+</html>

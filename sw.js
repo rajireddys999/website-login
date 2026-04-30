@@ -1,4 +1,4 @@
-const CACHE = 'laxmi-academy-v3';
+const CACHE = 'laxmi-academy-v4';
 
 const PRECACHE = [
   '/',
@@ -6,9 +6,16 @@ const PRECACHE = [
   '/login.html',
   '/signup.html',
   '/verify-email.html',
+  '/forgot-password.html',
+  '/reset-password.html',
   '/dashboard.html',
   '/instructor-dashboard.html',
   '/admin-dashboard.html',
+  '/mission-control.html',
+  '/privacy.html',
+  '/terms.html',
+  '/refund.html',
+  '/offline.html',
   '/theme.css',
   '/theme.js',
   '/manifest.json',
@@ -47,7 +54,7 @@ self.addEventListener('fetch', e => {
         }
         return res;
       }).catch(() => cached); // offline fallback to cache
-      return cached || fresh;
+      return cached || fresh.catch(() => caches.match('/offline.html'));
     })
   );
 });

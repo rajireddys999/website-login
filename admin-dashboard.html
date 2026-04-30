@@ -460,6 +460,81 @@
     .btn-export:hover { background:rgba(99,102,241,.18); transform:translateY(-1px); }
     html.dark .btn-export { color:var(--accent2); }
 
+    /* ── Bulk action bar ── */
+    .bulk-bar {
+      display:none; align-items:center; gap:.75rem; flex-wrap:wrap;
+      background:rgba(99,102,241,.07); border:1px solid rgba(99,102,241,.2);
+      border-radius:10px; padding:.55rem .9rem; margin-bottom:.75rem;
+      animation:fadeIn .18s ease;
+    }
+    .bulk-bar.show { display:flex; }
+    .bulk-bar-count { font-size:.83rem; font-weight:700; color:var(--accent); }
+    html.dark .bulk-bar-count { color:var(--accent2); }
+    .bulk-bar-sep { width:1px; height:18px; background:var(--border); }
+
+    /* ── Date filter row ── */
+    .date-filter-row { display:flex; align-items:center; gap:.55rem; flex-wrap:wrap; margin-bottom:.75rem; }
+    .date-filter-row label { font-size:.78rem; font-weight:600; color:var(--muted); }
+    .date-input {
+      padding:.52rem .7rem; background:var(--surface); border:1px solid var(--border);
+      border-radius:9px; color:var(--text); font-family:'Inter',sans-serif;
+      font-size:.81rem; outline:none; transition:border-color .2s;
+    }
+    .date-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+    .btn-filter {
+      padding:.52rem .95rem; border-radius:9px; font-size:.79rem; font-weight:700;
+      background:rgba(99,102,241,.09); color:var(--accent); border:1px solid rgba(99,102,241,.2);
+      cursor:pointer; font-family:'Inter',sans-serif; transition:all .18s;
+    }
+    .btn-filter:hover { background:rgba(99,102,241,.2); }
+    html.dark .btn-filter { color:var(--accent2); }
+    .btn-filter-clear {
+      padding:.52rem .75rem; border-radius:9px; font-size:.78rem; font-weight:600;
+      background:transparent; color:var(--muted); border:1px solid var(--border);
+      cursor:pointer; font-family:'Inter',sans-serif; transition:all .18s;
+    }
+    .btn-filter-clear:hover { background:rgba(0,0,0,.04); color:var(--text); }
+    html.dark .btn-filter-clear:hover { background:rgba(255,255,255,.06); }
+
+    /* ── Revenue chart ── */
+    .chart-panel {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:16px; padding:1.2rem 1.4rem; margin-top:1rem;
+    }
+    .chart-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:.5rem; }
+    .chart-title { font-size:.82rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
+    .chart-toggle-group { display:flex; gap:.3rem; }
+    .chart-toggle {
+      padding:.28rem .75rem; border-radius:7px; font-size:.74rem; font-weight:700;
+      border:1px solid var(--border); background:transparent; color:var(--muted);
+      cursor:pointer; font-family:'Inter',sans-serif; transition:all .18s;
+    }
+    .chart-toggle.active { background:rgba(99,102,241,.12); color:var(--accent); border-color:rgba(99,102,241,.25); }
+    html.dark .chart-toggle.active { color:var(--accent2); }
+    #revenue-chart-svg { width:100%; display:block; }
+
+    /* ── Instructor modal form ── */
+    .modal-lg { width:min(540px,95%); }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+    .form-field { display:flex; flex-direction:column; gap:.3rem; }
+    .form-field.full { grid-column:1/-1; }
+    .form-label { font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .form-input {
+      padding:.6rem .85rem; background:var(--surface); border:1px solid var(--border);
+      border-radius:9px; color:var(--text); font-family:'Inter',sans-serif;
+      font-size:.85rem; outline:none; transition:border-color .2s, box-shadow .2s;
+    }
+    .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+    .form-input::placeholder { color:var(--muted); }
+    html.dark .modal-lg { background:#13131f; border-color:rgba(255,255,255,.1); }
+    .btn-primary {
+      padding:.62rem 1.3rem; border-radius:10px; font-size:.85rem; font-weight:700;
+      border:none; cursor:pointer; font-family:'Inter',sans-serif; transition:all .18s;
+      background:linear-gradient(135deg,#6366f1,#818cf8); color:#fff;
+    }
+    .btn-primary:hover { box-shadow:0 4px 16px rgba(99,102,241,.4); transform:translateY(-1px); }
+    .btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+
     /* ── Refresh indicator ── */
     .auto-refresh-dot {
       width:6px; height:6px; border-radius:50%; background:#22c55e;
@@ -510,6 +585,45 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       <button id="modal-confirm" class="btn-confirm-red">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Instructor Modal -->
+<div class="modal-overlay" id="instructor-modal">
+  <div class="modal modal-lg">
+    <h3>Add Instructor</h3>
+    <p style="margin-bottom:1rem">Create a new instructor account. A password reset email is not sent automatically.</p>
+    <div class="form-grid" id="instructor-form-grid">
+      <div class="form-field">
+        <label class="form-label" for="inst-name">Full Name *</label>
+        <input class="form-input" id="inst-name" type="text" placeholder="e.g. Priya Sharma" autocomplete="off"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="inst-email">Email *</label>
+        <input class="form-input" id="inst-email" type="email" placeholder="instructor@example.com"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="inst-phone">Phone *</label>
+        <input class="form-input" id="inst-phone" type="tel" placeholder="+91 9XXXXXXXXX"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="inst-subject">Subject *</label>
+        <input class="form-input" id="inst-subject" type="text" placeholder="e.g. Physics"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="inst-password">Password *</label>
+        <input class="form-input" id="inst-password" type="password" placeholder="Min 8 characters" autocomplete="new-password"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="inst-bio">Bio (optional)</label>
+        <input class="form-input" id="inst-bio" type="text" placeholder="Short bio…"/>
+      </div>
+    </div>
+    <div id="instructor-form-error" style="display:none;margin-top:.7rem;font-size:.8rem;color:#dc2626;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:.5rem .8rem"></div>
+    <div class="modal-actions" style="margin-top:1.2rem">
+      <button class="btn-cancel" onclick="closeInstructorModal()">Cancel</button>
+      <button class="btn-primary" id="inst-submit-btn" onclick="submitInstructor()">Create Instructor</button>
     </div>
   </div>
 </div>
@@ -670,9 +784,24 @@
               <button class="btn-export" onclick="showPage('students');loadStudents()" style="justify-content:flex-start">👥 Manage Students</button>
               <button class="btn-export" onclick="showPage('enquiries');loadEnquiries()" style="justify-content:flex-start">📩 Review Enquiries</button>
               <button class="btn-export" onclick="showPage('payments');loadPayments()" style="justify-content:flex-start">💳 View Payments</button>
-              <button class="btn-export" onclick="exportStudentsCSV()" style="justify-content:flex-start">⬇ Export Students CSV</button>
+              <button class="btn-export" onclick="exportCSV('students_'+isoDate()+'.csv', allStudents, studentsCSVCols)" style="justify-content:flex-start">⬇ Export Students CSV</button>
             </div>
           </div>
+        </div>
+
+        <!-- Revenue Trend Chart -->
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">📈 Revenue Trend</div>
+            <div class="chart-toggle-group">
+              <button class="chart-toggle active" id="chart-daily"   onclick="setChartMode('daily')">Daily</button>
+              <button class="chart-toggle"         id="chart-weekly"  onclick="setChartMode('weekly')">Weekly</button>
+              <button class="chart-toggle"         id="chart-monthly" onclick="setChartMode('monthly')">Monthly</button>
+            </div>
+          </div>
+          <svg id="revenue-chart-svg" height="220" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
+            <text x="400" y="115" text-anchor="middle" font-size="13" fill="var(--muted)">Loading chart…</text>
+          </svg>
         </div>
       </div>
 
@@ -680,11 +809,31 @@
       <div class="page" id="page-students">
         <div class="sec-title">
           <div class="sec-title-left">👥 Students</div>
-          <div style="display:flex;gap:.5rem">
-            <button class="btn-export" onclick="exportStudentsCSV()">⬇ CSV</button>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn-export" onclick="exportCSV('students_'+isoDate()+'.csv', allStudents, studentsCSVCols)">⬇ Export CSV</button>
             <button class="action-btn btn-view" onclick="loadStudents()">↻ Refresh</button>
           </div>
         </div>
+
+        <!-- Date range filter -->
+        <div class="date-filter-row">
+          <label for="student-from">From</label>
+          <input class="date-input" type="date" id="student-from"/>
+          <label for="student-to">To</label>
+          <input class="date-input" type="date" id="student-to"/>
+          <button class="btn-filter" onclick="filterStudents()">Filter</button>
+          <button class="btn-filter-clear" onclick="clearStudentDateFilter()">Clear</button>
+        </div>
+
+        <!-- Bulk action bar -->
+        <div class="bulk-bar" id="student-bulk-bar">
+          <span class="bulk-bar-count" id="student-bulk-count">0 selected</span>
+          <div class="bulk-bar-sep"></div>
+          <button class="action-btn btn-revoke" onclick="bulkRevokeStudents()">Revoke Access</button>
+          <button class="action-btn btn-delete" onclick="bulkDeleteStudents()">Delete</button>
+          <button class="btn-filter-clear" onclick="deselectAllStudents()" style="margin-left:auto">Deselect All</button>
+        </div>
+
         <div class="toolbar">
           <div class="search-wrap">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
@@ -708,7 +857,10 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>#</th><th>Student</th><th>Phone</th><th>Course</th><th>Plan</th><th>Payment</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+              <tr>
+                <th><input type="checkbox" id="select-all-students" title="Select all" onchange="toggleSelectAllStudents(this.checked)" style="cursor:pointer;accent-color:var(--accent)"/></th>
+                <th>Student</th><th>Phone</th><th>Course</th><th>Plan</th><th>Payment</th><th>Joined</th><th>Status</th><th>Actions</th>
+              </tr>
             </thead>
             <tbody id="students-tbody"></tbody>
           </table>
@@ -723,7 +875,10 @@
       <div class="page" id="page-enquiries">
         <div class="sec-title">
           <div class="sec-title-left">📩 Enquiries</div>
-          <button class="action-btn btn-view" onclick="loadEnquiries()">↻ Refresh</button>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn-export" onclick="exportCSV('enquiries_'+isoDate()+'.csv', allEnquiries, enquiriesCSVCols)">⬇ Export CSV</button>
+            <button class="action-btn btn-view" onclick="loadEnquiries()">↻ Refresh</button>
+          </div>
         </div>
         <div class="toolbar">
           <div class="search-wrap">
@@ -754,7 +909,10 @@
       <div class="page" id="page-instructors">
         <div class="sec-title">
           <div class="sec-title-left">👨‍🏫 Instructors</div>
-          <button class="action-btn btn-view" onclick="loadInstructors()">↻ Refresh</button>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn-primary" onclick="openInstructorModal()" style="font-size:.78rem;padding:.5rem .95rem">+ Add Instructor</button>
+            <button class="action-btn btn-view" onclick="loadInstructors()">↻ Refresh</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
@@ -807,7 +965,20 @@
       <div class="page" id="page-payments">
         <div class="sec-title">
           <div class="sec-title-left">💳 Payment History</div>
-          <button class="action-btn btn-view" onclick="loadPayments()">↻ Refresh</button>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn-export" onclick="exportCSV('payments_'+isoDate()+'.csv', currentPaymentView(), paymentsCSVCols)">⬇ Export CSV</button>
+            <button class="action-btn btn-view" onclick="loadPayments()">↻ Refresh</button>
+          </div>
+        </div>
+
+        <!-- Date range filter -->
+        <div class="date-filter-row">
+          <label for="payment-from">From</label>
+          <input class="date-input" type="date" id="payment-from"/>
+          <label for="payment-to">To</label>
+          <input class="date-input" type="date" id="payment-to"/>
+          <button class="btn-filter" onclick="filterPayments()">Filter</button>
+          <button class="btn-filter-clear" onclick="clearPaymentDateFilter()">Clear</button>
         </div>
 
         <!-- Payment stat mini-cards -->
@@ -1066,6 +1237,13 @@
         </div>
         <span class="badge ${ENQ_COLORS[e.status]||'badge-gray'}" style="flex-shrink:0">${e.status}</span>
       </div>`).join('') || '<p style="color:var(--muted);font-size:.84rem">No enquiries yet.</p>';
+
+    // Load payments for revenue chart (if not already loaded)
+    if (!allPayments.length) {
+      const rp = await api('/api/admin/payments');
+      if (rp.ok) { allPayments = rp.data; }
+    }
+    drawRevenueChart();
   }
 
   // ── STUDENTS ─────────────────────────────────────────────────
@@ -1094,12 +1272,14 @@
     filterStudents();
   }
 
+  let selectedStudentIds = new Set();
+
   function renderStudents(list) {
     const tbody = document.getElementById('students-tbody');
     const empty = document.getElementById('students-empty');
     document.getElementById('students-count').textContent =
       `Showing ${list.length} of ${allStudents.length} student${allStudents.length!==1?'s':''}`;
-    if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+    if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; updateBulkBar(); return; }
     empty.style.display = 'none';
     tbody.innerHTML = list.map((s,i) => {
       const active = s.is_active===1;
@@ -1110,8 +1290,12 @@
       const toggleBtn    = active
         ? `<button class="action-btn btn-revoke"  onclick="confirmRevoke(${s.id},'${escHtml(s.full_name)}')">Revoke</button>`
         : `<button class="action-btn btn-restore" onclick="confirmRestore(${s.id},'${escHtml(s.full_name)}')">Restore</button>`;
+      const checked = selectedStudentIds.has(s.id) ? 'checked' : '';
       return `<tr id="student-row-${s.id}">
-        <td style="color:var(--muted);font-size:.78rem">${i+1}</td>
+        <td style="width:36px">
+          <input type="checkbox" data-sid="${s.id}" ${checked} onchange="onStudentCheckboxChange(this)"
+            style="cursor:pointer;accent-color:var(--accent)"/>
+        </td>
         <td>
           <div style="display:flex;align-items:center;gap:.6rem">
             <div class="recent-avatar" style="width:28px;height:28px;font-size:.72rem;flex-shrink:0">${s.full_name.charAt(0).toUpperCase()}</div>
@@ -1135,6 +1319,66 @@
         </td>
       </tr>`;
     }).join('');
+    updateBulkBar();
+  }
+
+  function onStudentCheckboxChange(cb) {
+    const id = parseInt(cb.dataset.sid);
+    cb.checked ? selectedStudentIds.add(id) : selectedStudentIds.delete(id);
+    updateBulkBar();
+    // sync select-all state
+    const allCbs = document.querySelectorAll('#students-tbody input[type=checkbox]');
+    const allChecked = allCbs.length > 0 && [...allCbs].every(c => c.checked);
+    document.getElementById('select-all-students').checked = allChecked;
+    document.getElementById('select-all-students').indeterminate = !allChecked && selectedStudentIds.size > 0;
+  }
+
+  function toggleSelectAllStudents(checked) {
+    const allCbs = document.querySelectorAll('#students-tbody input[type=checkbox]');
+    allCbs.forEach(cb => {
+      cb.checked = checked;
+      const id = parseInt(cb.dataset.sid);
+      checked ? selectedStudentIds.add(id) : selectedStudentIds.delete(id);
+    });
+    document.getElementById('select-all-students').indeterminate = false;
+    updateBulkBar();
+  }
+
+  function deselectAllStudents() {
+    selectedStudentIds.clear();
+    document.querySelectorAll('#students-tbody input[type=checkbox]').forEach(cb => cb.checked = false);
+    const sa = document.getElementById('select-all-students');
+    sa.checked = false; sa.indeterminate = false;
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    const bar   = document.getElementById('student-bulk-bar');
+    const count = selectedStudentIds.size;
+    document.getElementById('student-bulk-count').textContent = `${count} selected`;
+    bar.classList.toggle('show', count > 0);
+  }
+
+  async function bulkRevokeStudents() {
+    const ids = [...selectedStudentIds];
+    if (!ids.length) return;
+    showModal('Bulk Revoke Access', `Revoke access for ${ids.length} student${ids.length!==1?'s':''}?`, 'Revoke All', 'btn-confirm-orange', async () => {
+      // TODO: backend endpoint POST /api/admin/students/bulk-revoke
+      const r = await api('/api/admin/students/bulk-revoke', { method:'PATCH', body:JSON.stringify({ids}) });
+      if (r.ok) { toast(`Access revoked for ${ids.length} student${ids.length!==1?'s':''}.`); deselectAllStudents(); await loadStudents(); loadOverview(); }
+      else toast(r.data?.error||'Bulk revoke failed.','error');
+    });
+  }
+
+  async function bulkDeleteStudents() {
+    const ids = [...selectedStudentIds];
+    if (!ids.length) return;
+    showModal('Bulk Delete Students', `Permanently delete ${ids.length} student${ids.length!==1?'s':''}? This cannot be undone.`, 'Delete All', 'btn-confirm-red', async () => {
+      // TODO: backend endpoint DELETE /api/admin/students/bulk
+      const r = await api('/api/admin/students/bulk', { method:'DELETE', body:JSON.stringify({ids}) });
+      if (r.ok) { toast(`${ids.length} student${ids.length!==1?'s':''} deleted.`); deselectAllStudents(); await loadStudents(); loadOverview(); }
+      else toast(r.data?.error||'Bulk delete failed.','error');
+    });
   }
 
   function filterStudents() {
@@ -1142,15 +1386,28 @@
     const course  = document.getElementById('course-filter').value;
     const status  = document.getElementById('status-filter').value;
     const payment = document.getElementById('payment-filter').value;
+    const fromVal = document.getElementById('student-from').value;
+    const toVal   = document.getElementById('student-to').value;
+    const fromD   = fromVal ? new Date(fromVal) : null;
+    const toD     = toVal   ? new Date(toVal + 'T23:59:59') : null;
     const filtered = allStudents.filter(s => {
       const matchQ = !q || s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || (s.phone||'').includes(q);
       const matchC = !course  || s.course===course;
       const matchS = status==='' || String(s.is_active)===status;
       const matchP = !payment || (s.payment_status||'pending')===payment;
-      return matchQ && matchC && matchS && matchP;
+      const d = s.created_at ? new Date(s.created_at) : null;
+      const matchFrom = !fromD || (d && d >= fromD);
+      const matchTo   = !toD   || (d && d <= toD);
+      return matchQ && matchC && matchS && matchP && matchFrom && matchTo;
     });
     syncStudentFiltersToURL();
     renderStudents(filtered);
+  }
+
+  function clearStudentDateFilter() {
+    document.getElementById('student-from').value = '';
+    document.getElementById('student-to').value   = '';
+    filterStudents();
   }
 
   function syncStudentFiltersToURL() {
@@ -1190,22 +1447,60 @@
     else toast(r.data.error||'Failed.','error');
   }
 
-  function exportStudentsCSV() {
-    const data = allStudents.length ? allStudents : [];
-    if (!data.length) { toast('Load students first.','error'); return; }
-    const headers = ['ID','Name','Email','Phone','Course','Plan','Payment','Active','Joined'];
-    const rows = data.map(s => [
-      s.id, `"${s.full_name}"`, s.email, s.phone,
-      `"${s.course}"`, `"${s.plan}"`, s.payment_status||'pending',
-      s.is_active?'Yes':'No', fmtDate(s.created_at)
-    ]);
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const a = document.createElement('a');
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = `students_${new Date().toISOString().slice(0,10)}.csv`;
+  // ── CSV EXPORT HELPER ─────────────────────────────────────────
+  // columns: [{header, key, fn}]  fn is optional transform
+  function exportCSV(filename, rows, columns) {
+    if (!rows || !rows.length) { toast('No data to export.','error'); return; }
+    function csvCell(v) {
+      const s = String(v == null ? '' : v);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? '"' + s.replace(/"/g, '""') + '"'
+        : s;
+    }
+    const header = columns.map(c => csvCell(c.header)).join(',');
+    const body   = rows.map(r => columns.map(c => csvCell(c.fn ? c.fn(r) : (r[c.key]??''))).join(',')).join('\n');
+    const blob   = new Blob([header + '\n' + body], { type:'text/csv;charset=utf-8;' });
+    const url    = URL.createObjectURL(blob);
+    const a      = Object.assign(document.createElement('a'), { href:url, download:filename });
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast('CSV downloaded.');
   }
+
+  function isoDate() { return new Date().toISOString().slice(0,10); }
+
+  const studentsCSVCols = [
+    { header:'ID',      key:'id' },
+    { header:'Name',    key:'full_name' },
+    { header:'Email',   key:'email' },
+    { header:'Phone',   key:'phone' },
+    { header:'Course',  key:'course' },
+    { header:'Plan',    key:'plan' },
+    { header:'Payment', fn: r => r.payment_status||'pending' },
+    { header:'Active',  fn: r => r.is_active ? 'Yes' : 'No' },
+    { header:'Joined',  fn: r => fmtDate(r.created_at) },
+  ];
+
+  const enquiriesCSVCols = [
+    { header:'ID',      key:'id' },
+    { header:'Name',    key:'full_name' },
+    { header:'Phone',   key:'phone' },
+    { header:'Email',   key:'email' },
+    { header:'Course',  key:'course' },
+    { header:'Message', key:'message' },
+    { header:'Status',  key:'status' },
+    { header:'Date',    fn: r => fmtDate(r.created_at) },
+  ];
+
+  const paymentsCSVCols = [
+    { header:'ID',             key:'id' },
+    { header:'Student',        key:'full_name' },
+    { header:'Email',          key:'email' },
+    { header:'Amount (INR)',   fn: r => r.amount||0 },
+    { header:'Status',         key:'status' },
+    { header:'Transaction ID', key:'merchant_transaction_id' },
+    { header:'Date',           fn: r => fmtDate(r.created_at) },
+  ];
 
   // ── ENQUIRIES ─────────────────────────────────────────────────
   const ENQ_BADGES = { new:'badge-orange', contacted:'badge-blue', enrolled:'badge-green' };
@@ -1384,6 +1679,7 @@
     const r = await api('/api/admin/payments');
     if (!r.ok) return;
     allPayments = r.data;
+    _lastPaymentFiltered = [];
 
     // Update mini-stats
     const paid    = allPayments.filter(p => p.status==='paid');
@@ -1399,6 +1695,8 @@
     document.getElementById('p-pending-rev').textContent = '₹'+pendRev.toLocaleString('en-IN');
 
     renderPayments(allPayments);
+    // Redraw chart if it's visible on overview
+    if (document.getElementById('revenue-chart-svg')) drawRevenueChart();
   }
 
   function renderPayments(list) {
@@ -1427,15 +1725,222 @@
     }).join('');
   }
 
+  let _lastPaymentFiltered = [];
+
+  function currentPaymentView() { return _lastPaymentFiltered.length ? _lastPaymentFiltered : allPayments; }
+
   function filterPayments() {
-    const q  = document.getElementById('payment-search').value.toLowerCase();
-    const st = document.getElementById('payment-status-filter').value;
+    const q       = document.getElementById('payment-search').value.toLowerCase();
+    const st      = document.getElementById('payment-status-filter').value;
+    const fromVal = document.getElementById('payment-from').value;
+    const toVal   = document.getElementById('payment-to').value;
+    const fromD   = fromVal ? new Date(fromVal) : null;
+    const toD     = toVal   ? new Date(toVal + 'T23:59:59') : null;
     const filtered = allPayments.filter(p => {
       const matchQ  = !q  || (p.full_name||'').toLowerCase().includes(q) || (p.merchant_transaction_id||'').toLowerCase().includes(q);
       const matchSt = !st || p.status===st;
-      return matchQ && matchSt;
+      const d = p.created_at ? new Date(p.created_at) : null;
+      const matchFrom = !fromD || (d && d >= fromD);
+      const matchTo   = !toD   || (d && d <= toD);
+      return matchQ && matchSt && matchFrom && matchTo;
     });
+    _lastPaymentFiltered = filtered;
     renderPayments(filtered);
+  }
+
+  function clearPaymentDateFilter() {
+    document.getElementById('payment-from').value = '';
+    document.getElementById('payment-to').value   = '';
+    filterPayments();
+  }
+
+  // ── INSTRUCTOR CREATION FORM ──────────────────────────────────
+  function openInstructorModal() {
+    ['inst-name','inst-email','inst-phone','inst-subject','inst-password','inst-bio'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('instructor-form-error').style.display = 'none';
+    const btn = document.getElementById('inst-submit-btn');
+    btn.disabled = false; btn.textContent = 'Create Instructor';
+    document.getElementById('instructor-modal').classList.add('show');
+  }
+
+  function closeInstructorModal() {
+    document.getElementById('instructor-modal').classList.remove('show');
+  }
+
+  async function submitInstructor() {
+    const name     = document.getElementById('inst-name').value.trim();
+    const email    = document.getElementById('inst-email').value.trim();
+    const phone    = document.getElementById('inst-phone').value.trim();
+    const subject  = document.getElementById('inst-subject').value.trim();
+    const password = document.getElementById('inst-password').value;
+    const bio      = document.getElementById('inst-bio').value.trim();
+
+    const errEl = document.getElementById('instructor-form-error');
+    errEl.style.display = 'none';
+
+    if (!name || !email || !phone || !subject || !password) {
+      errEl.textContent = 'Please fill in all required fields.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (password.length < 8) {
+      errEl.textContent = 'Password must be at least 8 characters.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('inst-submit-btn');
+    btn.disabled = true; btn.textContent = 'Creating…';
+
+    // TODO: backend endpoint POST /api/admin/instructors
+    const body = { name, email, phone, subject, password };
+    if (bio) body.bio = bio;
+
+    const r = await api('/api/admin/instructors', { method:'POST', body:JSON.stringify(body) });
+    btn.disabled = false; btn.textContent = 'Create Instructor';
+
+    if (r.ok) {
+      toast(`Instructor "${name}" created.`);
+      closeInstructorModal();
+      loadInstructors();
+    } else {
+      errEl.textContent = r.data?.error || 'Failed to create instructor.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  // ── REVENUE TREND CHART ───────────────────────────────────────
+  let chartMode = 'daily';
+
+  function setChartMode(mode) {
+    chartMode = mode;
+    ['daily','weekly','monthly'].forEach(m => {
+      document.getElementById('chart-'+m).classList.toggle('active', m===mode);
+    });
+    drawRevenueChart();
+  }
+
+  function drawRevenueChart() {
+    const svg = document.getElementById('revenue-chart-svg');
+    if (!svg) return;
+
+    const payments = allPayments.filter(p => p.status === 'paid' && p.created_at);
+    const now = new Date();
+
+    let buckets = [];
+    if (chartMode === 'daily') {
+      // Last 14 days
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        buckets.push({ label: (d.getMonth()+1)+'/'+d.getDate(), key: d.toISOString().slice(0,10), value: 0 });
+      }
+      payments.forEach(p => {
+        const key = p.created_at.slice(0,10);
+        const b = buckets.find(b => b.key === key);
+        if (b) b.value += (p.amount || 0);
+      });
+    } else if (chartMode === 'weekly') {
+      // Last 8 weeks
+      for (let i = 7; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i*7);
+        const weekStart = new Date(d); weekStart.setDate(d.getDate() - d.getDay());
+        const ws = weekStart.toISOString().slice(0,10);
+        buckets.push({ label: 'W'+(8-i), key: ws, value: 0 });
+      }
+      payments.forEach(p => {
+        const pd = new Date(p.created_at);
+        const weekStart = new Date(pd); weekStart.setDate(pd.getDate() - pd.getDay());
+        const ws = weekStart.toISOString().slice(0,10);
+        const b = buckets.find(b => b.key === ws);
+        if (b) b.value += (p.amount || 0);
+      });
+    } else {
+      // Last 6 months
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'));
+        buckets.push({ label: months[d.getMonth()]+' '+String(d.getFullYear()).slice(2), key, value: 0 });
+      }
+      payments.forEach(p => {
+        const key = p.created_at.slice(0,7);
+        const b = buckets.find(b => b.key === key);
+        if (b) b.value += (p.amount || 0);
+      });
+    }
+
+    const W = 800, H = 220, padL = 62, padR = 20, padT = 18, padB = 44;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+    const maxVal = Math.max(...buckets.map(b => b.value), 1);
+    const n = buckets.length;
+
+    // compute points
+    const xStep = chartW / Math.max(n - 1, 1);
+    const pts = buckets.map((b, i) => ({
+      x: padL + (n === 1 ? chartW/2 : i * xStep),
+      y: padT + chartH - (b.value / maxVal) * chartH,
+      value: b.value,
+      label: b.label,
+    }));
+
+    // dark mode check
+    const isDark = document.documentElement.classList.contains('dark');
+    const textCol    = isDark ? 'rgba(255,255,255,.45)' : '#94a3b8';
+    const gridCol    = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+    const areaTop    = isDark ? 'rgba(99,102,241,.35)'  : 'rgba(99,102,241,.18)';
+    const areaBot    = isDark ? 'rgba(99,102,241,0)'    : 'rgba(99,102,241,0)';
+
+    // Y axis labels (4 steps)
+    const yLabels = [0, 0.25, 0.5, 0.75, 1.0].map(f => ({
+      y: padT + chartH - f * chartH,
+      label: maxVal * f >= 1000 ? '₹'+(maxVal*f/1000).toFixed(0)+'k' : '₹'+(maxVal*f).toFixed(0)
+    }));
+
+    // Build SVG string
+    let out = `<defs>
+      <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${areaTop}"/>
+        <stop offset="100%" stop-color="${areaBot}"/>
+      </linearGradient>
+      <filter id="dot-shadow"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(99,102,241,.5)"/></filter>
+    </defs>`;
+
+    // Grid lines
+    yLabels.forEach(yl => {
+      out += `<line x1="${padL}" y1="${yl.y}" x2="${W-padR}" y2="${yl.y}" stroke="${gridCol}" stroke-width="1"/>`;
+      out += `<text x="${padL-6}" y="${yl.y+4}" font-size="10" text-anchor="end" fill="${textCol}" font-family="Inter,sans-serif">${yl.label}</text>`;
+    });
+
+    // Area fill
+    if (pts.length >= 2) {
+      const areaPath = `M ${pts[0].x} ${padT+chartH} ` +
+        pts.map(p => `L ${p.x} ${p.y}`).join(' ') +
+        ` L ${pts[pts.length-1].x} ${padT+chartH} Z`;
+      out += `<path d="${areaPath}" fill="url(#area-grad)"/>`;
+    }
+
+    // Line
+    if (pts.length >= 2) {
+      const linePath = `M ${pts[0].x} ${pts[0].y} ` + pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
+      out += `<path d="${linePath}" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+
+    // X labels & dots
+    pts.forEach((p, i) => {
+      // Only show every Nth label to avoid crowding
+      const every = n > 10 ? 2 : 1;
+      if (i % every === 0) {
+        out += `<text x="${p.x}" y="${H-padB+14}" font-size="9.5" text-anchor="middle" fill="${textCol}" font-family="Inter,sans-serif">${p.label}</text>`;
+      }
+      // dot
+      out += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#6366f1" filter="url(#dot-shadow)"/>`;
+      out += `<circle cx="${p.x}" cy="${p.y}" r="2" fill="#fff"/>`;
+    });
+
+    svg.innerHTML = out;
   }
 
   // ── SESSIONS ──────────────────────────────────────────────────

@@ -543,6 +543,7 @@
     <button class="nav-btn" id="nav-sessions" onclick="showPage('sessions')"> <span class="nav-icon">🔑</span> Sessions</button>
 
     <div class="nav-group">Site</div>
+    <a href="mission-control.html" class="nav-btn" style="color:var(--accent);font-weight:700"><span class="nav-icon">🚀</span> Mission Control</a>
     <a href="index.html"       class="nav-btn"><span class="nav-icon">🌐</span> Main Website</a>
     <a href="login.html"       class="nav-btn"><span class="nav-icon">🔐</span> Login Page</a>
     <a href="instructor-dashboard.html" class="nav-btn"><span class="nav-icon">🎓</span> Instructor Panel</a>
@@ -947,6 +948,10 @@
 
   function showPage(name) {
     currentPage = name;
+    const _sp = new URLSearchParams(window.location.search);
+    _sp.set('page', name);
+    if (name !== 'students') { _sp.delete('q'); _sp.delete('course'); _sp.delete('status'); _sp.delete('payment'); }
+    history.replaceState(null, '', '?' + _sp.toString());
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('page-'+name).classList.add('active');
@@ -1081,11 +1086,12 @@
     // Populate course filter
     const courses = [...new Set(allStudents.map(s => s.course).filter(Boolean))];
     const cf = document.getElementById('course-filter');
-    const prev = cf.value;
+    const urlCourse = new URLSearchParams(window.location.search).get('course') || cf.value;
     cf.innerHTML = '<option value="">All Courses</option>' +
-      courses.map(c => `<option value="${escHtml(c)}" ${c===prev?'selected':''}>${escHtml(c)}</option>`).join('');
+      courses.map(c => `<option value="${escHtml(c)}" ${c===urlCourse?'selected':''}>${escHtml(c)}</option>`).join('');
 
-    renderStudents(allStudents);
+    restoreStudentFiltersFromURL();
+    filterStudents();
   }
 
   function renderStudents(list) {
@@ -1143,7 +1149,30 @@
       const matchP = !payment || (s.payment_status||'pending')===payment;
       return matchQ && matchC && matchS && matchP;
     });
+    syncStudentFiltersToURL();
     renderStudents(filtered);
+  }
+
+  function syncStudentFiltersToURL() {
+    const params  = new URLSearchParams(window.location.search);
+    params.set('page', 'students');
+    const q       = document.getElementById('student-search').value;
+    const course  = document.getElementById('course-filter').value;
+    const status  = document.getElementById('status-filter').value;
+    const payment = document.getElementById('payment-filter').value;
+    q       ? params.set('q', q)             : params.delete('q');
+    course  ? params.set('course', course)   : params.delete('course');
+    status  ? params.set('status', status)   : params.delete('status');
+    payment ? params.set('payment', payment) : params.delete('payment');
+    history.replaceState(null, '', '?' + params.toString());
+  }
+
+  function restoreStudentFiltersFromURL() {
+    const p = new URLSearchParams(window.location.search);
+    document.getElementById('student-search').value = p.get('q')       || '';
+    document.getElementById('course-filter').value  = p.get('course')  || '';
+    document.getElementById('status-filter').value  = p.get('status')  || '';
+    document.getElementById('payment-filter').value = p.get('payment') || '';
   }
 
   function confirmRevoke(id,name)  { showModal('Revoke Access',  `Remove login access for "${name}"?`,        'Revoke',   'btn-confirm-orange', () => toggleStudent(id)); }
@@ -1442,6 +1471,8 @@
 
   // ── Init ──────────────────────────────────────────────────────
   loadOverview();
+  const _initPage = new URLSearchParams(window.location.search).get('page');
+  if (_initPage && _initPage !== 'overview') showPage(_initPage);
 </script>
 </body>
 </html>

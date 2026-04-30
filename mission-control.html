@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0a0a1a"/>
+  <title>Mission Control — Laxmi Academy</title>
+  <link rel="icon" href="logo.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root{
+      --bg:       #060610;
+      --surface:  rgba(255,255,255,.04);
+      --surface2: rgba(255,255,255,.07);
+      --border:   rgba(255,255,255,.08);
+      --border2:  rgba(255,255,255,.14);
+      --text:     #e8e8f0;
+      --muted:    rgba(255,255,255,.38);
+      --indigo:   #6366f1;
+      --indigo2:  #818cf8;
+      --green:    #10b981;
+      --green2:   #34d399;
+      --teal:     #0d9488;
+      --teal2:    #2dd4bf;
+      --orange:   #f59e0b;
+      --orange2:  #fbbf24;
+      --red:      #ef4444;
+      --red2:     #f87171;
+      --blue:     #3b82f6;
+      --blue2:    #60a5fa;
+      --purple:   #8b5cf6;
+      --purple2:  #a78bfa;
+      --pink:     #ec4899;
+      --pink2:    #f472b6;
+    }
+
+    html{scroll-behavior:smooth}
+    body{
+      font-family:'Inter',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    /* Subtle animated grid background */
+    body::before{
+      content:'';
+      position:fixed;inset:0;
+      background-image:
+        linear-gradient(rgba(99,102,241,.03) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(99,102,241,.03) 1px,transparent 1px);
+      background-size:48px 48px;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    *{scrollbar-width:thin;scrollbar-color:rgba(99,102,241,.25) transparent}
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-thumb{background:rgba(99,102,241,.25);border-radius:99px}
+
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes ping{0%{transform:scale(1);opacity:1}75%,100%{transform:scale(2);opacity:0}}
+    @keyframes barGrow{from{width:0}to{width:var(--w)}}
+    @keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes scanline{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+    @keyframes glow{0%,100%{box-shadow:0 0 8px currentColor}50%{box-shadow:0 0 20px currentColor}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ── HEADER ─────────────────────────────────────────────── */
+    .mc-header{
+      position:sticky;top:0;z-index:100;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.7rem 1.5rem;
+      background:rgba(6,6,16,.92);
+      border-bottom:1px solid var(--border);
+      backdrop-filter:blur(20px);
+      gap:1rem;
+    }
+    .mc-brand{display:flex;align-items:center;gap:.75rem}
+    .mc-logo{width:36px;height:36px;border-radius:50%;border:2px solid var(--indigo);box-shadow:0 0 12px rgba(99,102,241,.4);object-fit:cover}
+    .mc-title{font-size:.75rem;color:var(--muted);font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+    .mc-name{font-size:1rem;font-weight:900;background:linear-gradient(90deg,var(--indigo2),var(--purple2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+    .mc-status{display:flex;align-items:center;gap:.5rem;font-size:.78rem;font-weight:700;font-family:'JetBrains Mono',monospace}
+    .live-dot{position:relative;display:inline-flex;width:10px;height:10px}
+    .live-dot span{position:absolute;inset:0;border-radius:50%;background:var(--green);display:inline-flex}
+    .live-dot span::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--green);animation:ping 1.4s ease infinite}
+    .live-txt{color:var(--green2);letter-spacing:.1em}
+
+    .mc-right{display:flex;align-items:center;gap:1rem}
+    .mc-clock{text-align:right}
+    .mc-time{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--text)}
+    .mc-date{font-size:.68rem;color:var(--muted);font-weight:500}
+    .mc-admin{font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:.4rem}
+    .mc-admin strong{color:var(--text)}
+
+    .btn-back{
+      display:flex;align-items:center;gap:.4rem;
+      padding:.45rem .9rem;border-radius:8px;
+      background:var(--surface2);border:1px solid var(--border2);
+      color:var(--muted);font-size:.78rem;font-weight:600;
+      cursor:pointer;text-decoration:none;transition:.2s;white-space:nowrap;
+    }
+    .btn-back:hover{background:rgba(99,102,241,.12);color:var(--indigo2);border-color:rgba(99,102,241,.3)}
+
+    /* ── ALERT BANNER ───────────────────────────────────────── */
+    .alert-banner{
+      display:none;
+      background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(239,68,68,.08));
+      border-bottom:1px solid rgba(245,158,11,.2);
+      padding:.55rem 1.5rem;
+      gap:.6rem;align-items:center;
+      font-size:.8rem;font-weight:600;color:var(--orange2);
+      flex-wrap:wrap;
+    }
+    .alert-banner.show{display:flex}
+    .alert-item{display:flex;align-items:center;gap:.35rem;background:rgba(245,158,11,.1);padding:.2rem .6rem;border-radius:20px;border:1px solid rgba(245,158,11,.2)}
+
+    /* ── MAIN WRAPPER ───────────────────────────────────────── */
+    .mc-body{padding:1.25rem 1.5rem;position:relative;z-index:1;max-width:1600px;margin:0 auto}
+
+    /* ── KPI GRID ───────────────────────────────────────────── */
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:.75rem;
+      margin-bottom:1rem;
+    }
+    @media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:500px){.kpi-grid{grid-template-columns:repeat(1,1fr)}}
+
+    .kpi{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:1rem 1.1rem .9rem;
+      position:relative;overflow:hidden;
+      transition:transform .2s,border-color .2s;
+      animation:fadeInUp .35s ease both;
+    }
+    .kpi:hover{transform:translateY(-2px);border-color:var(--border2)}
+    .kpi-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:14px 14px 0 0}
+    .kpi-icon{position:absolute;bottom:.6rem;right:.9rem;font-size:1.6rem;opacity:.12}
+    .kpi-label{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+    .kpi-value{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;line-height:1;margin-bottom:.25rem}
+    .kpi-sub{font-size:.72rem;color:var(--muted)}
+
+    .kpi.indigo .kpi-accent{background:linear-gradient(90deg,var(--indigo),var(--indigo2))}
+    .kpi.indigo .kpi-value{color:var(--indigo2)}
+    .kpi.green  .kpi-accent{background:linear-gradient(90deg,var(--green),var(--green2))}
+    .kpi.green  .kpi-value{color:var(--green2)}
+    .kpi.teal   .kpi-accent{background:linear-gradient(90deg,var(--teal),var(--teal2))}
+    .kpi.teal   .kpi-value{color:var(--teal2)}
+    .kpi.orange .kpi-accent{background:linear-gradient(90deg,var(--orange),var(--orange2))}
+    .kpi.orange .kpi-value{color:var(--orange2)}
+    .kpi.blue   .kpi-accent{background:linear-gradient(90deg,var(--blue),var(--blue2))}
+    .kpi.blue   .kpi-value{color:var(--blue2)}
+    .kpi.purple .kpi-accent{background:linear-gradient(90deg,var(--purple),var(--purple2))}
+    .kpi.purple .kpi-value{color:var(--purple2)}
+    .kpi.red    .kpi-accent{background:linear-gradient(90deg,var(--red),var(--red2))}
+    .kpi.red    .kpi-value{color:var(--red2)}
+    .kpi.pink   .kpi-accent{background:linear-gradient(90deg,var(--pink),var(--pink2))}
+    .kpi.pink   .kpi-value{color:var(--pink2)}
+
+    /* ── MAIN GRID ──────────────────────────────────────────── */
+    .main-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:.75rem;
+      margin-bottom:1rem;
+    }
+    @media(max-width:1100px){.main-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:700px){.main-grid{grid-template-columns:1fr}}
+
+    .panel{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:1.1rem;
+      animation:fadeInUp .35s ease both;
+    }
+    .panel-title{
+      font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;
+      justify-content:space-between;gap:.5rem;
+    }
+    .panel-title-left{display:flex;align-items:center;gap:.5rem}
+    .panel-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+    /* ── ACTIVITY FEED ──────────────────────────────────────── */
+    .feed{display:flex;flex-direction:column;gap:.5rem;max-height:320px;overflow-y:auto}
+    .feed-item{
+      display:flex;align-items:flex-start;gap:.7rem;
+      padding:.55rem .7rem;border-radius:10px;
+      background:var(--surface2);border:1px solid var(--border);
+      transition:.15s;
+    }
+    .feed-item:hover{border-color:var(--border2);background:rgba(255,255,255,.06)}
+    .feed-avatar{
+      width:30px;height:30px;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      font-size:.8rem;font-weight:700;
+    }
+    .feed-body{flex:1;min-width:0}
+    .feed-name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .feed-meta{font-size:.7rem;color:var(--muted);margin-top:.1rem}
+    .feed-badge{
+      font-size:.62rem;font-weight:700;padding:.15rem .5rem;border-radius:20px;
+      flex-shrink:0;margin-top:.1rem;white-space:nowrap;
+    }
+    .badge-signup{background:rgba(99,102,241,.15);color:var(--indigo2);border:1px solid rgba(99,102,241,.2)}
+    .badge-paid{background:rgba(16,185,129,.15);color:var(--green2);border:1px solid rgba(16,185,129,.2)}
+    .badge-pending-pay{background:rgba(245,158,11,.15);color:var(--orange2);border:1px solid rgba(245,158,11,.2)}
+    .badge-failed{background:rgba(239,68,68,.15);color:var(--red2);border:1px solid rgba(239,68,68,.2)}
+    .badge-enquiry{background:rgba(59,130,246,.15);color:var(--blue2);border:1px solid rgba(59,130,246,.2)}
+
+    /* ── PAYMENT PIPELINE ───────────────────────────────────── */
+    .pay-rate{
+      text-align:center;margin-bottom:1rem;
+    }
+    .pay-rate-num{
+      font-family:'JetBrains Mono',monospace;
+      font-size:3rem;font-weight:700;
+      background:linear-gradient(135deg,var(--green2),var(--teal2));
+      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+      line-height:1;
+    }
+    .pay-rate-label{font-size:.7rem;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-top:.2rem}
+
+    .pay-stack{
+      height:10px;border-radius:99px;overflow:hidden;
+      display:flex;margin-bottom:1rem;gap:2px;
+    }
+    .pay-stack-seg{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+
+    .pay-rows{display:flex;flex-direction:column;gap:.55rem}
+    .pay-row{display:flex;align-items:center;gap:.7rem}
+    .pay-row-label{font-size:.75rem;color:var(--muted);width:70px;flex-shrink:0}
+    .pay-bar-wrap{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+    .pay-bar{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.4,0,.2,1);width:0}
+    .pay-row-val{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text);width:30px;text-align:right;flex-shrink:0}
+
+    /* ── COURSE BREAKDOWN ───────────────────────────────────── */
+    .course-rows{display:flex;flex-direction:column;gap:.8rem}
+    .course-row{}
+    .course-row-top{display:flex;justify-content:space-between;margin-bottom:.3rem}
+    .course-row-name{font-size:.76rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%}
+    .course-row-pct{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted)}
+    .course-bar-wrap{height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+    .course-bar{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.4,0,.2,1);width:0}
+
+    /* ── BOTTOM ROW ─────────────────────────────────────────── */
+    .bottom-row{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:.75rem;
+      align-items:start;
+    }
+    @media(max-width:700px){.bottom-row{grid-template-columns:1fr}}
+
+    /* ── QUICK COMMANDS ─────────────────────────────────────── */
+    .cmd-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+      gap:.6rem;
+    }
+    .cmd-btn{
+      display:flex;align-items:center;gap:.55rem;
+      padding:.75rem .9rem;border-radius:10px;
+      background:var(--surface2);border:1px solid var(--border);
+      color:var(--muted);font-size:.82rem;font-weight:600;
+      cursor:pointer;text-decoration:none;transition:.18s;
+      position:relative;overflow:hidden;
+    }
+    .cmd-btn::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,currentColor,transparent);
+      opacity:0;transition:.2s;
+    }
+    .cmd-btn:hover{color:var(--text);border-color:var(--border2);transform:translateY(-1px)}
+    .cmd-btn:hover::before{opacity:.04}
+    .cmd-btn .cmd-icon{font-size:1.1rem;flex-shrink:0}
+    .cmd-btn.primary{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.25);color:var(--indigo2)}
+    .cmd-btn.primary:hover{background:rgba(99,102,241,.18);border-color:rgba(99,102,241,.4)}
+
+    /* ── STATUS BAR ─────────────────────────────────────────── */
+    .status-bar{
+      display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;
+      padding:.6rem 0;margin-top:.25rem;
+      border-top:1px solid var(--border);
+      font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;
+    }
+    .status-item{display:flex;align-items:center;gap:.35rem}
+    .status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .status-dot.green{background:var(--green);box-shadow:0 0 6px var(--green)}
+    .status-dot.orange{background:var(--orange);box-shadow:0 0 6px var(--orange)}
+    .status-dot.red{background:var(--red);box-shadow:0 0 6px var(--red)}
+
+    .refresh-ring{
+      display:inline-flex;width:14px;height:14px;border-radius:50%;
+      border:2px solid rgba(255,255,255,.1);border-top-color:var(--indigo2);
+      animation:spin 1s linear infinite;display:none;
+    }
+    .refresh-ring.active{display:inline-flex}
+
+    /* ── SECTION SEPARATOR ──────────────────────────────────── */
+    .section-label{
+      font-size:.62rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+      color:rgba(99,102,241,.5);margin:.25rem 0 .75rem;display:flex;align-items:center;gap:.6rem;
+    }
+    .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+    /* ── LOADING ─────────────────────────────────────────────── */
+    .loading-pulse{
+      height:2rem;border-radius:6px;
+      background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);
+      background-size:200% 100%;
+      animation:shimmer 1.4s ease infinite;
+    }
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    .empty-feed{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.82rem}
+
+    /* ── MOBILE TWEAKS ───────────────────────────────────────── */
+    @media(max-width:600px){
+      .mc-header{padding:.6rem 1rem}
+      .mc-body{padding:1rem}
+      .mc-admin,.mc-title{display:none}
+      .kpi-value{font-size:1.5rem}
+      .pay-rate-num{font-size:2rem}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<header class="mc-header">
+  <div class="mc-brand">
+    <img class="mc-logo" src="logo.png" alt="Laxmi Academy"/>
+    <div>
+      <div class="mc-title">Laxmi Academy</div>
+      <div class="mc-name">Mission Control</div>
+    </div>
+  </div>
+
+  <div class="mc-status">
+    <div class="live-dot"><span></span></div>
+    <span class="live-txt">LIVE</span>
+  </div>
+
+  <div class="mc-right">
+    <div class="mc-clock">
+      <div class="mc-time" id="clock">--:--:--</div>
+      <div class="mc-date" id="date-str">Loading…</div>
+    </div>
+    <div class="mc-admin">Logged in as <strong id="admin-name">Admin</strong></div>
+    <a href="admin-dashboard.html" class="btn-back">⬅ Full Dashboard</a>
+  </div>
+</header>
+
+<!-- ══ ALERT BANNER ═════════════════════════════════════════════ -->
+<div class="alert-banner" id="alert-banner">
+  <span style="font-size:.85rem">⚠</span>
+  <strong>Action Required:</strong>
+  <span id="alert-items"></span>
+</div>
+
+<!-- ══ MAIN BODY ════════════════════════════════════════════════ -->
+<div class="mc-body">
+
+  <!-- Row 1: 4 KPIs -->
+  <div class="section-label">Academy Overview</div>
+  <div class="kpi-grid" style="margin-bottom:.75rem">
+    <div class="kpi indigo" style="animation-delay:.05s">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">Total Students</div>
+      <div class="kpi-value" id="k-total">—</div>
+      <div class="kpi-sub">All enrolled</div>
+      <div class="kpi-icon">👥</div>
+    </div>
+    <div class="kpi green" style="animation-delay:.1s">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">Active Students</div>
+      <div class="kpi-value" id="k-active">—</div>
+      <div class="kpi-sub">Access granted</div>
+      <div class="kpi-icon">✅</div>
+    </div>
+    <div class="kpi teal" style="animation-delay:.15s">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="k-revenue" style="font-size:1.4rem">—</div>
+      <div class="kpi-sub">Confirmed payments</div>
+      <div class="kpi-icon">💰</div>
+    </div>
+    <div class="kpi orange" style="animation-delay:.2s">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">Pending Payment</div>
+      <div class="kpi-value" id="k-pending">—</div>
+      <div class="kpi-sub">Awaiting payment</div>
+      <div class="kpi-icon">⏳</div>
+    </div>
+  </div>
+
+  <!-- Row 2: 4 KPIs -->
+  <div class="kpi-grid" style="margin-bottom:1.25rem">
+    <div class="kpi blue" style="animation-delay:.25s">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">Lessons Live</div>
+      <div class="kpi-value" id="k-lessons">—</div>
+      <div class="kpi-sub">Published content</div>
+      <div class="kpi-icon">🎬</div>
+    </div>
+    <div class="kpi purple" style="animation-delay:.3s">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">Instructors</div>
+      <div class="kpi-value" id="k-instructors">—</div>
+      <div class="kpi-sub">Active faculty</div>
+      <div class="kpi-icon">👨‍🏫</div>
+    </div>
+    <div class="kpi pink" style="animation-delay:.35s">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">Live Sessions</div>
+      <div class="kpi-value" id="k-sessions">—</div>
+      <div class="kpi-sub">Active logins</div>
+      <div class="kpi-icon">🔑</div>
+    </div>
+    <div class="kpi red" style="animation-delay:.4s">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">New Enquiries</div>
+      <div class="kpi-value" id="k-enq">—</div>
+      <div class="kpi-sub">Awaiting follow-up</div>
+      <div class="kpi-icon">📩</div>
+    </div>
+  </div>
+
+  <!-- 3-column main panels -->
+  <div class="section-label">Live Operations</div>
+  <div class="main-grid" style="margin-bottom:1.25rem">
+
+    <!-- Activity Feed -->
+    <div class="panel" style="animation-delay:.45s">
+      <div class="panel-title">
+        <div class="panel-title-left">
+          <div class="panel-dot" style="background:var(--indigo2);box-shadow:0 0 6px var(--indigo)"></div>
+          Activity Feed
+        </div>
+        <div class="refresh-ring active" id="feed-ring"></div>
+      </div>
+      <div class="feed" id="activity-feed">
+        <div class="loading-pulse" style="height:48px"></div>
+        <div class="loading-pulse" style="height:48px;opacity:.6"></div>
+        <div class="loading-pulse" style="height:48px;opacity:.3"></div>
+      </div>
+    </div>
+
+    <!-- Payment Pipeline -->
+    <div class="panel" style="animation-delay:.5s">
+      <div class="panel-title">
+        <div class="panel-title-left">
+          <div class="panel-dot" style="background:var(--green2);box-shadow:0 0 6px var(--green)"></div>
+          Payment Pipeline
+        </div>
+      </div>
+
+      <div class="pay-rate">
+        <div class="pay-rate-num" id="pay-rate">—</div>
+        <div class="pay-rate-label">conversion rate</div>
+      </div>
+
+      <div class="pay-stack" id="pay-stack">
+        <div class="pay-stack-seg" style="background:var(--green);width:0%;transition:width .8s" id="ps-paid"></div>
+        <div class="pay-stack-seg" style="background:var(--orange);width:0%;transition:width .8s" id="ps-pending"></div>
+        <div class="pay-stack-seg" style="background:var(--red);width:0%;transition:width .8s" id="ps-failed"></div>
+      </div>
+
+      <div class="pay-rows">
+        <div class="pay-row">
+          <div class="pay-row-label" style="color:var(--green2)">● Paid</div>
+          <div class="pay-bar-wrap"><div class="pay-bar" id="pb-paid" style="background:var(--green)"></div></div>
+          <div class="pay-row-val" id="pv-paid">—</div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-row-label" style="color:var(--orange2)">● Pending</div>
+          <div class="pay-bar-wrap"><div class="pay-bar" id="pb-pending" style="background:var(--orange)"></div></div>
+          <div class="pay-row-val" id="pv-pending">—</div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-row-label" style="color:var(--red2)">● Failed</div>
+          <div class="pay-bar-wrap"><div class="pay-bar" id="pb-failed" style="background:var(--red)"></div></div>
+          <div class="pay-row-val" id="pv-failed">—</div>
+        </div>
+        <div class="pay-row" style="margin-top:.5rem;border-top:1px solid var(--border);padding-top:.5rem">
+          <div class="pay-row-label" style="color:var(--muted)">Total txns</div>
+          <div class="pay-bar-wrap"></div>
+          <div class="pay-row-val" id="pv-total">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course Distribution -->
+    <div class="panel" style="animation-delay:.55s">
+      <div class="panel-title">
+        <div class="panel-title-left">
+          <div class="panel-dot" style="background:var(--purple2);box-shadow:0 0 6px var(--purple)"></div>
+          Course Distribution
+        </div>
+      </div>
+      <div class="course-rows" id="course-rows">
+        <div class="loading-pulse" style="height:36px"></div>
+        <div class="loading-pulse" style="height:36px;opacity:.6"></div>
+        <div class="loading-pulse" style="height:36px;opacity:.3"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom: Quick Commands -->
+  <div class="section-label">Quick Commands</div>
+  <div class="cmd-grid" style="margin-bottom:1rem">
+    <a href="admin-dashboard.html?page=students" class="cmd-btn">
+      <span class="cmd-icon">👥</span> Students
+    </a>
+    <a href="admin-dashboard.html?page=enquiries" class="cmd-btn">
+      <span class="cmd-icon">📩</span> Enquiries
+    </a>
+    <a href="admin-dashboard.html?page=payments" class="cmd-btn">
+      <span class="cmd-icon">💳</span> Payments
+    </a>
+    <a href="admin-dashboard.html?page=lessons" class="cmd-btn">
+      <span class="cmd-icon">🎬</span> Lessons
+    </a>
+    <a href="admin-dashboard.html?page=sessions" class="cmd-btn">
+      <span class="cmd-icon">🔑</span> Sessions
+    </a>
+    <a href="admin-dashboard.html?page=instructors" class="cmd-btn">
+      <span class="cmd-icon">👨‍🏫</span> Instructors
+    </a>
+    <a href="admin-dashboard.html" class="cmd-btn primary">
+      <span class="cmd-icon">📊</span> Full Dashboard
+    </a>
+    <a href="index.html" class="cmd-btn" target="_blank">
+      <span class="cmd-icon">🌐</span> View Website
+    </a>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="status-dot green" id="sd-server"></div>
+      <span id="sl-server">Server Online</span>
+    </div>
+    <div class="status-item">
+      <div class="status-dot green" id="sd-db"></div>
+      <span>Database OK</span>
+    </div>
+    <div class="status-item">
+      <div class="refresh-ring" id="bottom-ring"></div>
+      <span id="refresh-label">Last updated: —</span>
+    </div>
+    <div class="status-item" style="margin-left:auto">
+      <span id="next-refresh" style="color:var(--indigo2)">Refreshing in 30s</span>
+    </div>
+  </div>
+
+</div><!-- /mc-body -->
+
+<script>
+  const token = localStorage.getItem('la_token');
+  const role  = localStorage.getItem('la_role');
+  if (!token || role !== 'admin') window.location.href = 'login.html';
+
+  const user = JSON.parse(localStorage.getItem('la_user') || '{}');
+  document.getElementById('admin-name').textContent = user.name || user.full_name || 'Admin';
+
+  // ── Clock ────────────────────────────────────────────────────
+  function tickClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+    document.getElementById('date-str').textContent =
+      now.toLocaleDateString('en-IN', {weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // ── API helper ───────────────────────────────────────────────
+  const api = (url) =>
+    fetch(url, {headers:{'Authorization':'Bearer '+token}})
+      .then(r => r.ok ? r.json() : Promise.reject(r.status));
+
+  // ── Animated counter ─────────────────────────────────────────
+  function animCount(el, target, prefix='', suffix='') {
+    if (!el) return;
+    const n = parseInt(target);
+    if (isNaN(n)) { el.textContent = prefix + target + suffix; return; }
+    const dur = 700, start = Date.now();
+    const tick = () => {
+      const p = Math.min((Date.now()-start)/dur, 1);
+      const e = 1 - Math.pow(1-p, 3);
+      el.textContent = prefix + Math.round(e*n) + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // ── Format time ago ──────────────────────────────────────────
+  function timeAgo(ts) {
+    if (!ts) return '';
+    const d = new Date(ts.replace(' ','T')+'Z');
+    const s = Math.floor((Date.now() - d)/1000);
+    if (s < 60) return s+'s ago';
+    if (s < 3600) return Math.floor(s/60)+'m ago';
+    if (s < 86400) return Math.floor(s/3600)+'h ago';
+    return Math.floor(s/86400)+'d ago';
+  }
+
+  function escH(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Course colours ───────────────────────────────────────────
+  const COURSE_CLRS = ['#6366f1','#10b981','#f59e0b','#3b82f6','#8b5cf6','#ec4899','#14b8a6'];
+
+  // ── Load stats ───────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const d = await api('/api/admin/stats');
+
+      animCount(document.getElementById('k-total'),       d.total_students);
+      animCount(document.getElementById('k-active'),      d.active_students);
+      animCount(document.getElementById('k-revenue'),     Math.round(d.total_revenue||0), '₹');
+      animCount(document.getElementById('k-pending'),     d.pending_students||0);
+      animCount(document.getElementById('k-lessons'),     d.total_lessons);
+      animCount(document.getElementById('k-instructors'), d.total_instructors);
+      animCount(document.getElementById('k-sessions'),    d.active_sessions);
+      animCount(document.getElementById('k-enq'),         d.new_enquiries);
+
+      // Alerts
+      const alerts = [];
+      if ((d.new_enquiries||0) > 0) alerts.push(`<span class="alert-item">📩 ${d.new_enquiries} new enquir${d.new_enquiries===1?'y':'ies'}</span>`);
+      if ((d.pending_students||0) > 0) alerts.push(`<span class="alert-item">⏳ ${d.pending_students} payment${d.pending_students===1?'':'s'} pending</span>`);
+      if ((d.revoked_students||0) > 0) alerts.push(`<span class="alert-item">🚫 ${d.revoked_students} revoked student${d.revoked_students===1?'':'s'}</span>`);
+      const banner = document.getElementById('alert-banner');
+      if (alerts.length) {
+        document.getElementById('alert-items').innerHTML = alerts.join(' ');
+        banner.classList.add('show');
+      } else {
+        banner.classList.remove('show');
+      }
+
+      // Course breakdown
+      const courses = d.courses || [];
+      const total   = courses.reduce((a,c) => a+c.count, 0) || 1;
+      document.getElementById('course-rows').innerHTML = courses.length
+        ? courses.map((c,i) => `
+          <div class="course-row">
+            <div class="course-row-top">
+              <div class="course-row-name" style="color:${COURSE_CLRS[i%COURSE_CLRS.length]}">${escH(c.course||'Unknown')}</div>
+              <div class="course-row-pct">${c.count} · ${Math.round(c.count/total*100)}%</div>
+            </div>
+            <div class="course-bar-wrap">
+              <div class="course-bar" data-w="${Math.round(c.count/total*100)}%" style="background:${COURSE_CLRS[i%COURSE_CLRS.length]};width:0"></div>
+            </div>
+          </div>`).join('')
+        : '<div class="empty-feed">No course data yet</div>';
+
+      // Animate bars after render
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.course-bar').forEach(b => {
+          b.style.width = b.dataset.w;
+        });
+      });
+
+    } catch(e) {
+      console.error('Stats load failed', e);
+      document.getElementById('sd-server').className = 'status-dot red';
+      document.getElementById('sl-server').textContent = 'Server Offline';
+    }
+  }
+
+  // ── Load payments ────────────────────────────────────────────
+  async function loadPayments() {
+    try {
+      const rows = await api('/api/admin/payments');
+      const paid    = rows.filter(r => r.status==='paid').length;
+      const pending = rows.filter(r => r.status==='pending').length;
+      const failed  = rows.filter(r => r.status==='failed' || r.status==='PAYMENT_ERROR').length;
+      const total   = rows.length || 1;
+
+      const rate = total ? Math.round(paid/total*100) : 0;
+      document.getElementById('pay-rate').textContent = rate+'%';
+
+      document.getElementById('ps-paid').style.width    = (paid/total*100)+'%';
+      document.getElementById('ps-pending').style.width = (pending/total*100)+'%';
+      document.getElementById('ps-failed').style.width  = (failed/total*100)+'%';
+
+      const mx = Math.max(paid, pending, failed, 1);
+      document.getElementById('pb-paid').style.width    = (paid/mx*100)+'%';
+      document.getElementById('pb-pending').style.width = (pending/mx*100)+'%';
+      document.getElementById('pb-failed').style.width  = (failed/mx*100)+'%';
+
+      document.getElementById('pv-paid').textContent    = paid;
+      document.getElementById('pv-pending').textContent = pending;
+      document.getElementById('pv-failed').textContent  = failed;
+      document.getElementById('pv-total').textContent   = rows.length;
+    } catch(e) { console.error('Payments load failed', e); }
+  }
+
+  // ── Build activity feed ──────────────────────────────────────
+  async function loadActivity() {
+    try {
+      const [students, payments, enquiries] = await Promise.all([
+        api('/api/admin/students'),
+        api('/api/admin/payments'),
+        api('/api/admin/enquiries'),
+      ]);
+
+      const events = [];
+
+      (students||[]).slice(0,8).forEach(s => events.push({
+        type:'signup', ts:s.created_at,
+        name: s.full_name,
+        meta: s.course || 'Unknown course',
+        init: s.full_name.charAt(0).toUpperCase(),
+        color:'#6366f1',
+        badge:'signup', label:'Signup'
+      }));
+
+      (payments||[]).slice(0,8).forEach(p => {
+        const type = p.status==='paid' ? 'paid' : p.status==='failed' ? 'failed' : 'pending-pay';
+        const label = p.status==='paid' ? 'Paid' : p.status==='failed' ? 'Failed' : 'Pending';
+        events.push({
+          type, ts: p.created_at||p.updated_at,
+          name: p.full_name || 'Student',
+          meta: '₹' + (p.amount||0),
+          init: (p.full_name||'?').charAt(0).toUpperCase(),
+          color: p.status==='paid'?'#10b981':p.status==='failed'?'#ef4444':'#f59e0b',
+          badge: type, label
+        });
+      });
+
+      (enquiries||[]).slice(0,6).forEach(e => events.push({
+        type:'enquiry', ts:e.created_at,
+        name: e.full_name,
+        meta: e.course || e.phone || '',
+        init: e.full_name.charAt(0).toUpperCase(),
+        color:'#3b82f6',
+        badge:'enquiry', label:'Enquiry'
+      }));
+
+      // Sort by timestamp desc
+      events.sort((a,b) => new Date(b.ts||0) - new Date(a.ts||0));
+      const top = events.slice(0,12);
+
+      document.getElementById('feed-ring').classList.remove('active');
+      document.getElementById('activity-feed').innerHTML = top.length
+        ? top.map(e => `
+          <div class="feed-item">
+            <div class="feed-avatar" style="background:${e.color}22;color:${e.color};border:1px solid ${e.color}44">${escH(e.init)}</div>
+            <div class="feed-body">
+              <div class="feed-name">${escH(e.name)}</div>
+              <div class="feed-meta">${escH(e.meta)} · ${timeAgo(e.ts)}</div>
+            </div>
+            <div class="feed-badge badge-${e.badge}">${e.label}</div>
+          </div>`).join('')
+        : '<div class="empty-feed">No recent activity</div>';
+
+    } catch(ex) { console.error('Activity load failed', ex); }
+  }
+
+  // ── Refresh cycle ────────────────────────────────────────────
+  let countdown = 30;
+  let refreshTimer;
+
+  function updateCountdown() {
+    document.getElementById('next-refresh').textContent =
+      countdown > 0 ? `Refreshing in ${countdown}s` : 'Refreshing…';
+    countdown--;
+    if (countdown < 0) {
+      countdown = 30;
+      refresh();
+    }
+  }
+
+  async function refresh() {
+    document.getElementById('bottom-ring').classList.add('active');
+    document.getElementById('feed-ring').classList.add('active');
+    await Promise.all([loadStats(), loadPayments(), loadActivity()]);
+    const now = new Date();
+    document.getElementById('refresh-label').textContent =
+      'Last updated: ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('bottom-ring').classList.remove('active');
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  refresh();
+  setInterval(updateCountdown, 1000);
+</script>
+</body>
+</html>

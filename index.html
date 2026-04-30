@@ -800,6 +800,10 @@
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     });
+    // Auto-reload when a new service worker takes control (delivers new JS/HTML)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
   }
 
   // ── PWA: Install banner ──

@@ -2340,6 +2340,14 @@
   loadOverview();
   const _initPage = new URLSearchParams(window.location.search).get('page');
   if (_initPage && _initPage !== 'overview') showPage(_initPage);
+
+  // Register SW + auto-reload when new version deploys
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }
 </script>
 </body>
 </html>

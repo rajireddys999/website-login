@@ -15,18 +15,6 @@ CORS(app)
 
 limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[])
 
-@app.errorhandler(Exception)
-def handle_exception(e):
-    app.logger.error("Unhandled exception: %s", e, exc_info=True)
-    return jsonify({'error': 'Internal server error. Please try again.'}), 500
-
-@app.errorhandler(404)
-def handle_404(e):
-    # Only return JSON for /api/ paths; let static files 404 normally
-    if request.path.startswith('/api/'):
-        return jsonify({'error': 'Not found.'}), 404
-    return send_from_directory('.', '404.html') if os.path.exists('404.html') else ('Not found', 404)
-
 # ── Email config ─────────────────────────────────────────────────
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
@@ -1425,55 +1413,67 @@ def add_student_enrollment(sid):
     if not course:
         return jsonify({'error': 'course is required.'}), 400
 
-    conn = get_conn()
-    # Check student exists
-    student = conn.execute("SELECT id, course FROM students WHERE id=?", (sid,)).fetchone()
-    if not student:
-        conn.close(); return jsonify({'error': 'Student not found.'}), 404
+    conn = None
+    try:
+        conn = get_conn()
+        student = conn.execute("SELECT id, course FROM students WHERE id=?", (sid,)).fetchone()
+        if not student:
+            return jsonify({'error': 'Student not found.'}), 404
 
-    # Block duplicate active enrollment for the same course
-    dup = conn.execute(
-        "SELECT id FROM course_enrollments WHERE student_id=? AND course=? AND status='active'",
-        (sid, course)
-    ).fetchone()
-    if dup:
-        conn.close()
-        return jsonify({'error': f'Student is already actively enrolled in {course}. Remove or deactivate the existing enrollment first.'}), 409
-
-    # Auto-fill amount from pricing table if not provided or zero
-    if raw_amt is None or int(raw_amt or 0) == 0:
-        pricing = conn.execute(
-            "SELECT amount FROM course_pricing WHERE course=? AND plan=?", (course, plan)
+        dup = conn.execute(
+            "SELECT id FROM course_enrollments WHERE student_id=? AND course=? AND status='active'",
+            (sid, course)
         ).fetchone()
-        amount = pricing['amount'] if pricing else 99
-    else:
-        amount = int(raw_amt)
+        if dup:
+            return jsonify({'error': f'Already enrolled in {course}. Deactivate existing first.'}), 409
 
-    cur = conn.execute(
-        "INSERT INTO course_enrollments (student_id, course, plan, amount) VALUES (?,?,?,?)",
-        (sid, course, plan, amount)
-    )
-    eid = cur.lastrowid
+        # Auto-fill amount from pricing table if not provided or zero
+        try:
+            parsed_amt = int(raw_amt) if raw_amt is not None else 0
+        except (TypeError, ValueError):
+            parsed_amt = 0
 
-    # Sync students.course to this new enrollment if it's their first
-    existing_count = conn.execute(
-        "SELECT COUNT(*) FROM course_enrollments WHERE student_id=?", (sid,)
-    ).fetchone()[0]
-    if existing_count == 1:
-        conn.execute("UPDATE students SET course=?, plan=? WHERE id=?", (course, plan, sid))
+        if parsed_amt == 0:
+            pricing = conn.execute(
+                "SELECT amount FROM course_pricing WHERE course=? AND plan=?", (course, plan)
+            ).fetchone()
+            amount = pricing['amount'] if pricing else 99
+        else:
+            amount = parsed_amt
 
-    # Record payment entry for this new enrollment only (not re-charging existing courses)
-    txn_id = f"ADM-{sid}-{secrets.token_hex(6).upper()}"
-    conn.execute(
-        "INSERT INTO payments (student_id, merchant_transaction_id, amount, status) VALUES (?,?,?,?)",
-        (sid, txn_id, amount, 'paid')
-    )
-    # Mark student payment_status as paid since admin is manually adding this enrollment
-    conn.execute("UPDATE students SET payment_status='paid' WHERE id=?", (sid,))
-    conn.commit()
-    row = conn.execute("SELECT * FROM course_enrollments WHERE id=?", (eid,)).fetchone()
-    conn.close()
-    return jsonify(dict(row)), 201
+        cur = conn.execute(
+            "INSERT INTO course_enrollments (student_id, course, plan, amount) VALUES (?,?,?,?)",
+            (sid, course, plan, amount)
+        )
+        eid = cur.lastrowid
+
+        # Only update students.course if this is their very first enrollment
+        existing_count = conn.execute(
+            "SELECT COUNT(*) FROM course_enrollments WHERE student_id=?", (sid,)
+        ).fetchone()[0]
+        if existing_count == 1:
+            conn.execute("UPDATE students SET course=?, plan=? WHERE id=?", (course, plan, sid))
+
+        # Payment record for this new course only
+        txn_id = f"ADM-{sid}-{secrets.token_hex(8).upper()}"
+        conn.execute(
+            "INSERT INTO payments (student_id, merchant_transaction_id, amount, status) VALUES (?,?,?,?)",
+            (sid, txn_id, amount, 'paid')
+        )
+        conn.execute("UPDATE students SET payment_status='paid' WHERE id=?", (sid,))
+        conn.commit()
+        row = conn.execute("SELECT * FROM course_enrollments WHERE id=?", (eid,)).fetchone()
+        return jsonify(dict(row)), 201
+    except Exception as exc:
+        app.logger.error("add_student_enrollment error: %s", exc, exc_info=True)
+        if conn:
+            try: conn.rollback()
+            except Exception: pass
+        return jsonify({'error': f'Server error: {str(exc)}'}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
 
 @app.route('/api/admin/enrollments/<int:eid>', methods=['PATCH'])
 def update_enrollment(eid):
@@ -2118,8 +2118,8 @@ if __name__ == '__main__':
     instructor_count = conn.execute("SELECT COUNT(*) FROM instructors").fetchone()[0]
     conn.close()
 
-    if student_count == 0 or admin_count == 0 or instructor_count == 0:
-        print("  Empty database detected — running seed...")
+    if os.environ.get('SEED_DB', '').lower() == 'true':
+        print("  SEED_DB=true — running seed...")
         import seed
         seed.seed()
 

@@ -1,4 +1,4 @@
-const CACHE = 'laxmi-academy-v6';
+const CACHE = 'laxmi-academy-v7';
 
 const PRECACHE = [
   '/',

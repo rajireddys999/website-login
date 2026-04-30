@@ -1430,9 +1430,22 @@
     document.getElementById('es-submit-btn').textContent = 'Save Basic Info';
     document.getElementById('edit-student-modal').classList.add('show');
 
-    // Load pricing and enrollments in parallel
+    // Show immediate placeholder from already-loaded student data so the modal
+    // doesn't look empty while the detailed fetch is in flight
+    const immediateList = (s.enrolled_courses || s.course || '').split(' | ').filter(Boolean);
+    const list = document.getElementById('es-enrollments-list');
+    if (immediateList.length) {
+      list.innerHTML = immediateList.map(c =>
+        `<div style="display:flex;align-items:center;gap:.6rem;padding:.55rem .8rem;background:var(--surface);border:1px solid var(--border);border-radius:9px;opacity:.6">
+          <div style="flex:1;font-weight:700;font-size:.82rem">${escHtml(c)}</div>
+          <span style="font-size:.72rem;color:var(--muted)">Loading details…</span>
+        </div>`).join('');
+    }
+
+    // Fetch full enrollment details (with IDs, amounts, status controls)
     const tok = localStorage.getItem('la_token');
     const hdr = {'Authorization':'Bearer '+tok,'Content-Type':'application/json'};
+    let fetchError = false;
     try {
       const [pricingResp, enrResp] = await Promise.all([
         fetch('/api/admin/course-pricing', {headers:hdr}),
@@ -1442,18 +1455,21 @@
       if (enrResp.ok) {
         esEnrollments = await enrResp.json();
       } else {
+        fetchError = true;
         esEnrollments = [];
-        const errTxt = await enrResp.text().catch(()=>'');
-        document.getElementById('es-enrollments-list').innerHTML =
-          `<div style="color:#f87171;font-size:.8rem;text-align:center;padding:.6rem">Failed to load enrollments (${enrResp.status}). ${errTxt.slice(0,80)}</div>`;
+        list.innerHTML = `<div style="color:#f87171;font-size:.8rem;text-align:center;padding:.6rem">
+          Failed to load enrollment details (${enrResp.status}).
+          <button onclick="openEditStudent(${id})" style="margin-left:.5rem;font-size:.75rem;color:#818cf8;background:none;border:none;cursor:pointer;text-decoration:underline">Retry</button></div>`;
       }
     } catch(e) {
+      fetchError = true;
       esEnrollments = [];
       coursePricing = [];
-      document.getElementById('es-enrollments-list').innerHTML =
-        '<div style="color:#f87171;font-size:.8rem;text-align:center;padding:.6rem">Network error loading enrollments. Check server connection.</div>';
+      list.innerHTML = `<div style="color:#f87171;font-size:.8rem;text-align:center;padding:.6rem">
+        Network error — server may be starting up.
+        <button onclick="openEditStudent(${id})" style="margin-left:.5rem;font-size:.75rem;color:#818cf8;background:none;border:none;cursor:pointer;text-decoration:underline">Retry</button></div>`;
     }
-    renderEnrollments();
+    if (!fetchError) renderEnrollments();
     autoFillPrice();
   }
 
@@ -1541,7 +1557,7 @@
         document.getElementById('es-new-amount').value  = '';
         renderEnrollments();
         showToast('Course added');
-        loadStudents();
+        await loadStudents();
       } else {
         errEl.textContent = d.error || 'Failed to add enrollment.'; errEl.style.display = 'block';
       }
@@ -1562,7 +1578,7 @@
       esEnrollments = esEnrollments.filter(e=>e.id!==eid);
       renderEnrollments();
       showToast('Enrollment removed');
-      loadStudents();
+      await loadStudents();
     }
   }
 
@@ -1604,7 +1620,7 @@
       });
       const d = await r.json();
       if (r.ok) {
-        closeEditStudent(); showToast('Student updated'); loadStudents();
+        closeEditStudent(); showToast('Student updated'); await loadStudents();
       } else {
         errEl.textContent = d.error || 'Update failed'; errEl.style.display = 'block';
         btn.disabled = false; btn.textContent = 'Save Basic Info';

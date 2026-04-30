@@ -1557,7 +1557,15 @@
         document.getElementById('es-new-amount').value  = '';
         renderEnrollments();
         showToast('Course added');
-        await loadStudents();
+        // Update in-memory immediately so table refreshes without waiting
+        const idx = allStudents.findIndex(s => s.id === editStudentId);
+        if (idx >= 0) {
+          const existing = (allStudents[idx].enrolled_courses || allStudents[idx].course || '').split(' | ').filter(Boolean);
+          if (!existing.includes(course)) existing.push(course);
+          allStudents[idx].enrolled_courses = existing.join(' | ');
+          filterStudents();
+        }
+        loadStudents(); // background sync
       } else {
         errEl.textContent = d.error || 'Failed to add enrollment.'; errEl.style.display = 'block';
       }
@@ -1575,10 +1583,18 @@
       headers:{'Authorization':'Bearer '+localStorage.getItem('la_token')}
     });
     if (r.ok) {
+      const removedCourse = (esEnrollments.find(e=>e.id===eid)||{}).course;
       esEnrollments = esEnrollments.filter(e=>e.id!==eid);
       renderEnrollments();
       showToast('Enrollment removed');
-      await loadStudents();
+      // Update in-memory immediately
+      const idx = allStudents.findIndex(s => s.id === editStudentId);
+      if (idx >= 0 && removedCourse) {
+        const existing = (allStudents[idx].enrolled_courses || allStudents[idx].course || '').split(' | ').filter(c => c && c !== removedCourse);
+        allStudents[idx].enrolled_courses = existing.join(' | ');
+        filterStudents();
+      }
+      loadStudents(); // background sync
     }
   }
 
@@ -1620,7 +1636,18 @@
       });
       const d = await r.json();
       if (r.ok) {
-        closeEditStudent(); showToast('Student updated'); await loadStudents();
+        // Update in-memory immediately so table refreshes without waiting for server
+        const idx = allStudents.findIndex(s => s.id === editStudentId);
+        if (idx >= 0) {
+          allStudents[idx].full_name      = document.getElementById('es-name').value.trim();
+          allStudents[idx].phone          = document.getElementById('es-phone').value.trim();
+          allStudents[idx].payment_status = document.getElementById('es-payment').value;
+          allStudents[idx].is_active      = document.getElementById('es-active').value === '1' ? 1 : 0;
+        }
+        closeEditStudent();
+        filterStudents();
+        showToast('Student updated');
+        loadStudents(); // background sync
       } else {
         errEl.textContent = d.error || 'Update failed'; errEl.style.display = 'block';
         btn.disabled = false; btn.textContent = 'Save Basic Info';

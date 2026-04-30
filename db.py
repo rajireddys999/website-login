@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import bcrypt
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'laxmi_academy.db')
 
@@ -103,9 +104,20 @@ def init_db():
     _migrate_password_resets(conn)
     _migrate_lesson_progress(conn)
     _migrate_enrollments(conn)
+    _seed_default_admin(conn)
     conn.commit()
     conn.close()
     print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing")
+
+def _seed_default_admin(conn):
+    existing = conn.execute("SELECT id FROM admins WHERE email='admin@laxmiacademy.com'").fetchone()
+    if not existing:
+        hashed = bcrypt.hashpw(b'Admin@123', bcrypt.gensalt()).decode()
+        conn.execute(
+            "INSERT INTO admins (name, email, password) VALUES ('Admin','admin@laxmiacademy.com',?)",
+            (hashed,)
+        )
+        print("  [OK] Default admin account seeded (admin@laxmiacademy.com / Admin@123)")
 
 def _migrate_payment_status(conn):
     cols = [r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()]

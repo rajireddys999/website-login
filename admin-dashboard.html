@@ -1432,12 +1432,26 @@
     // Load pricing and enrollments in parallel
     const tok = localStorage.getItem('la_token');
     const hdr = {'Authorization':'Bearer '+tok,'Content-Type':'application/json'};
-    const [pricingResp, enrResp] = await Promise.all([
-      fetch('/api/admin/course-pricing', {headers:hdr}),
-      fetch(`/api/admin/students/${id}/enrollments`, {headers:hdr})
-    ]);
-    coursePricing  = pricingResp.ok ? await pricingResp.json() : [];
-    esEnrollments  = enrResp.ok ? await enrResp.json() : [];
+    try {
+      const [pricingResp, enrResp] = await Promise.all([
+        fetch('/api/admin/course-pricing', {headers:hdr}),
+        fetch(`/api/admin/students/${id}/enrollments`, {headers:hdr})
+      ]);
+      coursePricing = pricingResp.ok ? await pricingResp.json() : [];
+      if (enrResp.ok) {
+        esEnrollments = await enrResp.json();
+      } else {
+        esEnrollments = [];
+        const errTxt = await enrResp.text().catch(()=>'');
+        document.getElementById('es-enrollments-list').innerHTML =
+          `<div style="color:#f87171;font-size:.8rem;text-align:center;padding:.6rem">Failed to load enrollments (${enrResp.status}). ${errTxt.slice(0,80)}</div>`;
+      }
+    } catch(e) {
+      esEnrollments = [];
+      coursePricing = [];
+      document.getElementById('es-enrollments-list').innerHTML =
+        '<div style="color:#f87171;font-size:.8rem;text-align:center;padding:.6rem">Network error loading enrollments. Check server connection.</div>';
+    }
     renderEnrollments();
     autoFillPrice();
   }
@@ -1494,21 +1508,29 @@
     if (!course) { errEl.textContent='Please select a course.'; errEl.style.display='block'; return; }
     errEl.style.display = 'none';
 
-    const r = await fetch(`/api/admin/students/${editStudentId}/enrollments`, {
-      method:'POST',
-      headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
-      body: JSON.stringify({course, plan, amount})
-    });
-    const d = await r.json();
-    if (r.ok) {
-      esEnrollments.unshift(d);
-      document.getElementById('es-new-course').value  = '';
-      document.getElementById('es-new-amount').value  = '';
-      renderEnrollments();
-      showToast('Course added');
-      loadStudents();
-    } else {
-      errEl.textContent = d.error || 'Failed to add'; errEl.style.display = 'block';
+    const addBtn = document.querySelector('#edit-student-modal button[onclick="addEnrollment()"]');
+    if (addBtn) { addBtn.disabled = true; addBtn.textContent = 'Adding…'; }
+    try {
+      const r = await fetch(`/api/admin/students/${editStudentId}/enrollments`, {
+        method:'POST',
+        headers:{'Authorization':'Bearer '+localStorage.getItem('la_token'),'Content-Type':'application/json'},
+        body: JSON.stringify({course, plan, amount})
+      });
+      const d = await r.json();
+      if (r.ok) {
+        esEnrollments.unshift(d);
+        document.getElementById('es-new-course').value  = '';
+        document.getElementById('es-new-amount').value  = '';
+        renderEnrollments();
+        showToast('Course added');
+        loadStudents();
+      } else {
+        errEl.textContent = d.error || 'Failed to add enrollment.'; errEl.style.display = 'block';
+      }
+    } catch(e) {
+      errEl.textContent = 'Network error. Is the server running?'; errEl.style.display = 'block';
+    } finally {
+      if (addBtn) { addBtn.disabled = false; addBtn.textContent = '+ Add'; }
     }
   }
 

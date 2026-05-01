@@ -1,5 +1,6 @@
 import os, re, bcrypt
-import psycopg2, psycopg2.extras
+import psycopg
+from psycopg.rows import dict_row
 
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 
@@ -79,7 +80,7 @@ class PGConn:
     def executemany(self, sql, params_list):
         sql = self._adapt(sql)
         cur = self._conn.cursor()
-        psycopg2.extras.execute_batch(cur, sql, list(params_list))
+        cur.executemany(sql, list(params_list))
         return _Cursor(cur)
 
     def executescript(self, sql):
@@ -104,7 +105,7 @@ class PGConn:
 
 
 def get_conn():
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     return PGConn(conn)
 
 

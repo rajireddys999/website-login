@@ -727,7 +727,7 @@ def admin_students():
         rows = conn.execute("""
             SELECT s.id, s.full_name, s.email, s.phone, s.course, s.plan,
                    s.is_active, s.payment_status, s.created_at,
-                   GROUP_CONCAT(DISTINCT ce.course) as enrolled_courses,
+                   STRING_AGG(DISTINCT ce.course, ' | ') as enrolled_courses,
                    COALESCE((SELECT SUM(amount) FROM payments
                              WHERE student_id=s.id AND status='paid'), 0)    as paid_amount,
                    COALESCE((SELECT SUM(amount) FROM payments

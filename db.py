@@ -118,6 +118,7 @@ def get_conn():
         password=unquote(p.password or ''),
         dbname=(p.path or '/postgres').lstrip('/') or 'postgres',
         sslmode='require',
+        prepare_threshold=None,   # required for transaction-mode pooler
         row_factory=dict_row,
     )
     return PGConn(conn)

@@ -3,7 +3,7 @@ services:
     name: laxmi-academy-api
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT server:app
+    startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT server:app
     healthCheckPath: /health
     plan: free
     envVars:

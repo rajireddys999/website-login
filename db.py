@@ -59,6 +59,9 @@ class PGConn:
         self._conn = conn
 
     def _adapt(self, sql):
+        # Escape literal % first (LIKE wildcards etc.) so psycopg3 doesn't
+        # treat them as parameter placeholders. Must happen before ?→%s.
+        sql = sql.replace('%', '%%')
         for old, new in self._SUBS:
             sql = sql.replace(old, new)
         if _OR_IGN.search(sql):

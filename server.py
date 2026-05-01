@@ -728,13 +728,15 @@ def admin_students():
     conn = get_conn()
 
     if page_param is None:
-        # Backward-compatible: return plain list with all active enrolled courses
         rows = conn.execute("""
             SELECT s.id, s.full_name, s.email, s.phone, s.course, s.plan,
                    s.is_active, s.payment_status, s.created_at,
-                   GROUP_CONCAT(ce.course, ' | ') as enrolled_courses
+                   GROUP_CONCAT(DISTINCT ce.course) as enrolled_courses,
+                   COALESCE(SUM(CASE WHEN p.status='paid'    THEN p.amount ELSE 0 END), 0) as paid_amount,
+                   COALESCE(SUM(CASE WHEN p.status='pending' THEN p.amount ELSE 0 END), 0) as due_amount
             FROM students s
             LEFT JOIN course_enrollments ce ON ce.student_id = s.id AND ce.status = 'active'
+            LEFT JOIN payments p ON p.student_id = s.id
             GROUP BY s.id
             ORDER BY s.created_at DESC
         """).fetchall()
@@ -1544,9 +1546,19 @@ def get_student_enrollments(sid):
     session, err, code = require_role('admin')
     if err: return err, code
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT * FROM course_enrollments WHERE student_id=? ORDER BY enrolled_at DESC", (sid,)
-    ).fetchall()
+    rows = conn.execute("""
+        SELECT ce.*,
+               p.status  AS pay_status,
+               p.amount  AS pay_amount,
+               p.id      AS payment_id
+        FROM course_enrollments ce
+        LEFT JOIN payments p ON p.student_id = ce.student_id
+                             AND p.merchant_transaction_id LIKE 'ADM-' || ce.student_id || '-%'
+                             AND p.amount = ce.amount
+        WHERE ce.student_id = ?
+        GROUP BY ce.id
+        ORDER BY ce.enrolled_at DESC
+    """, (sid,)).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
 
@@ -1602,13 +1614,18 @@ def add_student_enrollment(sid):
         if existing_count == 1:
             conn.execute("UPDATE students SET course=?, plan=? WHERE id=?", (course, plan, sid))
 
-        # Payment record for this new course only
+        # New admin-added course is pending until student actually pays
         txn_id = f"ADM-{sid}-{secrets.token_hex(8).upper()}"
         conn.execute(
             "INSERT INTO payments (student_id, merchant_transaction_id, amount, status) VALUES (?,?,?,?)",
-            (sid, txn_id, amount, 'paid')
+            (sid, txn_id, amount, 'pending')
         )
-        conn.execute("UPDATE students SET payment_status='paid' WHERE id=?", (sid,))
+        # Recalculate payment_status from actual payment records
+        has_pending = conn.execute(
+            "SELECT COUNT(*) FROM payments WHERE student_id=? AND status='pending'", (sid,)
+        ).fetchone()[0]
+        new_pay_status = 'pending' if has_pending else 'paid'
+        conn.execute("UPDATE students SET payment_status=? WHERE id=?", (new_pay_status, sid))
         conn.commit()
         row = conn.execute("SELECT * FROM course_enrollments WHERE id=?", (eid,)).fetchone()
         return jsonify(dict(row)), 201

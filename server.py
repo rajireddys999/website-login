@@ -16,7 +16,18 @@ CORS(app)
 limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[])
 
 # Always init DB — runs under both `python server.py` and gunicorn
-init_db()
+try:
+    import sys
+    db_path = os.environ.get('DATABASE_PATH', 'laxmi_academy.db')
+    db_dir  = os.path.dirname(db_path)
+    if db_dir and not os.path.exists(db_dir):
+        print(f"[WARN] DB directory '{db_dir}' does not exist — check Render disk mount", file=sys.stderr)
+    init_db()
+    print(f"[OK] Database ready: {db_path}", file=sys.stderr)
+except Exception as _init_err:
+    import sys, traceback
+    print(f"[FATAL] init_db() failed: {_init_err}", file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
 
 # ── Email config ─────────────────────────────────────────────────
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')

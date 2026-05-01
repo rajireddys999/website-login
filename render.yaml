@@ -5,8 +5,14 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT server:app
     healthCheckPath: /health
-    plan: free
+    plan: starter
+    disk:
+      name: laxmi-db
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
+      - key: DATABASE_PATH
+        value: /var/data/laxmi_academy.db
       - key: FLASK_ENV
         value: production
       - key: APP_BASE_URL

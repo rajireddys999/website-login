@@ -1545,12 +1545,12 @@ def get_student_enrollments(sid):
     conn = get_conn()
     rows = conn.execute("""
         SELECT ce.*,
-               p.status  AS pay_status,
-               p.amount  AS pay_amount,
-               p.id      AS payment_id
+               MAX(p.status) AS pay_status,
+               MAX(p.amount) AS pay_amount,
+               MAX(p.id)     AS payment_id
         FROM course_enrollments ce
         LEFT JOIN payments p ON p.student_id = ce.student_id
-                             AND p.merchant_transaction_id LIKE 'ADM-' || ce.student_id || '-%'
+                             AND p.merchant_transaction_id LIKE 'ADM-' || ce.student_id::text || '-%'
                              AND p.amount = ce.amount
         WHERE ce.student_id = ?
         GROUP BY ce.id

@@ -6,13 +6,9 @@ services:
     startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT server:app
     healthCheckPath: /health
     plan: starter
-    disk:
-      name: laxmi-db
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
-      - key: DATABASE_PATH
-        value: /var/data/laxmi_academy.db
+      - key: DATABASE_URL
+        sync: false
       - key: FLASK_ENV
         value: production
       - key: APP_BASE_URL

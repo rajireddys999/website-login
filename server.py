@@ -177,7 +177,7 @@ def login():
     if not user or not bcrypt.checkpw(password.encode(), user['password'].encode()):
         return jsonify({'error': 'Invalid credentials. Please check and try again.'}), 401
 
-    if role == 'student' and not user.get('email_verified', 1):
+    if role == 'student' and not dict(user).get('email_verified', 1):
         return jsonify({'error': 'Please verify your email before logging in. Check your inbox for the verification link.', 'email_unverified': True}), 403
 
     token = create_session(user['id'], role)
@@ -222,7 +222,7 @@ def register():
 
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     cursor = conn.execute(
-        "INSERT INTO students (full_name, email, phone, password, course, plan, is_active, payment_status, email_verified) VALUES (?, ?, ?, ?, ?, ?, 0, 'pending', 0)",
+        "INSERT INTO students (full_name, email, phone, password, course, plan, is_active, payment_status, email_verified) VALUES (?, ?, ?, ?, ?, ?, 1, 'pending', 1)",
         (full_name, email, phone, hashed, course, plan)
     )
     conn.commit()

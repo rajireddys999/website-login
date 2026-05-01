@@ -681,9 +681,12 @@
           <button type="submit" class="btn-submit" id="submit-btn">Sign In</button>
         </form>
 
-        <div class="divider">or</div>
-        <div class="signup-row">
+        <div class="divider" id="signup-divider">or</div>
+        <div class="signup-row" id="signup-row">
           New here? <a href="signup.html">Create an account →</a>
+        </div>
+        <div class="signup-row" id="admin-note" style="display:none">
+          Instructor accounts are created by admin from Mission Control.
         </div>
       </div>
 
@@ -781,6 +784,11 @@
       document.getElementById('email').value    = '';
       document.getElementById('password').value = '';
       hideError();
+      // Signup row: only show for students
+      const isStudent = role === 'student';
+      document.getElementById('signup-divider').style.display = isStudent ? '' : 'none';
+      document.getElementById('signup-row').style.display     = isStudent ? '' : 'none';
+      document.getElementById('admin-note').style.display     = (role === 'admin' || role === 'instructor') ? '' : 'none';
     }
 
     function togglePassword() {

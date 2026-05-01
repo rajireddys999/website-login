@@ -105,7 +105,21 @@ class PGConn:
 
 
 def get_conn():
-    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
+    from urllib.parse import urlparse, unquote
+    url = DATABASE_URL
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set")
+    p = urlparse(url)
+    # Pass params individually so special chars in password need no URL-encoding
+    conn = psycopg.connect(
+        host=p.hostname,
+        port=p.port or 5432,
+        user=unquote(p.username or ''),
+        password=unquote(p.password or ''),
+        dbname=(p.path or '/postgres').lstrip('/') or 'postgres',
+        sslmode='require',
+        row_factory=dict_row,
+    )
     return PGConn(conn)
 
 

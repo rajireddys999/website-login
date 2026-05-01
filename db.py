@@ -302,7 +302,7 @@ def _migrate_enrollments(conn):
         )
         print("  [OK] Default course pricing seeded")
     else:
-        # Sync 6-Month to ₹99 and restore 1-Month to original prices
+        # Sync 6-Month to Rs.99 and restore 1-Month to original prices
         conn.executescript("""
             UPDATE course_pricing SET amount = 99  WHERE plan = '6 Months';
             UPDATE course_pricing SET amount = 198 WHERE plan = '12 Months';
@@ -311,7 +311,7 @@ def _migrate_enrollments(conn):
             UPDATE course_pricing SET amount = 3500 WHERE plan = '1 Month' AND course = 'JEE Advanced';
             UPDATE course_pricing SET amount = 2000 WHERE plan = '1 Month' AND course IN ('Class 11 Physics','Class 12 Physics');
         """)
-        print("  [OK] 6-Month=₹99, 12-Month=₹198 pricing synced")
+        print("  [OK] 6-Month=Rs.99, 12-Month=Rs.198 pricing synced")
 
     # Migrate existing students into course_enrollments if not already there
     students = conn.execute("SELECT id, course, plan FROM students").fetchall()

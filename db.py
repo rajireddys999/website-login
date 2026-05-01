@@ -107,6 +107,7 @@ def init_db():
     _migrate_enrollments(conn)
     _migrate_invoice_numbers(conn)
     _seed_default_admin(conn)
+    _sync_payment_status(conn)
     conn.commit()
     conn.close()
     print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing")
@@ -122,6 +123,23 @@ def _migrate_invoice_numbers(conn):
             inv = f"INV-{ym}-{r['id']:04d}"
             conn.execute("UPDATE payments SET invoice_number=? WHERE id=?", (inv, r['id']))
         print("  [OK] payments.invoice_number column added")
+
+def _sync_payment_status(conn):
+    """Recalculate students.payment_status from actual payment records on every startup."""
+    conn.executescript("""
+        UPDATE students
+        SET payment_status = CASE
+            WHEN EXISTS (
+                SELECT 1 FROM payments
+                WHERE student_id = students.id AND status = 'pending'
+            ) THEN 'pending'
+            WHEN EXISTS (
+                SELECT 1 FROM payments
+                WHERE student_id = students.id AND status = 'paid'
+            ) THEN 'paid'
+            ELSE payment_status
+        END;
+    """)
 
 def _seed_default_admin(conn):
     existing = conn.execute("SELECT id FROM admins WHERE email='admin@laxmiacademy.com'").fetchone()

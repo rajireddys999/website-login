@@ -1217,6 +1217,7 @@ def admin_payment_status(pid):
 @app.route('/api/invoice/<int:payment_id>', methods=['GET'])
 def download_invoice(payment_id):
     from fpdf import FPDF
+    from fpdf.enums import XPos, YPos
     # Accept token from query param so plain <a href> links work in browser tabs
     qtoken = request.args.get('token', '').strip()
     if qtoken:
@@ -1236,14 +1237,23 @@ def download_invoice(payment_id):
     if not row:
         return jsonify({'error': 'Payment not found.'}), 404
 
-    # Students can only download their own invoices
     if session_data['role'] == 'student' and row['student_id'] != session_data['user_id']:
         return jsonify({'error': 'Access denied.'}), 403
 
     p = dict(row)
-    inv_num = p.get('invoice_number') or f"INV-{(p['created_at'] or '2026-01')[:7].replace('-','')}-{payment_id:04d}"
+
+    def safe(val, fallback='-'):
+        """Strip non-Latin-1 chars so fpdf built-in fonts never crash."""
+        s = str(val or fallback)
+        return s.encode('latin-1', errors='replace').decode('latin-1')
+
+    inv_num = p.get('invoice_number') or f"INV-{(p.get('created_at') or '2026-01')[:7].replace('-','')}-{payment_id:04d}"
     status  = (p.get('status') or 'pending').upper()
-    amount  = p.get('amount', 0)
+    amount  = p.get('amount', 0) or 0
+    txn_id  = safe(p.get('merchant_transaction_id'), '-')
+    issued  = safe((p.get('created_at') or '')[:10], '-')
+
+    NL = dict(new_x=XPos.LMARGIN, new_y=YPos.NEXT)  # fpdf2 2.7+ line-break
 
     pdf = FPDF()
     pdf.add_page()
@@ -1255,12 +1265,12 @@ def download_invoice(payment_id):
     pdf.set_text_color(255, 255, 255)
     pdf.set_font('Helvetica', 'B', 18)
     pdf.set_xy(10, 7)
-    pdf.cell(0, 12, 'Laxmi Academy', ln=True)
+    pdf.cell(0, 12, 'Laxmi Academy', **NL)
     pdf.set_font('Helvetica', '', 9)
     pdf.set_xy(10, 19)
-    pdf.cell(0, 6, 'Physics Excellence — Payment Invoice')
+    pdf.cell(0, 6, 'Physics Excellence - Payment Invoice')
 
-    # Status badge (top-right)
+    # Status badge top-right
     badge_color = (34, 197, 94) if status == 'PAID' else (234, 179, 8) if status == 'PENDING' else (239, 68, 68)
     pdf.set_fill_color(*badge_color)
     pdf.set_text_color(255, 255, 255)
@@ -1273,10 +1283,10 @@ def download_invoice(payment_id):
 
     # Invoice meta
     pdf.set_font('Helvetica', 'B', 13)
-    pdf.cell(0, 8, f'Invoice  {inv_num}', ln=True)
+    pdf.cell(0, 8, f'Invoice  {safe(inv_num)}', **NL)
     pdf.set_font('Helvetica', '', 9)
     pdf.set_text_color(100, 100, 120)
-    pdf.cell(0, 6, f"Issued: {(p.get('created_at') or '')[:10]}    Transaction: {p.get('merchant_transaction_id','—')}", ln=True)
+    pdf.cell(0, 6, f'Issued: {issued}    Transaction: {txn_id}', **NL)
 
     pdf.ln(6)
     pdf.set_draw_color(200, 200, 220)
@@ -1284,15 +1294,15 @@ def download_invoice(payment_id):
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(6)
 
-    # Student details
+    # Bill To
     pdf.set_text_color(30, 20, 60)
     pdf.set_font('Helvetica', 'B', 10)
-    pdf.cell(0, 6, 'Bill To', ln=True)
+    pdf.cell(0, 6, 'Bill To', **NL)
     pdf.set_font('Helvetica', '', 10)
-    pdf.cell(0, 6, p.get('full_name', '—'), ln=True)
-    pdf.cell(0, 6, p.get('email', '—'), ln=True)
+    pdf.cell(0, 6, safe(p.get('full_name')), **NL)
+    pdf.cell(0, 6, safe(p.get('email')), **NL)
     if p.get('phone'):
-        pdf.cell(0, 6, p['phone'], ln=True)
+        pdf.cell(0, 6, safe(p['phone']), **NL)
 
     pdf.ln(6)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
@@ -1302,27 +1312,27 @@ def download_invoice(payment_id):
     pdf.set_fill_color(240, 238, 255)
     pdf.set_font('Helvetica', 'B', 9)
     pdf.cell(100, 8, 'Description', fill=True, border=1)
-    pdf.cell(45, 8, 'Plan', fill=True, border=1)
-    pdf.cell(45, 8, 'Amount', fill=True, border=1, align='R', ln=True)
+    pdf.cell(45,  8, 'Plan',        fill=True, border=1)
+    pdf.cell(45,  8, 'Amount',      fill=True, border=1, align='R', **NL)
 
     pdf.set_font('Helvetica', '', 9)
-    pdf.cell(100, 8, p.get('course') or p.get('plan') or 'Course Enrollment', border=1)
-    pdf.cell(45, 8, p.get('plan') or '—', border=1)
-    pdf.cell(45, 8, f"Rs. {amount:,}", border=1, align='R', ln=True)
+    pdf.cell(100, 8, safe(p.get('course') or p.get('plan') or 'Course Enrollment'), border=1)
+    pdf.cell(45,  8, safe(p.get('plan') or '-'), border=1)
+    pdf.cell(45,  8, f'Rs. {amount:,}', border=1, align='R', **NL)
 
     pdf.ln(4)
     pdf.set_font('Helvetica', 'B', 11)
     pdf.cell(145, 9, 'Total Amount', align='R')
-    pdf.cell(45, 9, f"Rs. {amount:,}", align='R', ln=True)
+    pdf.cell(45,  9, f'Rs. {amount:,}', align='R', **NL)
 
     pdf.ln(10)
     pdf.set_font('Helvetica', 'I', 8)
     pdf.set_text_color(130, 130, 150)
-    pdf.cell(0, 6, 'Thank you for choosing Laxmi Academy. This is a computer-generated invoice.', align='C', ln=True)
+    pdf.cell(0, 6, 'Thank you for choosing Laxmi Academy. This is a computer-generated invoice.', align='C', **NL)
 
-    pdf_bytes = bytes(pdf.output())
-    response = app.response_class(pdf_bytes, mimetype='application/pdf')
-    response.headers['Content-Disposition'] = f'attachment; filename="invoice-{inv_num}.pdf"'
+    pdf_bytes = pdf.output()
+    response = app.response_class(bytes(pdf_bytes), mimetype='application/pdf')
+    response.headers['Content-Disposition'] = f'attachment; filename="invoice-{safe(inv_num)}.pdf"'
     return response
 
 # ── Linear proxy ─────────────────────────────────────────────────

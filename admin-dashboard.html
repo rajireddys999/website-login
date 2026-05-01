@@ -1094,13 +1094,16 @@
           </div>
         </div>
 
-        <div class="toolbar">
-          <div class="search-wrap">
+        <div class="toolbar" style="flex-wrap:wrap;gap:.5rem">
+          <select class="filter-select" id="payment-student-filter" onchange="filterPayments()" style="min-width:180px;max-width:260px">
+            <option value="">👤 All Students</option>
+          </select>
+          <div class="search-wrap" style="flex:1;min-width:160px">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
-            <input type="text" id="payment-search" placeholder="Search student or transaction…" oninput="filterPayments()"/>
+            <input type="text" id="payment-search" placeholder="Search transaction ID…" oninput="filterPayments()"/>
           </div>
           <select class="filter-select" id="payment-status-filter" onchange="filterPayments()">
-            <option value="">All Payments</option>
+            <option value="">All Status</option>
             <option value="paid">Paid</option>
             <option value="pending">Pending</option>
             <option value="failed">Failed</option>
@@ -2064,6 +2067,20 @@
     document.getElementById('p-revenue').textContent = '₹'+totalRev.toLocaleString('en-IN');
     document.getElementById('p-pending-rev').textContent = '₹'+pendRev.toLocaleString('en-IN');
 
+    // Populate student dropdown from payment records
+    const studentSel = document.getElementById('payment-student-filter');
+    const prevSid = studentSel.value;
+    const seen = new Set();
+    const opts = ['<option value="">👤 All Students</option>'];
+    allPayments.forEach(p => {
+      if (p.student_id && !seen.has(p.student_id)) {
+        seen.add(p.student_id);
+        opts.push(`<option value="${p.student_id}">${escHtml(p.full_name||'Unknown')}</option>`);
+      }
+    });
+    studentSel.innerHTML = opts.join('');
+    if (prevSid) studentSel.value = prevSid; // restore selection after refresh
+
     renderPayments(allPayments);
     // Redraw chart if it's visible on overview
     if (document.getElementById('revenue-chart-svg')) drawRevenueChart();
@@ -2084,7 +2101,9 @@
       return `<tr>
         <td style="color:var(--muted);font-size:.78rem">${i+1}</td>
         <td>
-          <div class="cell-name">${escHtml(p.full_name||'—')}</div>
+          <div class="cell-name" onclick="filterPaymentsByStudent('${p.student_id}')"
+            style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px"
+            title="Show only this student's payments">${escHtml(p.full_name||'—')}</div>
           <div class="cell-sub">${escHtml(p.email||'')}</div>
         </td>
         <td><span class="${amtClass}">₹${(p.amount||0).toLocaleString('en-IN')}</span></td>
@@ -2134,25 +2153,35 @@
   function filterPayments() {
     const q       = document.getElementById('payment-search').value.toLowerCase();
     const st      = document.getElementById('payment-status-filter').value;
+    const sid     = document.getElementById('payment-student-filter').value;
     const fromVal = document.getElementById('payment-from').value;
     const toVal   = document.getElementById('payment-to').value;
     const fromD   = fromVal ? new Date(fromVal) : null;
     const toD     = toVal   ? new Date(toVal + 'T23:59:59') : null;
     const filtered = allPayments.filter(p => {
-      const matchQ  = !q  || (p.full_name||'').toLowerCase().includes(q) || (p.merchant_transaction_id||'').toLowerCase().includes(q);
-      const matchSt = !st || p.status===st;
+      const matchSid  = !sid || String(p.student_id) === sid;
+      const matchQ    = !q   || (p.merchant_transaction_id||'').toLowerCase().includes(q);
+      const matchSt   = !st  || p.status===st;
       const d = p.created_at ? new Date(p.created_at) : null;
       const matchFrom = !fromD || (d && d >= fromD);
       const matchTo   = !toD   || (d && d <= toD);
-      return matchQ && matchSt && matchFrom && matchTo;
+      return matchSid && matchQ && matchSt && matchFrom && matchTo;
     });
     _lastPaymentFiltered = filtered;
     renderPayments(filtered);
   }
 
+  function filterPaymentsByStudent(sid) {
+    document.getElementById('payment-student-filter').value = sid;
+    filterPayments();
+  }
+
   function clearPaymentDateFilter() {
-    document.getElementById('payment-from').value = '';
-    document.getElementById('payment-to').value   = '';
+    document.getElementById('payment-from').value            = '';
+    document.getElementById('payment-to').value              = '';
+    document.getElementById('payment-student-filter').value  = '';
+    document.getElementById('payment-status-filter').value   = '';
+    document.getElementById('payment-search').value          = '';
     filterPayments();
   }
 

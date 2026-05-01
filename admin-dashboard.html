@@ -1590,20 +1590,11 @@
         document.getElementById('es-new-amount').value  = '';
         renderEnrollments();
         showToast('Course added');
-        // Update in-memory immediately so table refreshes without waiting
-        const idx = allStudents.findIndex(s => s.id === editStudentId);
-        if (idx >= 0) {
-          const existing = (allStudents[idx].enrolled_courses || allStudents[idx].course || '').split(' | ').filter(Boolean);
-          if (!existing.includes(course)) existing.push(course);
-          allStudents[idx].enrolled_courses = existing.join(' | ');
-          // New course is pending — add to due amount, flip payment_status
-          allStudents[idx].due_amount     = (allStudents[idx].due_amount || 0) + (d.amount || 0);
-          allStudents[idx].payment_status = 'pending';
-          filterStudents();
-        }
         // Update the payment-status dropdown in the still-open edit modal
         const payDrop = document.getElementById('es-payment');
         if (payDrop) payDrop.value = 'pending';
+        // Reload students from API so paid_amount/due_amount are accurate
+        loadStudents();
       } else {
         errEl.textContent = d.error || 'Failed to add enrollment.'; errEl.style.display = 'block';
       }

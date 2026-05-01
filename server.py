@@ -1817,6 +1817,12 @@ def admin_edit_student(sid):
 
     conn = get_conn()
     conn.execute(f"UPDATE students SET {', '.join(updates)} WHERE id = ?", params + [sid])
+    # When admin marks as paid, flip all pending payments to paid
+    if payment_status == 'paid':
+        conn.execute(
+            "UPDATE payments SET status='paid', updated_at=datetime('now') WHERE student_id=? AND status='pending'",
+            (sid,)
+        )
     conn.commit()
     row = conn.execute("SELECT id,full_name,email,phone,course,plan,is_active,payment_status,created_at FROM students WHERE id=?", (sid,)).fetchone()
     conn.close()

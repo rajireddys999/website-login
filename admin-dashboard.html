@@ -1259,6 +1259,15 @@
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  function showToast(msg, type) {
+    const t = document.createElement('div');
+    const bg = type === 'error' ? 'rgba(239,68,68,.92)' : 'rgba(34,197,94,.92)';
+    t.style.cssText = `position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);padding:.55rem 1.2rem;border-radius:10px;color:#fff;font-size:.83rem;font-weight:600;background:${bg};box-shadow:0 4px 18px rgba(0,0,0,.25);z-index:9999;pointer-events:none;transition:opacity .3s`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 320); }, 2200);
+  }
+
   function fmtDate(s) { return (s||'').slice(0,10); }
   function fmtDateTime(s) { return (s||'').slice(0,16).replace('T',' '); }
 

@@ -1217,6 +1217,10 @@ def admin_payment_status(pid):
 @app.route('/api/invoice/<int:payment_id>', methods=['GET'])
 def download_invoice(payment_id):
     from fpdf import FPDF
+    # Accept token from query param so plain <a href> links work in browser tabs
+    qtoken = request.args.get('token', '').strip()
+    if qtoken:
+        request.environ['HTTP_AUTHORIZATION'] = f'Bearer {qtoken}'
     session_data, err_resp, err_code = require_auth()
     if err_resp:
         return err_resp, err_code

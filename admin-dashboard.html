@@ -2070,7 +2070,7 @@
               <option value="pending" ${p.status==='pending'?'selected':''}>Pending</option>
               <option value="failed"  ${p.status==='failed' ?'selected':''}>Failed</option>
             </select>
-            <a href="/api/invoice/${p.id}" target="_blank"
+            <a href="/api/invoice/${p.id}?token=${localStorage.getItem('la_token')}" target="_blank"
               style="font-size:.72rem;padding:.2rem .6rem;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;white-space:nowrap"
               title="Download Invoice PDF">📄 Invoice</a>
           </div>

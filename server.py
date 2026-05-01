@@ -732,11 +732,12 @@ def admin_students():
             SELECT s.id, s.full_name, s.email, s.phone, s.course, s.plan,
                    s.is_active, s.payment_status, s.created_at,
                    GROUP_CONCAT(DISTINCT ce.course) as enrolled_courses,
-                   COALESCE(SUM(CASE WHEN p.status='paid'    THEN p.amount ELSE 0 END), 0) as paid_amount,
-                   COALESCE(SUM(CASE WHEN p.status='pending' THEN p.amount ELSE 0 END), 0) as due_amount
+                   COALESCE((SELECT SUM(amount) FROM payments
+                             WHERE student_id=s.id AND status='paid'), 0)    as paid_amount,
+                   COALESCE((SELECT SUM(amount) FROM payments
+                             WHERE student_id=s.id AND status='pending'), 0) as due_amount
             FROM students s
             LEFT JOIN course_enrollments ce ON ce.student_id = s.id AND ce.status = 'active'
-            LEFT JOIN payments p ON p.student_id = s.id
             GROUP BY s.id
             ORDER BY s.created_at DESC
         """).fetchall()

@@ -1542,22 +1542,31 @@ def delete_course_pricing(pid):
 def get_student_enrollments(sid):
     session, err, code = require_role('admin')
     if err: return err, code
-    conn = get_conn()
-    rows = conn.execute("""
-        SELECT ce.*,
-               MAX(p.status) AS pay_status,
-               MAX(p.amount) AS pay_amount,
-               MAX(p.id)     AS payment_id
-        FROM course_enrollments ce
-        LEFT JOIN payments p ON p.student_id = ce.student_id
-                             AND p.merchant_transaction_id LIKE 'ADM-' || ce.student_id::text || '-%'
-                             AND p.amount = ce.amount
-        WHERE ce.student_id = ?
-        GROUP BY ce.id
-        ORDER BY ce.enrolled_at DESC
-    """, (sid,)).fetchall()
-    conn.close()
-    return jsonify([dict(r) for r in rows])
+    conn = None
+    try:
+        conn = get_conn()
+        rows = conn.execute("""
+            SELECT ce.id, ce.student_id, ce.course, ce.plan, ce.amount,
+                   ce.status, ce.enrolled_at,
+                   MAX(p.status) AS pay_status,
+                   MAX(p.amount) AS pay_amount,
+                   MAX(p.id)     AS payment_id
+            FROM course_enrollments ce
+            LEFT JOIN payments p ON p.student_id = ce.student_id
+                                 AND p.merchant_transaction_id LIKE 'ADM-' || ce.student_id::text || '-%'
+                                 AND p.amount = ce.amount
+            WHERE ce.student_id = ?
+            GROUP BY ce.id, ce.student_id, ce.course, ce.plan, ce.amount, ce.status, ce.enrolled_at
+            ORDER BY ce.enrolled_at DESC
+        """, (sid,)).fetchall()
+        return jsonify([dict(r) for r in rows])
+    except Exception as exc:
+        app.logger.error("get_student_enrollments error: %s", exc, exc_info=True)
+        return jsonify({'error': str(exc)}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except: pass
 
 @app.route('/api/admin/students/<int:sid>/enrollments', methods=['POST'])
 def add_student_enrollment(sid):

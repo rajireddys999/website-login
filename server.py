@@ -15,6 +15,9 @@ CORS(app)
 
 limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[])
 
+# Always init DB — runs under both `python server.py` and gunicorn
+init_db()
+
 # ── Email config ─────────────────────────────────────────────────
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))

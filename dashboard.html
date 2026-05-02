@@ -960,9 +960,12 @@
     const link = document.getElementById('make-payment-link');
     link.textContent = 'Connecting…';
     try {
-      const plan = student.plan || '';
-      const allAmounts = [...plan.matchAll(/₹(\d+)/g)];
-      const amount = allAmounts.length ? parseInt(allAmounts[allAmounts.length - 1][1]) : 99;
+      // Fetch actual pricing for student's course + plan
+      let amount = 99;
+      try {
+        const pr = await fetch('/api/student/pricing', { headers: {'Authorization': 'Bearer ' + token} });
+        if (pr.ok) { const pd = await pr.json(); amount = pd.amount || 99; }
+      } catch(_) {}
       const res = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },

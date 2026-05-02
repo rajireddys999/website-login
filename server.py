@@ -197,11 +197,13 @@ def login():
 @app.route('/api/register', methods=['POST'])
 def register():
     VALID_COURSES = [
-        'NEET - BI-PC',
-        'JEE MAINS - Physics',
-        'EAMCET - Physics',
-        'Intermediate - 1-Year Physics',
-        'Intermediate - 2-Year Physics',
+        'NEET',
+        'JEE Mains',
+        'JEE Advanced',
+        'EAMCET',
+        'Class 11 Physics',
+        'Class 12 Physics',
+        'Physics Foundation',
     ]
     data      = request.get_json() or {}
     full_name = data.get('full_name', '').strip()
@@ -212,7 +214,7 @@ def register():
     plan      = data.get('plan', '6 Months')
 
     if course not in VALID_COURSES:
-        course = 'JEE MAINS - Physics'
+        course = 'JEE Mains'
 
     if not full_name or not email or not phone or not password:
         return jsonify({'error': 'full_name, email, phone and password are required.'}), 400
@@ -247,23 +249,12 @@ def register():
         )
         conn.commit()
 
-    # Create verification token (24-hour expiry)
-    verify_token = secrets.token_urlsafe(32)
-    expires_at   = (datetime.utcnow() + timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
-    conn.execute(
-        "INSERT INTO email_verifications (student_id, token, expires_at) VALUES (?, ?, ?)",
-        (student_id, verify_token, expires_at)
-    )
-    conn.commit()
     conn.close()
-
-    send_verification_email(email, full_name, verify_token)
 
     session_token = create_session(student_id, 'student')
     return jsonify({
         'token': session_token, 'role': 'student', 'student_id': student_id,
-        'message': 'Account created. Please check your email to verify your account.',
-        'email_verification_required': True
+        'message': 'Account created successfully. Welcome to Laxmi Academy!',
     }), 201
 
 # ── GET /api/verify-email?token= ────────────────────────────────
@@ -1470,9 +1461,9 @@ def student_post_progress():
         INSERT INTO lesson_progress (student_id, lesson_id, watched, completed, watched_seconds, updated_at)
         VALUES (?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(student_id, lesson_id) DO UPDATE SET
-            watched         = MAX(watched, excluded.watched),
-            completed       = MAX(completed, excluded.completed),
-            watched_seconds = MAX(watched_seconds, excluded.watched_seconds),
+            watched         = GREATEST(watched, excluded.watched),
+            completed       = GREATEST(completed, excluded.completed),
+            watched_seconds = GREATEST(watched_seconds, excluded.watched_seconds),
             updated_at      = datetime('now')
     """, (session['user_id'], lesson_id, watched, completed, watched_seconds))
     conn.commit()
@@ -1494,6 +1485,25 @@ def student_get_progress():
     ).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+# ── STUDENT: get pricing for own course+plan ─────────────────────
+
+@app.route('/api/student/pricing', methods=['GET'])
+def student_pricing():
+    session, err_resp, err_code = require_role('student')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    student = conn.execute("SELECT course, plan FROM students WHERE id=?", (session['user_id'],)).fetchone()
+    if not student:
+        conn.close()
+        return jsonify({'amount': 99})
+    row = conn.execute(
+        "SELECT amount FROM course_pricing WHERE course=? AND plan=?",
+        (student['course'], student['plan'])
+    ).fetchone()
+    conn.close()
+    return jsonify({'amount': row['amount'] if row else 99, 'course': student['course'], 'plan': student['plan']})
 
 # ── ADMIN: course pricing ─────────────────────────────────────────
 
@@ -1901,26 +1911,6 @@ def student_payments():
 
 # ── STUDENT / INSTRUCTOR: Doubts Q&A (RAJ-14 / RAJ-25) ───────────
 
-def _migrate_doubts(conn):
-    conn.executescript("""
-        CREATE TABLE IF NOT EXISTS doubts (
-            id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id   INTEGER NOT NULL,
-            lesson_id    INTEGER,
-            question     TEXT    NOT NULL,
-            answer       TEXT,
-            status       TEXT    NOT NULL DEFAULT 'open',
-            answered_by  INTEGER,
-            created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
-            answered_at  TEXT,
-            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-            FOREIGN KEY (lesson_id)  REFERENCES lessons(id)  ON DELETE SET NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_doubts_student    ON doubts(student_id);
-        CREATE INDEX IF NOT EXISTS idx_doubts_lesson     ON doubts(lesson_id);
-        CREATE INDEX IF NOT EXISTS idx_doubts_status     ON doubts(status);
-    """)
-
 @app.route('/api/student/doubts', methods=['POST'])
 def student_post_doubt():
     session, err_resp, err_code = require_role('student')
@@ -1934,7 +1924,6 @@ def student_post_doubt():
         return jsonify({'error': 'Question is required.'}), 400
 
     conn = get_conn()
-    _migrate_doubts(conn)
     cur = conn.execute(
         "INSERT INTO doubts (student_id, lesson_id, question) VALUES (?, ?, ?)",
         (session['user_id'], lesson_id or None, question)
@@ -1951,7 +1940,6 @@ def student_get_doubts():
         return err_resp, err_code
 
     conn = get_conn()
-    _migrate_doubts(conn)
     rows = conn.execute("""
         SELECT d.id, d.lesson_id, l.title as lesson_title,
                d.question, d.answer, d.status, d.created_at, d.answered_at
@@ -1970,7 +1958,6 @@ def instructor_get_doubts():
         return err_resp, err_code
 
     conn = get_conn()
-    _migrate_doubts(conn)
     rows = conn.execute("""
         SELECT d.id, d.lesson_id, l.title as lesson_title,
                d.question, d.answer, d.status, d.created_at, d.answered_at,
@@ -1996,7 +1983,6 @@ def instructor_answer_doubt(did):
         return jsonify({'error': 'Answer is required.'}), 400
 
     conn = get_conn()
-    _migrate_doubts(conn)
     conn.execute("""
         UPDATE doubts SET answer = ?, status = 'answered',
                answered_by = ?, answered_at = datetime('now')
@@ -2212,7 +2198,6 @@ def admin_get_discount_codes():
         return err_resp, err_code
 
     conn = get_conn()
-    _migrate_discount_codes(conn)
     rows = conn.execute("SELECT * FROM discount_codes ORDER BY created_at DESC").fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
@@ -2232,7 +2217,6 @@ def admin_create_discount_code():
         return jsonify({'error': 'code and discount_percent (1-100) required.'}), 400
 
     conn = get_conn()
-    _migrate_discount_codes(conn)
     try:
         conn.execute(
             "INSERT INTO discount_codes (code, discount_percent, max_uses, expires_at) VALUES (?,?,?,?)",
@@ -2258,7 +2242,6 @@ def apply_discount():
         return jsonify({'error': 'Code required.'}), 400
 
     conn = get_conn()
-    _migrate_discount_codes(conn)
     row = conn.execute("""
         SELECT * FROM discount_codes
         WHERE code = ? AND is_active = 1
@@ -2269,21 +2252,6 @@ def apply_discount():
     if not row:
         return jsonify({'error': 'Invalid or expired discount code.'}), 404
     return jsonify({'discount_percent': row['discount_percent'], 'code': code})
-
-def _migrate_discount_codes(conn):
-    conn.executescript("""
-        CREATE TABLE IF NOT EXISTS discount_codes (
-            id               INTEGER PRIMARY KEY AUTOINCREMENT,
-            code             TEXT    UNIQUE NOT NULL,
-            discount_percent INTEGER NOT NULL DEFAULT 10,
-            max_uses         INTEGER NOT NULL DEFAULT 100,
-            times_used       INTEGER NOT NULL DEFAULT 0,
-            is_active        INTEGER NOT NULL DEFAULT 1,
-            expires_at       TEXT,
-            created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
-        );
-        CREATE INDEX IF NOT EXISTS idx_dc_code ON discount_codes(code);
-    """)
 
 # ── Main ─────────────────────────────────────────────────────────
 

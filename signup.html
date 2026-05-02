@@ -658,9 +658,14 @@
               NEET
             </label>
             <label class="pill-label">
-              <input type="checkbox" name="exam" value="JEE MAINS" onchange="updateTotal()"/>
+              <input type="checkbox" name="exam" value="JEE Mains" onchange="updateTotal()"/>
               <span class="pill-check"></span>
               JEE Mains
+            </label>
+            <label class="pill-label">
+              <input type="checkbox" name="exam" value="JEE Advanced" onchange="updateTotal()"/>
+              <span class="pill-check"></span>
+              JEE Advanced
             </label>
             <label class="pill-label">
               <input type="checkbox" name="exam" value="EAMCET" onchange="updateTotal()"/>
@@ -668,14 +673,14 @@
               EAMCET
             </label>
             <label class="pill-label">
-              <input type="checkbox" name="exam" value="Intermediate 1st Year" onchange="updateTotal()"/>
+              <input type="checkbox" name="exam" value="Class 11 Physics" onchange="updateTotal()"/>
               <span class="pill-check"></span>
-              Inter 1st Year
+              Class 11 Physics
             </label>
             <label class="pill-label">
-              <input type="checkbox" name="exam" value="Intermediate 2nd Year" onchange="updateTotal()"/>
+              <input type="checkbox" name="exam" value="Class 12 Physics" onchange="updateTotal()"/>
               <span class="pill-check"></span>
-              Inter 2nd Year
+              Class 12 Physics
             </label>
           </div>
         </div>
@@ -865,7 +870,8 @@
       if (password !== confirm)  { showError('Passwords do not match.'); return; }
       if (password.length < 6)   { showError('Password must be at least 6 characters.'); return; }
 
-      const course = exams.join(', ') + ' — ' + courses.join(', ');
+      // Use first selected exam as the primary course (matches course_pricing names)
+      const course = exams[0];
       const plan   = '6 Months';
 
       const btn = document.getElementById('submit-btn');

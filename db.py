@@ -242,11 +242,13 @@ def init_db():
     _migrate_lesson_progress(conn)
     _migrate_enrollments(conn)
     _migrate_invoice_numbers(conn)
+    _migrate_doubts(conn)
+    _migrate_discount_codes(conn)
     _seed_default_admin(conn)
     _sync_payment_status(conn)
     conn.commit()
     conn.close()
-    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing")
+    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing, doubts, discount_codes")
 
 
 def _migrate_sessions(conn):
@@ -458,4 +460,41 @@ def _sync_payment_status(conn):
             ) THEN 'paid'
             ELSE payment_status
         END
+    """)
+
+
+def _migrate_doubts(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS doubts (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id   INTEGER NOT NULL,
+            lesson_id    INTEGER,
+            question     TEXT    NOT NULL,
+            answer       TEXT,
+            status       TEXT    NOT NULL DEFAULT 'open',
+            answered_by  INTEGER,
+            created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+            answered_at  TEXT,
+            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+            FOREIGN KEY (lesson_id)  REFERENCES lessons(id)  ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_doubts_student ON doubts(student_id);
+        CREATE INDEX IF NOT EXISTS idx_doubts_lesson  ON doubts(lesson_id);
+        CREATE INDEX IF NOT EXISTS idx_doubts_status  ON doubts(status)
+    """)
+
+
+def _migrate_discount_codes(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS discount_codes (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            code             TEXT    UNIQUE NOT NULL,
+            discount_percent INTEGER NOT NULL DEFAULT 10,
+            max_uses         INTEGER NOT NULL DEFAULT 100,
+            times_used       INTEGER NOT NULL DEFAULT 0,
+            is_active        INTEGER NOT NULL DEFAULT 1,
+            expires_at       TEXT,
+            created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_dc_code ON discount_codes(code)
     """)

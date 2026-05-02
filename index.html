@@ -1254,6 +1254,16 @@
     background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.09);
     color: #e8e8f2; border-radius: 4px 14px 14px 14px; align-self: flex-start;
   }
+  .chat-bubble.bot strong { color: #a5b4fc; }
+  .chat-bubble.bot ul { margin: .3rem 0 .3rem 1rem; padding: 0; }
+  .chat-bubble.bot li { margin: .18rem 0; }
+  .chat-bot-row { display: flex; align-items: flex-start; gap: .45rem; }
+  .chat-bot-avatar {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .6rem; font-weight: 800; color: #fff; margin-top: 3px;
+  }
   .chat-bubble.user {
     background: linear-gradient(135deg, #6366f1, #7c3aed);
     color: #fff; border-radius: 14px 14px 4px 14px;
@@ -1327,8 +1337,8 @@
       <div class="chat-online-dot"></div>
     </div>
     <div class="chat-header-info">
-      <div class="chat-header-name">Laxmi Academy AI</div>
-      <div class="chat-header-status">● Online · Physics Expert</div>
+      <div class="chat-header-name">Priya</div>
+      <div class="chat-header-status">● Admissions Advisor · Online</div>
     </div>
     <button class="chat-close" onclick="toggleChat()">✕</button>
   </div>
@@ -1336,15 +1346,16 @@
   <div class="chat-messages" id="chat-messages"></div>
 
   <div class="chat-typing" id="chat-typing">
+    <div class="chat-bot-avatar" style="width:20px;height:20px;font-size:.55rem">P</div>
     <div class="typing-dots"><span></span><span></span><span></span></div>
-    Thinking…
+    <span style="font-size:.72rem;color:rgba(255,255,255,.4)">Priya is typing…</span>
   </div>
 
   <div class="chat-suggestions" id="chat-sugs">
-    <span class="chat-sug" onclick="sendChat(this.textContent)">What courses do you offer?</span>
-    <span class="chat-sug" onclick="sendChat(this.textContent)">How do I enroll?</span>
+    <span class="chat-sug" onclick="sendChat(this.textContent)">Which course suits me?</span>
     <span class="chat-sug" onclick="sendChat(this.textContent)">What are the fees?</span>
-    <span class="chat-sug" onclick="sendChat(this.textContent)">Is there a free demo?</span>
+    <span class="chat-sug" onclick="sendChat(this.textContent)">Book a free demo</span>
+    <span class="chat-sug" onclick="sendChat(this.textContent)">JEE vs NEET — which course?</span>
   </div>
 
   <div class="chat-input-row">
@@ -1363,15 +1374,46 @@
   let chatHistory = [];
   let chatOpen    = false;
 
-  // Welcome message on first open
-  const WELCOME = "Hi! 👋 I'm the Laxmi Academy AI assistant. I can help you with information about our physics courses, enrollment, fees, and more. What would you like to know?";
+  const WELCOME = "Hi! I'm **Priya**, your Admissions Advisor at Laxmi Academy. 🙏\n\nI can help you choose the right Physics course, understand fees, enrollment steps, or book a free demo class. What would you like to know?";
+
+  function renderMd(text) {
+    let s = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    const lines = s.split('\n');
+    let out = [], inList = false;
+    for (const line of lines) {
+      const m = line.match(/^[\-•]\s+(.*)/);
+      if (m) {
+        if (!inList) { out.push('<ul>'); inList = true; }
+        out.push('<li>' + m[1] + '</li>');
+      } else {
+        if (inList) { out.push('</ul>'); inList = false; }
+        out.push(line.trim() === '' ? '<br>' : line + '<br>');
+      }
+    }
+    if (inList) out.push('</ul>');
+    return out.join('').replace(/<br>$/, '');
+  }
 
   function addBubble(role, text) {
     const msgs = document.getElementById('chat-messages');
-    const div  = document.createElement('div');
-    div.className = 'chat-bubble ' + role;
-    div.textContent = text;
-    msgs.appendChild(div);
+    if (role === 'bot') {
+      const row = document.createElement('div');
+      row.className = 'chat-bot-row';
+      const av  = document.createElement('div');
+      av.className = 'chat-bot-avatar';
+      av.textContent = 'P';
+      const bub = document.createElement('div');
+      bub.className = 'chat-bubble bot';
+      bub.innerHTML = renderMd(text);
+      row.appendChild(av); row.appendChild(bub);
+      msgs.appendChild(row);
+    } else {
+      const div = document.createElement('div');
+      div.className = 'chat-bubble user';
+      div.textContent = text;
+      msgs.appendChild(div);
+    }
     msgs.scrollTop = msgs.scrollHeight;
   }
 

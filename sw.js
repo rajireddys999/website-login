@@ -1,4 +1,4 @@
-const CACHE = 'laxmi-academy-v15';
+const CACHE = 'laxmi-academy-v16';
 
 const PRECACHE = [
   '/',
@@ -38,22 +38,39 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch — cache-first for static assets, network-first for API
+// Fetch strategy:
+//   HTML pages  → network-first (always fresh; cache is offline fallback only)
+//   Everything else → cache-first (fast; background-updates cache)
 self.addEventListener('fetch', e => {
   const { request } = e;
   const url = new URL(request.url);
 
-  // Skip non-GET and API calls
   if (request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 
+  const isHtml = url.pathname === '/' || url.pathname.endsWith('.html');
+
+  if (isHtml) {
+    // Network-first: always load latest HTML; fall back to cache when offline
+    e.respondWith(
+      fetch(request)
+        .then(res => {
+          if (res.ok) caches.open(CACHE).then(c => c.put(request, res.clone()));
+          return res;
+        })
+        .catch(() =>
+          caches.match(request).then(cached => cached || caches.match('/offline.html'))
+        )
+    );
+    return;
+  }
+
+  // Cache-first for CSS, JS, images, fonts
   e.respondWith(
     caches.match(request).then(cached => {
       const fresh = fetch(request).then(res => {
-        if (res.ok) {
-          caches.open(CACHE).then(c => c.put(request, res.clone()));
-        }
+        if (res.ok) caches.open(CACHE).then(c => c.put(request, res.clone()));
         return res;
-      }).catch(() => cached); // offline fallback to cache
+      }).catch(() => cached);
       return cached || fresh.catch(() => caches.match('/offline.html'));
     })
   );

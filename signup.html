@@ -395,6 +395,34 @@
       font-weight: 900;
     }
 
+    /* ── Plan selector ── */
+    .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; margin-top: .4rem; }
+    .plan-card { cursor: pointer; }
+    .plan-card input { display: none; }
+    .plan-inner {
+      border: 1.5px solid rgba(99,102,241,0.18);
+      border-radius: 14px;
+      padding: .75rem .6rem;
+      text-align: center;
+      background: var(--accent-soft);
+      transition: all .2s;
+      position: relative;
+    }
+    .plan-card:hover .plan-inner { border-color: rgba(99,102,241,0.4); }
+    .plan-card input:checked + .plan-inner {
+      border-color: #6366f1;
+      background: rgba(99,102,241,0.12);
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+    }
+    .plan-dur { font-size: .78rem; font-weight: 700; color: var(--text-muted); margin-bottom: .3rem; }
+    .plan-price { font-size: 1.15rem; font-weight: 900; color: var(--accent); line-height: 1; margin-bottom: .4rem; }
+    .plan-badge {
+      font-size: .62rem; font-weight: 700; letter-spacing: .4px;
+      background: rgba(99,102,241,.12); color: #818cf8;
+      border: 1px solid rgba(99,102,241,.2);
+      border-radius: 20px; padding: .18rem .55rem; display: inline-block;
+    }
+
     /* ── Price box ── */
     .price-box {
       background: var(--accent-soft);
@@ -709,13 +737,39 @@
           </div>
         </div>
 
-        <!-- Pricing -->
+        <!-- Plan Selection -->
         <div class="field" style="animation-delay:0.42s">
-          <div class="section-title">Pricing</div>
-          <div class="price-box">
+          <div class="section-title">Choose Plan</div>
+          <div class="plan-grid" id="plan-grid">
+            <label class="plan-card">
+              <input type="radio" name="plan" value="6 Months" data-price="999" checked onchange="updateTotal()"/>
+              <div class="plan-inner">
+                <div class="plan-dur">6 Months</div>
+                <div class="plan-price">₹999</div>
+                <div class="plan-badge">Most Popular</div>
+              </div>
+            </label>
+            <label class="plan-card">
+              <input type="radio" name="plan" value="9 Months" data-price="1499" onchange="updateTotal()"/>
+              <div class="plan-inner">
+                <div class="plan-dur">9 Months</div>
+                <div class="plan-price">₹1,499</div>
+                <div class="plan-badge" style="background:rgba(16,185,129,.15);color:#10b981;border-color:rgba(16,185,129,.25)">Best Value</div>
+              </div>
+            </label>
+            <label class="plan-card">
+              <input type="radio" name="plan" value="12 Months" data-price="1998" onchange="updateTotal()"/>
+              <div class="plan-inner">
+                <div class="plan-dur">12 Months</div>
+                <div class="plan-price">₹1,998</div>
+                <div class="plan-badge" style="background:rgba(251,191,36,.1);color:#f59e0b;border-color:rgba(251,191,36,.25)">Full Year</div>
+              </div>
+            </label>
+          </div>
+          <div class="price-box" style="margin-top:.75rem">
             <div class="price-left">
               <div class="price-per">Per course / stream</div>
-              <div class="price-amount">₹<span>99</span></div>
+              <div class="price-amount">₹<span id="price-per-course">999</span></div>
             </div>
             <div class="price-right">
               <div class="price-total-label">Total Due</div>
@@ -796,10 +850,18 @@
   <style>@keyframes spinIcon { to { transform: rotate(360deg); } }</style>
 
   <script>
+    function selectedPlanPrice() {
+      const sel = document.querySelector('input[name="plan"]:checked');
+      return sel ? parseInt(sel.dataset.price) : 999;
+    }
+
     function updateTotal() {
       const count = document.querySelectorAll('input[name="exam"]:checked').length;
+      const price = selectedPlanPrice();
+      const perEl = document.getElementById('price-per-course');
+      if (perEl) perEl.textContent = price.toLocaleString('en-IN');
       const el = document.getElementById('price-total');
-      el.textContent = '₹' + (count * 99);
+      el.textContent = '₹' + (count * price).toLocaleString('en-IN');
       el.style.transform = 'scale(1.1)';
       setTimeout(() => el.style.transform = '', 200);
 
@@ -875,7 +937,9 @@
 
       const exams   = [...document.querySelectorAll('input[name="exam"]:checked')].map(cb => cb.value);
       const courses = [...document.querySelectorAll('input[name="course"]:checked')].map(cb => cb.value);
-      const total   = exams.length * 99;
+      const planSel = document.querySelector('input[name="plan"]:checked');
+      const plan    = planSel ? planSel.value : '6 Months';
+      const total   = exams.length * selectedPlanPrice();
 
       if (exams.length === 0)   { showError('Please select at least one exam / stream.'); return; }
       if (courses.length === 0) { showError('Please select at least one course.'); return; }
@@ -884,7 +948,6 @@
 
       // Use first selected exam as the primary course (matches course_pricing names)
       const course = exams[0];
-      const plan   = '6 Months';
 
       const btn = document.getElementById('submit-btn');
       btn.disabled = true;

@@ -241,6 +241,7 @@ def init_db():
     _migrate_password_resets(conn)
     _migrate_lesson_progress(conn)
     _migrate_enrollments(conn)
+    _migrate_pricing_v2(conn)
     _migrate_invoice_numbers(conn)
     _migrate_doubts(conn)
     _migrate_discount_codes(conn)
@@ -434,6 +435,36 @@ def _migrate_enrollments(conn):
                 "INSERT OR IGNORE INTO course_enrollments (student_id, course, plan, amount) VALUES (?,?,?,?)",
                 (s['id'], s['course'], s['plan'], amount)
             )
+
+
+def _migrate_pricing_v2(conn):
+    """Remove 1-Month & 3-Month plans; set 6M=₹999, 9M=₹1499, 12M=₹1998."""
+    courses = [
+        'Physics Foundation', 'JEE Mains', 'JEE Advanced',
+        'NEET', 'EAMCET', 'Class 11 Physics', 'Class 12 Physics',
+    ]
+    # Remove old short-term plans
+    conn.executescript("""
+        DELETE FROM course_pricing WHERE plan = '1 Month';
+        DELETE FROM course_pricing WHERE plan = '3 Months'
+    """)
+    # Update existing plans to new amounts
+    conn.executescript("""
+        UPDATE course_pricing SET amount = 999  WHERE plan = '6 Months';
+        UPDATE course_pricing SET amount = 1998 WHERE plan = '12 Months'
+    """)
+    # Insert 9-Month plan for every course (idempotent)
+    for course in courses:
+        existing = conn.execute(
+            "SELECT id FROM course_pricing WHERE course=? AND plan='9 Months'",
+            (course,)
+        ).fetchone()
+        if not existing:
+            conn.execute(
+                "INSERT INTO course_pricing (course, plan, amount) VALUES (?, '9 Months', 1499)",
+                (course,)
+            )
+    print("  [OK] Pricing v2: 1M+3M removed; 6M=₹999, 9M=₹1499, 12M=₹1998")
 
 
 def _seed_default_admin(conn):

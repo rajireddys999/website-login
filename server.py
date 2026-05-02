@@ -1714,7 +1714,7 @@ def public_chat():
 
     conn = get_conn()
     try:
-        # Safe public context — no PII, no payment data
+        # Safe public context — no PII, no credentials
         courses_rows = conn.execute("""
             SELECT course, COUNT(*) as lesson_count
             FROM lessons WHERE is_published = 1
@@ -1724,55 +1724,98 @@ def public_chat():
         topics_rows = conn.execute("""
             SELECT topic, COUNT(*) as lesson_count
             FROM lessons WHERE is_published = 1
-            GROUP BY topic ORDER BY lesson_count DESC
+            GROUP BY topic ORDER BY lesson_count DESC LIMIT 10
+        """).fetchall()
+
+        # Pricing: group by course, list plans + amounts
+        pricing_rows = conn.execute("""
+            SELECT course, plan, amount FROM course_pricing ORDER BY course, amount
+        """).fetchall()
+
+        # Instructors: name + bio + subject only — never email/phone/password
+        instructor_rows = conn.execute("""
+            SELECT name, subject, bio FROM instructors WHERE is_active = 1
+        """).fetchall()
+
+        # Custom FAQs from chatbot_knowledge table
+        faq_rows = conn.execute("""
+            SELECT question, answer FROM chatbot_knowledge WHERE is_active = 1 ORDER BY category
         """).fetchall()
 
         total_lessons = conn.execute("SELECT COUNT(*) FROM lessons WHERE is_published=1").fetchone()[0]
-        total_instructors = conn.execute("SELECT COUNT(*) FROM instructors WHERE is_active=1").fetchone()[0]
 
-        courses_info = '\n'.join([f"  - {r['course']}: {r['lesson_count']} lessons" for r in courses_rows]) or '  - Physics Foundation'
-        topics_info  = '\n'.join([f"  - {r['topic']}: {r['lesson_count']} lessons" for r in topics_rows]) or '  - Various physics topics'
+        # Build context strings
+        courses_info = '\n'.join([f"  - {r['course']}: {r['lesson_count']} lesson(s)" for r in courses_rows]) \
+                       or '  - Physics Foundation, JEE Mains, JEE Advanced, NEET, EAMCET'
+        topics_info  = '\n'.join([f"  - {r['topic']}: {r['lesson_count']} lesson(s)" for r in topics_rows]) \
+                       or '  - Mechanics, Thermodynamics, Electromagnetism, Optics, Modern Physics'
+
+        # Group pricing by course
+        pricing_map = {}
+        for r in pricing_rows:
+            pricing_map.setdefault(r['course'], []).append(f"{r['plan']}: ₹{r['amount']}")
+        pricing_info = '\n'.join([f"  {c}: {', '.join(plans)}" for c, plans in pricing_map.items()]) \
+                       or '  Contact us for current pricing'
+
+        instructors_info = '\n'.join([
+            f"  - {r['name']} ({r['subject']})" + (f": {r['bio']}" if r['bio'] else '')
+            for r in instructor_rows
+        ]) or '  - Experienced Physics faculty'
+
+        faq_info = '\n'.join([f"  Q: {r['question']}\n  A: {r['answer']}" for r in faq_rows]) or ''
+
     except Exception:
         courses_info  = '  - Physics Foundation, JEE Mains, JEE Advanced, NEET, EAMCET'
         topics_info   = '  - Mechanics, Thermodynamics, Electromagnetism, Optics, Modern Physics'
+        pricing_info  = '  Contact us for current pricing'
+        instructors_info = '  - Experienced Physics faculty'
+        faq_info      = ''
         total_lessons = 'multiple'
-        total_instructors = 'experienced'
     finally:
         conn.close()
 
-    system = f"""You are the friendly AI assistant for Laxmi Academy — a physics coaching centre in Hyderabad, India, specialising in JEE, NEET, EAMCET, and Intermediate Physics.
+    system = f"""You are the friendly AI assistant for Laxmi Academy — a Physics coaching centre in Hyderabad, India, specialising in JEE, NEET, EAMCET, and Intermediate Physics.
 
-ACADEMY INFORMATION (use this to answer questions):
-- Name: Laxmi Academy
-- Location: Hyderabad, India
+Answer ONLY from the information provided below. Do not invent details.
+
+ACADEMY INFORMATION:
+- Name: Laxmi Academy  |  Location: Hyderabad, India
 - Specialisation: Physics — JEE Mains, JEE Advanced, NEET, EAMCET, Class 11 & 12
 - Total published lessons: {total_lessons}
-- Active faculty: {total_instructors} instructors
 
-AVAILABLE COURSES:
+COURSES AVAILABLE:
 {courses_info}
 
 TOPICS COVERED:
 {topics_info}
 
-PLANS OFFERED: 1 Month, 3 Months, 6 Months, 12 Months
-PAYMENT METHODS: UPI (Google Pay, PhonePe, Paytm), Debit/Credit card, Net banking via PhonePe gateway
-REFUND POLICY: Eligible within 7 days if less than 20% of course content watched. See /refund.html for full details.
-HOW TO ENROLL: Visit the Sign Up page, fill in details, choose a plan, and complete payment.
-CONTACT: Use the enquiry form on the website or reach us via WhatsApp.
+COURSE PRICING (plan: fee):
+{pricing_info}
 
-RULES — NEVER share or discuss:
-- Student names, emails, phone numbers, or personal data
-- Payment transaction IDs or amounts of any specific student
-- Admin credentials, passwords, or security details
-- Internal system architecture or API endpoints
-- Any instructor's personal contact details
+OUR INSTRUCTORS:
+{instructors_info}
+
+PAYMENT METHODS: UPI (Google Pay, PhonePe, Paytm), Debit/Credit card, Net banking via PhonePe gateway.
+REFUND POLICY: Full refund within 7 days if less than 20% of course watched. See /refund.html for full details.
+HOW TO ENROLL: Visit Sign Up → choose course & plan → complete payment → instant access.
+FREE DEMO: 45-minute free demo class available — no payment needed. Book via the website or WhatsApp.
+CONTACT: +91 72078 98999 (WhatsApp/call) or use the enquiry form on the website.
+
+FREQUENTLY ASKED QUESTIONS:
+{faq_info}
+
+STRICT RULES — NEVER share or discuss:
+- Any student's name, email, phone, or personal data
+- Specific payment transaction IDs or individual student amounts
+- Admin or instructor login credentials, passwords, or tokens
+- Internal API endpoints, server config, or database details
+- Any instructor's personal email, phone, or private contact info
 
 YOUR STYLE:
-- Be warm, helpful, and encouraging — like a knowledgeable academic counsellor
-- Keep answers concise (2–4 sentences) unless a detailed explanation is genuinely needed
-- If you don't know something specific (like exact fees), say "Please contact us for the latest pricing" and direct them to the enquiry form
-- Encourage students to sign up or ask a question via the form when appropriate"""
+- Warm, helpful, and encouraging — like a knowledgeable academic counsellor
+- Keep answers concise (2–4 sentences) unless detail is genuinely needed
+- For questions outside the above info, say "I don't have that detail — please contact us via WhatsApp or the enquiry form"
+- Encourage students to sign up or book a free demo when relevant"""
 
     messages = [{'role': m['role'], 'content': m['content']} for m in history[-8:] if m.get('role') in ('user','assistant')]
     messages.append({'role': 'user', 'content': message})

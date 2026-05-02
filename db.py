@@ -244,11 +244,12 @@ def init_db():
     _migrate_invoice_numbers(conn)
     _migrate_doubts(conn)
     _migrate_discount_codes(conn)
+    _migrate_chatbot_knowledge(conn)
     _seed_default_admin(conn)
     _sync_payment_status(conn)
     conn.commit()
     conn.close()
-    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing, doubts, discount_codes")
+    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing, doubts, discount_codes, chatbot_knowledge")
 
 
 def _migrate_sessions(conn):
@@ -498,3 +499,46 @@ def _migrate_discount_codes(conn):
         );
         CREATE INDEX IF NOT EXISTS idx_dc_code ON discount_codes(code)
     """)
+
+
+def _migrate_chatbot_knowledge(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS chatbot_knowledge (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            category   TEXT    NOT NULL DEFAULT 'general',
+            question   TEXT    NOT NULL,
+            answer     TEXT    NOT NULL,
+            is_active  INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_ck_category ON chatbot_knowledge(category)
+    """)
+    # Seed default FAQs if table is empty
+    existing = conn.execute("SELECT COUNT(*) FROM chatbot_knowledge").fetchone()[0]
+    if existing == 0:
+        faqs = [
+            ('courses',    'What courses does Laxmi Academy offer?',
+             'We offer Physics courses for NEET, JEE Mains, JEE Advanced, EAMCET, Class 11 Physics, Class 12 Physics, and Physics Foundation. Each is tailored to the respective exam syllabus.'),
+            ('courses',    'Is there a Physics Foundation course for beginners?',
+             'Yes! Our Physics Foundation course is ideal for students who want to build strong conceptual clarity before moving to competitive exam preparation.'),
+            ('pricing',    'What are the subscription plan options?',
+             'We offer 1 Month, 3 Months, 6 Months, and 12 Months plans. Longer plans offer better value. Contact us or check the Sign Up page for current pricing.'),
+            ('pricing',    'What payment methods are accepted?',
+             'We accept all UPI apps (Google Pay, PhonePe, Paytm), debit/credit cards, and net banking — all processed securely through PhonePe. We do not store any card or banking details.'),
+            ('pricing',    'Is there a refund policy?',
+             'Yes — full refund within 7 days of enrollment if you have watched less than 20% of the course. Refunds are processed in 5–7 business days. See /refund.html for full details.'),
+            ('enrollment', 'How do I enroll in a course?',
+             'Click Sign Up, fill in your details, select your course and plan, then complete payment. Your course is instantly activated and you can start watching immediately.'),
+            ('enrollment', 'Can I access the course from mobile?',
+             'Yes! You can install Laxmi Academy as an app on your phone (PWA). On Android tap "Add to Home Screen" in Chrome; on iPhone use Safari Share → Add to Home Screen.'),
+            ('demo',       'Is there a free demo class?',
+             'Yes! You can book a free 45-minute demo class with no payment required. Click "Book Free Demo Class" on the homepage or contact us via WhatsApp at +91 72078 98999.'),
+            ('support',    'How quickly are doubts answered?',
+             'Our team typically responds to student doubts within 30 minutes during working hours. You can submit doubts directly from your student dashboard after enrolling.'),
+            ('support',    'How do I contact Laxmi Academy?',
+             'You can call or WhatsApp us at +91 72078 98999, use the enquiry form on the website, or email us. We are based in Hyderabad, Telangana.'),
+        ]
+        conn.executemany(
+            "INSERT INTO chatbot_knowledge (category, question, answer) VALUES (?, ?, ?)",
+            faqs
+        )

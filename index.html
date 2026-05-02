@@ -213,6 +213,105 @@
       #demo h2 { font-size: 2rem !important; }
     }
 
+    /* ── AI Chatbot Widget ── */
+    #chat-bubble {
+      position: fixed; bottom: 24px; left: 24px; z-index: 1000;
+      width: 54px; height: 54px; border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 22px rgba(99,102,241,.55);
+      cursor: pointer; border: none; transition: transform .2s, box-shadow .2s;
+    }
+    #chat-bubble:hover { transform: scale(1.1); box-shadow: 0 10px 30px rgba(99,102,241,.65); }
+    #chat-bubble .chat-badge {
+      position: absolute; top: -3px; right: -3px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #ef4444; color: #fff; font-size: 0.62rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid #fff; display: none;
+    }
+    #chat-window {
+      position: fixed; bottom: 90px; left: 24px; z-index: 1001;
+      width: 340px; max-width: calc(100vw - 32px);
+      background: #fff; border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(99,102,241,.12);
+      display: flex; flex-direction: column; overflow: hidden;
+      transform-origin: bottom left;
+      animation: chatOpen .25s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    html.dark #chat-window { background: #0f0c29; box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.07); }
+    #chat-window.chat-closing { animation: chatClose .18s ease forwards; }
+    @keyframes chatOpen  { from { opacity:0; transform:scale(0.7) translateY(20px); } to { opacity:1; transform:none; } }
+    @keyframes chatClose { from { opacity:1; transform:none; } to { opacity:0; transform:scale(0.7) translateY(20px); } }
+
+    .chat-header {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      padding: 1rem 1.1rem; display: flex; align-items: center; gap: .75rem;
+    }
+    .chat-header-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .chat-header-info { flex: 1; }
+    .chat-header-info strong { display: block; color: #fff; font-size: .9rem; font-weight: 700; }
+    .chat-header-info span  { color: rgba(255,255,255,.7); font-size: .72rem; }
+    .chat-close-btn {
+      background: rgba(255,255,255,.15); border: none; color: #fff;
+      width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: .85rem;
+      transition: background .15s; flex-shrink: 0;
+    }
+    .chat-close-btn:hover { background: rgba(255,255,255,.3); }
+
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: .9rem 1rem; display: flex;
+      flex-direction: column; gap: .65rem; max-height: 320px; min-height: 180px;
+      scrollbar-width: thin; scrollbar-color: rgba(99,102,241,.2) transparent;
+    }
+    .chat-msg { max-width: 82%; display: flex; flex-direction: column; gap: .2rem; }
+    .chat-msg.bot { align-self: flex-start; }
+    .chat-msg.user { align-self: flex-end; }
+    .chat-msg .bubble {
+      padding: .6rem .85rem; border-radius: 16px; font-size: .84rem; line-height: 1.5;
+      word-break: break-word;
+    }
+    .chat-msg.bot  .bubble { background: #f1f5f9; color: #1e293b; border-bottom-left-radius: 4px; }
+    .chat-msg.user .bubble { background: linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; border-bottom-right-radius: 4px; }
+    html.dark .chat-msg.bot .bubble { background: rgba(255,255,255,.08); color: #e2e8f0; }
+
+    .chat-typing { display: flex; align-items: center; gap: 4px; padding: .55rem .85rem; }
+    .chat-typing span { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; animation: typingDot 1.2s infinite; }
+    .chat-typing span:nth-child(2) { animation-delay: .2s; }
+    .chat-typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes typingDot { 0%,60%,100%{ transform:translateY(0); opacity:.4; } 30%{ transform:translateY(-5px); opacity:1; } }
+
+    .chat-input-row {
+      display: flex; gap: .5rem; padding: .75rem 1rem;
+      border-top: 1px solid #f1f5f9;
+    }
+    html.dark .chat-input-row { border-top-color: rgba(255,255,255,.07); }
+    #chat-input {
+      flex: 1; border: 1.5px solid #e2e8f0; border-radius: 12px;
+      padding: .55rem .85rem; font-size: .84rem; outline: none;
+      background: #f8fafc; color: #1e293b; font-family: inherit;
+      transition: border-color .15s;
+    }
+    html.dark #chat-input { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); color: #e2e8f0; }
+    #chat-input:focus { border-color: #6366f1; background: #fff; }
+    html.dark #chat-input:focus { background: rgba(255,255,255,.1); }
+    #chat-send {
+      width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .15s; flex-shrink: 0;
+    }
+    #chat-send:disabled { opacity: .45; cursor: default; }
+    .chat-footer {
+      text-align: center; font-size: .68rem; color: #94a3b8;
+      padding: 0 1rem .55rem; font-style: italic;
+    }
+
     #hamburger-btn {
       display: none;
       padding: 0.45rem;
@@ -777,6 +876,42 @@
   </div>
 </footer>
 
+<!-- AI Chatbot Widget -->
+<button id="chat-bubble" onclick="toggleChat()" aria-label="Ask our AI assistant">
+  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+  <span class="chat-badge" id="chat-badge">1</span>
+</button>
+
+<div id="chat-window" style="display:none;">
+  <div class="chat-header">
+    <div class="chat-header-avatar">🤖</div>
+    <div class="chat-header-info">
+      <strong>Laxmi Academy AI</strong>
+      <span>Ask about courses, fees &amp; instructors</span>
+    </div>
+    <button class="chat-close-btn" onclick="closeChat()" aria-label="Close chat">✕</button>
+  </div>
+
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-msg bot">
+      <div class="bubble">👋 Hi! I'm the Laxmi Academy assistant. Ask me anything about our Physics courses, pricing, instructors, or how to enroll!</div>
+    </div>
+  </div>
+
+  <div class="chat-input-row">
+    <input id="chat-input" type="text" placeholder="Ask a question…" maxlength="300"
+           onkeydown="if(event.key==='Enter')sendChat()" autocomplete="off"/>
+    <button id="chat-send" onclick="sendChat()" aria-label="Send">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+      </svg>
+    </button>
+  </div>
+  <div class="chat-footer">Powered by AI · Won't share personal data</div>
+</div>
+
 <!-- WhatsApp -->
 <a href="https://wa.me/917207898999?text=Hi%20Laxmi%20Academy!%20%F0%9F%91%8B%0A%0AThanks%20for%20being%20available!%20I%20came%20across%20your%20Physics%20courses%20and%20I%E2%80%99m%20interested%20in%20learning%20more.%0A%0ACould%20you%20please%20share%20details%20about%3A%0A%E2%80%A2%20Available%20courses%20(NEET%20%2F%20JEE%20%2F%20EAMCET%20%2F%20Intermediate)%0A%E2%80%A2%20Batch%20schedule%20%26%20fees%0A%E2%80%A2%20How%20to%20enroll%0A%0ALooking%20forward%20to%20hearing%20from%20you!%20%F0%9F%93%9A" target="_blank" class="whatsapp-btn" aria-label="WhatsApp">
   <svg class="w-6 h-6 fill-white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -938,6 +1073,88 @@
     document.getElementById('ios-guide').classList.remove('show');
     sessionStorage.setItem('ios-guide-dismissed', '1');
   });
+
+  // ── AI Chatbot Widget ──────────────────────────────────────────
+  let chatHistory = [];
+  let chatOpen = false;
+
+  function toggleChat() {
+    chatOpen ? closeChat() : openChat();
+  }
+
+  function openChat() {
+    chatOpen = true;
+    const win = document.getElementById('chat-window');
+    win.style.display = 'flex';
+    win.classList.remove('chat-closing');
+    document.getElementById('chat-badge').style.display = 'none';
+    document.getElementById('chat-input').focus();
+  }
+
+  function closeChat() {
+    chatOpen = false;
+    const win = document.getElementById('chat-window');
+    win.classList.add('chat-closing');
+    setTimeout(() => { win.style.display = 'none'; win.classList.remove('chat-closing'); }, 180);
+  }
+
+  function appendMsg(role, text) {
+    const box = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + role;
+    div.innerHTML = `<div class="bubble">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+    return div;
+  }
+
+  function showTyping() {
+    const box = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg bot'; div.id = 'chat-typing-indicator';
+    div.innerHTML = '<div class="bubble chat-typing"><span></span><span></span><span></span></div>';
+    box.appendChild(div); box.scrollTop = box.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('chat-typing-indicator');
+    if (t) t.remove();
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const btn   = document.getElementById('chat-send');
+    const msg   = input.value.trim();
+    if (!msg) return;
+
+    input.value = ''; btn.disabled = true;
+    appendMsg('user', msg);
+    chatHistory.push({ role: 'user', content: msg });
+    showTyping();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, history: chatHistory.slice(-8) })
+      });
+      removeTyping();
+      const data = await res.json();
+      const reply = data.reply || "Sorry, I couldn't get a response. Please try again or use the enquiry form.";
+      appendMsg('bot', reply);
+      chatHistory.push({ role: 'assistant', content: reply });
+    } catch {
+      removeTyping();
+      appendMsg('bot', "I'm having trouble connecting. Please try the enquiry form below or WhatsApp us at +91 72078 98999.");
+    }
+    btn.disabled = false;
+    input.focus();
+  }
+
+  // Show chat badge after 8 seconds to nudge first-time visitors
+  setTimeout(() => {
+    if (!chatOpen) document.getElementById('chat-badge').style.display = 'flex';
+  }, 8000);
 
   // ── Typewriter hero headline ──
   const typedLines = ['for NEET 2026', 'for JEE Mains', 'for EAMCET', 'Anytime, Anywhere'];

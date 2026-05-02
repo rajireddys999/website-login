@@ -243,6 +243,12 @@
     .stat-label { font-size:.71rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
     .stat-value { font-size:1.55rem; font-weight:900; margin-top:.3rem; line-height:1; }
     .stat-sub   { font-size:.74rem; color:var(--muted); margin-top:.2rem; }
+    @keyframes valuePop {
+      0%   { transform:scale(0.6); opacity:0; }
+      70%  { transform:scale(1.08); }
+      100% { transform:scale(1); opacity:1; }
+    }
+    .value-pop { animation: valuePop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
 
     /* ── Section headings ───────────────────────── */
     .section-title {
@@ -908,6 +914,16 @@
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // ── Pop-in for text stat values ──────────────────────────────
+  function setStatValue(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val;
+    el.classList.remove('value-pop');
+    void el.offsetWidth;
+    el.classList.add('value-pop');
+  }
+
   // ── Animated counter ──────────────────────────────────────────
   function animateValue(el, target) {
     if (!el) return;
@@ -1001,10 +1017,10 @@
     document.getElementById('welcome-name').textContent   = 'Welcome back, ' + firstName + '!';
     document.getElementById('welcome-sub').textContent    = 'You are enrolled in: ' + course;
 
-    document.getElementById('stat-course').textContent    = course;
-    document.getElementById('stat-plan').textContent      = student.plan;
+    setStatValue('stat-course', course);
+    setStatValue('stat-plan', student.plan || '—');
     const since = student.created_at ? student.created_at.slice(0,10) : '—';
-    document.getElementById('stat-since').textContent     = since;
+    setStatValue('stat-since', since);
 
     document.getElementById('p-name').value   = student.full_name;
     document.getElementById('p-email').value  = student.email;

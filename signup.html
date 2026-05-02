@@ -39,16 +39,28 @@
       --input-focus: rgba(255,255,255,0.08);
     }
 
+    @keyframes gradientMesh {
+      0%,100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
+
     body {
       font-family: 'Outfit', sans-serif;
       min-height: 100vh;
-      background: var(--bg);
+      background: linear-gradient(-45deg, #1e1b4b, #312e81, #4f46e5, #6d28d9);
+      background-size: 400% 400%;
+      animation: gradientMesh 10s ease infinite;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1.5rem 1rem;
       position: relative;
       overflow-x: hidden;
+    }
+    html.dark body {
+      background: linear-gradient(-45deg, #05060f, #0f0c29, #1e1b4b, #2e1065);
+      background-size: 400% 400%;
+      animation: gradientMesh 10s ease infinite;
     }
 
     /* ── Animated orbs ── */

@@ -52,16 +52,28 @@
       --input-focus: rgba(255,255,255,0.15);
     }
 
+    @keyframes gradientMesh {
+      0%,100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
+
     body {
       font-family: 'Outfit', sans-serif;
       min-height: 100vh;
-      background: var(--bg);
+      background: linear-gradient(-45deg, #eef0ff, #e0e7ff, #c7d2fe, #ddd6fe);
+      background-size: 400% 400%;
+      animation: gradientMesh 12s ease infinite;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1rem;
       overflow: hidden;
       position: relative;
+    }
+    html.dark body {
+      background: linear-gradient(-45deg, #05060f, #0f0c29, #1a1040, #0d0d1a);
+      background-size: 400% 400%;
+      animation: gradientMesh 12s ease infinite;
     }
 
     /* ── Animated orbs background ── */

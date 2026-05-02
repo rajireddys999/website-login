@@ -1820,24 +1820,50 @@ YOUR STYLE:
     messages = [{'role': m['role'], 'content': m['content']} for m in history[-8:] if m.get('role') in ('user','assistant')]
     messages.append({'role': 'user', 'content': message})
 
+    for model in ['claude-haiku-4-5-20251001', 'claude-3-haiku-20240307']:
+        try:
+            resp = http_requests.post(
+                'https://api.anthropic.com/v1/messages',
+                headers={
+                    'x-api-key': ANTHROPIC_API_KEY,
+                    'anthropic-version': '2023-06-01',
+                    'content-type': 'application/json'
+                },
+                json={'model': model, 'max_tokens': 400,
+                      'system': system, 'messages': messages},
+                timeout=25
+            )
+            d = resp.json()
+            if resp.ok:
+                return jsonify({'reply': d['content'][0]['text']})
+            err = d.get('error', {}).get('message', str(resp.status_code))
+            print(f'[chat] model={model} status={resp.status_code} error={err}')
+            if resp.status_code in (401, 403):
+                break  # bad key — no point retrying other models
+        except Exception as ex:
+            print(f'[chat] model={model} exception={ex}')
+
+    return jsonify({'reply': "Sorry, I'm having trouble responding right now. Please use the enquiry form below or WhatsApp us at +91 72078 98999."}), 200
+
+
+@app.route('/api/chat/health', methods=['GET'])
+def chat_health():
+    if not ANTHROPIC_API_KEY:
+        return jsonify({'ok': False, 'reason': 'ANTHROPIC_API_KEY not set'})
     try:
         resp = http_requests.post(
             'https://api.anthropic.com/v1/messages',
-            headers={
-                'x-api-key': ANTHROPIC_API_KEY,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json'
-            },
-            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 400,
-                  'system': system, 'messages': messages},
-            timeout=25
+            headers={'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
+            json={'model': 'claude-3-haiku-20240307', 'max_tokens': 5, 'messages': [{'role': 'user', 'content': 'hi'}]},
+            timeout=10
         )
         d = resp.json()
         if resp.ok:
-            return jsonify({'reply': d['content'][0]['text']})
-        return jsonify({'reply': "Sorry, I'm having trouble responding right now. Please use the enquiry form below and we'll get back to you shortly."}), 200
-    except Exception:
-        return jsonify({'reply': "I'm offline at the moment. Please fill in the enquiry form and our team will contact you soon!"}), 200
+            return jsonify({'ok': True, 'model': 'claude-3-haiku-20240307'})
+        return jsonify({'ok': False, 'status': resp.status_code, 'error': d.get('error', {}).get('message', '')})
+    except Exception as ex:
+        return jsonify({'ok': False, 'error': str(ex)})
+
 
 # ── ADMIN: edit student (full edit) ──────────────────────────────
 

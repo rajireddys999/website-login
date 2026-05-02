@@ -1838,12 +1838,31 @@ YOUR STYLE:
                 return jsonify({'reply': d['content'][0]['text']})
             err = d.get('error', {}).get('message', str(resp.status_code))
             print(f'[chat] model={model} status={resp.status_code} error={err}')
-            if resp.status_code in (401, 403):
-                break  # bad key — no point retrying other models
+            if resp.status_code in (401, 403, 400):
+                break  # auth/billing failure — fall through to FAQ fallback
         except Exception as ex:
             print(f'[chat] model={model} exception={ex}')
 
-    return jsonify({'reply': "Sorry, I'm having trouble responding right now. Please use the enquiry form below or WhatsApp us at +91 72078 98999."}), 200
+    # ── FAQ keyword fallback (works without API credits) ──────────────
+    try:
+        conn2 = get_conn()
+        faqs = conn2.execute(
+            "SELECT question, answer FROM chatbot_knowledge WHERE is_active=1"
+        ).fetchall()
+        conn2.close()
+        msg_words = set(message.lower().split())
+        best_faq, best_score = None, 0
+        for faq in faqs:
+            q_words = set(faq['question'].lower().split())
+            score = len(q_words & msg_words)
+            if score > best_score:
+                best_score, best_faq = score, faq
+        if best_faq and best_score >= 1:
+            return jsonify({'reply': best_faq['answer']}), 200
+    except Exception as ex:
+        print(f'[chat] faq fallback error={ex}')
+
+    return jsonify({'reply': "Thanks for your question! Our team will get back to you shortly. You can also reach us via WhatsApp at +91 72078 98999 or use the enquiry form below."}), 200
 
 
 @app.route('/api/chat/health', methods=['GET'])

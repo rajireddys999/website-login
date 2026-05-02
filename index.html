@@ -1181,7 +1181,7 @@
 
   /* ── AI Chat Widget ─────────────────────────────────────────── */
   #chat-fab {
-    position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 9000;
+    position: fixed; bottom: 5.5rem; right: 1.5rem; z-index: 9000;
     width: 56px; height: 56px; border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     border: none; cursor: pointer; box-shadow: 0 4px 24px rgba(99,102,241,.5);
@@ -1198,7 +1198,7 @@
   }
 
   #chat-panel {
-    position: fixed; bottom: 5.5rem; left: 1.5rem; z-index: 9001;
+    position: fixed; bottom: 10rem; right: 1.5rem; z-index: 9001;
     width: min(380px, calc(100vw - 2rem));
     background: #0f0f1a;
     border: 1px solid rgba(99,102,241,.25);
@@ -1309,8 +1309,8 @@
   .chat-send svg { width: 16px; height: 16px; fill: #fff; }
 
   @media (max-width: 480px) {
-    #chat-fab  { bottom: 1rem; left: 1rem; }
-    #chat-panel { bottom: 5rem; left: 1rem; width: calc(100vw - 2rem); }
+    #chat-fab  { bottom: 5rem; right: 1rem; }
+    #chat-panel { bottom: 9.5rem; right: 1rem; width: calc(100vw - 2rem); }
   }
 </style>
 

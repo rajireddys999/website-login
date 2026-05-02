@@ -1838,26 +1838,82 @@ HOW TO BEHAVE AS PRIYA:
         except Exception as ex:
             print(f'[chat] model={model} exception={ex}')
 
-    # ── FAQ keyword fallback (works without API credits) ──────────────
+    # ── Intent-based fallback — pulls live DB data, no API needed ────────────
+    conn2 = None
     try:
         conn2 = get_conn()
-        faqs = conn2.execute(
-            "SELECT question, answer FROM chatbot_knowledge WHERE is_active=1"
-        ).fetchall()
-        conn2.close()
-        msg_words = set(message.lower().split())
+        msg_l = message.lower()
+        reply = None
+
+        if any(k in msg_l for k in ['fee', 'fees', 'price', 'cost', 'how much', 'pricing', 'plan', 'plans', 'amount', 'rupee', 'pay', 'charge', 'money']):
+            rows = conn2.execute("SELECT course, plan, amount FROM course_pricing ORDER BY course, amount").fetchall()
+            if rows:
+                pm = {}
+                for r in rows:
+                    pm.setdefault(r['course'], []).append(f"{r['plan']}: ₹{r['amount']}")
+                lines = '\n'.join([f"- **{c}**: {', '.join(plans)}" for c, plans in list(pm.items())[:6]])
+                reply = f"Here are our current course fees:\n\n{lines}\n\nLonger plans give the best value! Which course are you interested in?"
+
+        elif any(k in msg_l for k in ['demo', 'free class', 'trial', 'try before', 'sample']):
+            reply = "Yes! We offer a **free 45-minute demo class** — no payment required.\n\nHow to book:\n- Click **Book Free Demo** on the homepage\n- Or WhatsApp us at **+91 72078 98999**\n\nWould you like to know more about any specific course?"
+
+        elif any(k in msg_l for k in ['enroll', 'enrollment', 'sign up', 'join', 'register', 'how to start', 'begin', 'get started', 'access']):
+            reply = "Enrolling is quick and easy!\n\n- Click **Sign Up** on the homepage\n- Fill in your details and choose your course & plan\n- Complete payment via UPI, card, or net banking\n- **Instant access** — start watching right away!\n\nWant help choosing the right course?"
+
+        elif any(k in msg_l for k in ['refund', 'cancel', 'money back', 'return']):
+            reply = "We offer a **full refund within 7 days** of enrollment, as long as you've watched less than 20% of the course content.\n\nRefunds are processed in 5–7 business days. Full details at **/refund.html**."
+
+        elif any(k in msg_l for k in ['payment', 'upi', 'gpay', 'phonepe', 'paytm', 'card', 'net banking', 'how to pay', 'online payment']):
+            reply = "We accept all major payment methods:\n\n- **UPI**: Google Pay, PhonePe, Paytm\n- **Debit / Credit card**\n- **Net banking**\n\nAll payments go through the PhonePe gateway — secure and instant. Course access activates immediately after payment!"
+
+        elif any(k in msg_l for k in ['contact', 'phone', 'whatsapp', 'call', 'reach', 'address', 'location', 'hyderabad', 'where']):
+            reply = "You can reach us at:\n\n- **WhatsApp / Call**: +91 72078 98999\n- **Location**: Hyderabad, Telangana\n- **Enquiry form**: available on the homepage\n\nWe typically respond within 30 minutes during working hours!"
+
+        elif any(k in msg_l for k in ['instructor', 'teacher', 'faculty', 'professor', 'who teaches', 'who is']):
+            rows = conn2.execute("SELECT name, subject, bio FROM instructors WHERE is_active=1").fetchall()
+            if rows:
+                lines = '\n'.join([f"- **{r['name']}** ({r['subject']})" + (f" — {r['bio'][:80]}…" if r.get('bio') and len(r['bio']) > 20 else '') for r in rows])
+                reply = f"Our faculty:\n\n{lines}\n\nWant to meet them? Book a **free demo class** with no commitment!"
+            else:
+                reply = "We have experienced Physics faculty specialising in JEE, NEET, and EAMCET. Book a free demo to meet them!"
+
+        elif any(k in msg_l for k in ['course', 'courses', 'offer', 'available', 'jee', 'neet', 'eamcet', 'intermediate', 'foundation', 'class 11', 'class 12', 'which', 'suit', 'recommend', 'best for', 'prepare', 'preparing']):
+            rows = conn2.execute("SELECT course, COUNT(*) as cnt FROM lessons WHERE is_published=1 GROUP BY course ORDER BY cnt DESC").fetchall()
+            if rows:
+                lines = '\n'.join([f"- **{r['course']}** ({r['cnt']} lessons)" for r in rows])
+                reply = f"We offer these Physics courses:\n\n{lines}\n\nWhich exam are you preparing for — **JEE, NEET, or EAMCET**? I'll help you pick the right one!"
+            else:
+                reply = "We offer Physics courses for **JEE Mains, JEE Advanced, NEET, EAMCET, Class 11 & 12**, and a **Physics Foundation** course for beginners.\n\nWhich exam are you preparing for?"
+
+        elif any(k in msg_l for k in ['mobile', 'app', 'phone', 'android', 'iphone', 'install', 'pwa', 'download']):
+            reply = "Yes! Laxmi Academy works as a **mobile app** (PWA):\n\n- **Android**: open Chrome → menu → *Add to Home Screen*\n- **iPhone**: open Safari → Share → *Add to Home Screen*\n\nOnce installed it works like a native app — even offline!"
+
+        elif any(k in msg_l for k in ['doubt', 'doubts', 'question', 'help', 'support', 'stuck', 'clear']):
+            reply = "Our instructors typically respond to student doubts within **30 minutes** during working hours.\n\nYou can submit doubts directly from your **Student Dashboard** after enrolling. You can also WhatsApp us at **+91 72078 98999** for urgent queries."
+
+        if reply:
+            return jsonify({'reply': reply}), 200
+
+        # Last resort: FAQ keyword match (score ≥ 2 to avoid false positives)
+        faqs = conn2.execute("SELECT question, answer FROM chatbot_knowledge WHERE is_active=1").fetchall()
+        msg_words = set(msg_l.split())
         best_faq, best_score = None, 0
         for faq in faqs:
             q_words = set(faq['question'].lower().split())
             score = len(q_words & msg_words)
             if score > best_score:
                 best_score, best_faq = score, faq
-        if best_faq and best_score >= 1:
+        if best_faq and best_score >= 2:
             return jsonify({'reply': best_faq['answer']}), 200
-    except Exception as ex:
-        print(f'[chat] faq fallback error={ex}')
 
-    return jsonify({'reply': "Thanks for your question! Our team will get back to you shortly. You can also reach us via WhatsApp at +91 72078 98999 or use the enquiry form below."}), 200
+    except Exception as ex:
+        print(f'[chat] fallback error={ex}')
+    finally:
+        if conn2:
+            try: conn2.close()
+            except: pass
+
+    return jsonify({'reply': "Thanks for your question! For a quick answer, WhatsApp us at **+91 72078 98999** or use the enquiry form below — we respond within 30 minutes!"}), 200
 
 
 @app.route('/api/chat/health', methods=['GET'])

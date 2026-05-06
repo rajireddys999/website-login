@@ -19,38 +19,30 @@
   <script src="theme.js"></script>
   <link rel="stylesheet" href="theme.css">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Figtree:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; }
-    /* Navbar theme button */
-    #navbar-theme-btn {
-      width: 36px; height: 36px; border-radius: 50%;
-      border: 1.5px solid #e5e7eb; background: transparent;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-size: 1rem; transition: all .2s;
+    body { font-family: 'Figtree', 'Inter', sans-serif; }
+    h1, h2, h3, h4 { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; }
+
+    /* ── Dark base (default since theme.js adds .dark) ── */
+    html.dark body { background: #020812; color: #e2eeff; }
+
+    /* ── Brand glow ── */
+    .glow-text {
+      background: linear-gradient(90deg, #3991ff, #a855f7) !important;
+      -webkit-background-clip: text !important; background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
     }
-    #navbar-theme-btn:hover { border-color: #f97316; transform: rotate(15deg) scale(1.1); }
-    html.dark #navbar-theme-btn { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.06); }
-    .glow-text { background: linear-gradient(90deg,#ff9800,#ff5722); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-    .hero-bg { background: linear-gradient(135deg,#0f0c29 0%,#302b63 55%,#24243e 100%); }
-    .particle { position: absolute; border-radius: 50%; opacity: .12; animation: float 7s ease-in-out infinite; }
+
+    /* ── Hero ── */
+    .hero-bg { background: linear-gradient(135deg,#030b1e 0%,#0d0930 55%,#080624 100%); }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
-    .card-hover { transition: transform .22s, box-shadow .22s; }
-    .card-hover:hover { transform: translateY(-5px); box-shadow: 0 16px 36px rgba(0,0,0,.13); }
-    .reveal { opacity:0; transform:translateY(28px); transition: opacity .6s ease, transform .6s ease; }
-    .reveal.visible { opacity:1; transform:none; }
-    .step-line::after { content:''; position:absolute; top:50%; left:100%; width:100%; height:2px; background:linear-gradient(90deg,#ff9800,transparent); }
-    .whatsapp-btn { position:fixed; bottom:24px; right:24px; z-index:1000; width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,#25d366,#128c7e); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 22px rgba(37,211,102,.5); transition:transform .2s; }
-    .whatsapp-btn:hover { transform:scale(1.1); }
-    .marquee-track { display:flex; width:max-content; animation:marquee 30s linear infinite; }
-    .marquee-track:hover { animation-play-state:paused; }
-    @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
     /* ── Formula particles ── */
     .formula-particle {
       position: absolute; font-family: 'Georgia', serif; font-weight: 700;
-      color: rgba(255,255,255,0.14); pointer-events: none; white-space: nowrap;
+      color: rgba(57,145,255,0.14); pointer-events: none; white-space: nowrap;
       animation: formulaDrift linear infinite;
     }
     @keyframes formulaDrift {
@@ -60,178 +52,195 @@
       100% { opacity:0; transform:translate(var(--dx,40px),var(--dy,-80px)) rotate(6deg) scale(1.1); }
     }
 
-    /* ── Heading letter spacing ── */
-    h1, h2, h3 { letter-spacing: -0.02em; }
+    /* ── Card hover ── */
+    .card-hover { transition: transform .22s, box-shadow .22s; }
+    html.dark .card-hover:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,28,.5); }
+    html:not(.dark) .card-hover:hover { transform: translateY(-5px); box-shadow: 0 16px 36px rgba(0,0,0,.13); }
 
-    /* ── Stats counter band ── */
-    .stats-band { background: linear-gradient(135deg,#1e1b4b 0%,#302b63 100%); padding:2.5rem 1rem; }
+    /* ── Scroll reveal ── */
+    .reveal { opacity:0; transform:translateY(28px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity:1; transform:none; }
+
+    /* ── Marquee ── */
+    .marquee-track { display:flex; width:max-content; animation:marquee 30s linear infinite; }
+    .marquee-track:hover { animation-play-state:paused; }
+    @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+    /* ── Navbar ── */
+    html.dark header.sticky {
+      background: rgba(2,8,18,.93) !important;
+      border-bottom-color: rgba(57,145,255,.1) !important;
+      box-shadow: 0 1px 0 rgba(57,145,255,.06) !important;
+    }
+    html.dark header .text-slate-600 { color: #7aa4cc !important; }
+    html.dark nav a { color: #7aa4cc !important; }
+    html.dark nav a:hover { color: #fb923c !important; }
+    html.dark .border-orange-400 { border-color: rgba(249,115,22,.6) !important; }
+    html.dark .text-orange-500 { color: #fb923c !important; }
+    #navbar-theme-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid #e5e7eb; background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1rem; transition: all .2s;
+    }
+    #navbar-theme-btn:hover { border-color: #f97316; transform: rotate(15deg) scale(1.1); }
+    html.dark #navbar-theme-btn { border-color: rgba(57,145,255,.3) !important; background: rgba(57,145,255,.06) !important; }
+
+    /* ── Stats band ── */
+    .stats-band { background: linear-gradient(135deg,#030e25 0%,#070a26 100%); padding:2.5rem 1rem; border-top:1px solid rgba(57,145,255,.08); border-bottom:1px solid rgba(57,145,255,.08); }
     .stat-counter { text-align:center; color:#fff; }
     .stat-counter .num {
-      font-size:2.4rem; font-weight:900; line-height:1;
-      background:linear-gradient(90deg,#fbbf24,#f97316);
+      font-size:2.4rem; font-weight:900; line-height:1; font-family:'Syne',sans-serif;
+      background:linear-gradient(90deg,#3991ff,#22d3ee);
       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
     }
     .stat-counter .label {
-      font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.5);
+      font-size:0.75rem; font-weight:600; color:rgba(122,164,204,0.7);
       text-transform:uppercase; letter-spacing:0.07em; margin-top:0.35rem;
     }
 
-    /* ── Mobile nav ── */
-    #mobile-menu {
-      display: none;
-      flex-direction: column;
-      gap: 0.25rem;
-      padding: 0.75rem 1.25rem 1.25rem;
-      border-top: 1px solid #f1f5f9;
-      background: rgba(255,255,255,0.97);
-      backdrop-filter: blur(12px);
-    }
-    html.dark #mobile-menu {
-      background: rgba(15,12,41,0.97);
-      border-top-color: rgba(255,255,255,0.08);
-    }
-    #mobile-menu.open { display: flex; animation: slideDown .2s ease; }
-    @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+    /* ── All main sections dark ── */
+    html.dark #how    { background: #030d1e !important; }
+    html.dark #courses { background: #020812 !important; }
+    html.dark #testimonials { background: #030d1e !important; }
+    html.dark #faq    { background: #020812 !important; }
+    html.dark #contact { background: #030d1e !important; }
 
-    #mobile-menu a {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 0.75rem 1rem;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      color: #475569;
-      text-decoration: none;
-      transition: background 0.15s, color 0.15s;
-    }
-    html.dark #mobile-menu a { color: #94a3b8; }
-    #mobile-menu a:hover { background: #f8fafc; color: #f97316; }
-    html.dark #mobile-menu a:hover { background: rgba(255,255,255,0.06); color: #fb923c; }
+    /* ── Section heading text overrides ── */
+    html.dark .text-slate-900, html.dark h2.text-slate-900, html.dark h2.font-black { color: #e2eeff !important; }
+    html.dark .text-slate-800, html.dark h3.text-slate-800 { color: #c8dff8 !important; }
+    html.dark .text-slate-600 { color: #7aa4cc !important; }
+    html.dark .text-slate-500 { color: #5d82a8 !important; }
+    html.dark .text-slate-400 { color: rgba(122,164,204,.7) !important; }
+    html.dark .text-orange-500 { color: #fb923c !important; }
 
-    #mobile-menu .mob-divider { height: 1px; background: #f1f5f9; margin: 0.25rem 0; }
-    html.dark #mobile-menu .mob-divider { background: rgba(255,255,255,0.07); }
+    /* ── How It Works cards ── */
+    html.dark #how .bg-gradient-to-b { background: #08111e !important; }
+    html.dark #how .border-indigo-100 { border-color: rgba(99,102,241,.22) !important; }
+    html.dark #how .border-orange-100 { border-color: rgba(249,115,22,.22) !important; }
+    html.dark #how .border-emerald-100 { border-color: rgba(16,185,129,.22) !important; }
 
-    #mobile-menu .mob-login {
-      border: 1.5px solid #f97316;
-      color: #f97316 !important;
-    }
-    #mobile-menu .mob-login:hover { background: #fff7ed !important; }
-    #mobile-menu .mob-signup {
-      background: linear-gradient(135deg, #f97316, #e11d48) !important;
-      color: #fff !important;
-    }
+    /* ── Courses stream cards ── */
+    html.dark #courses .bg-rose-50   { background: #130810 !important; }
+    html.dark #courses .bg-indigo-50 { background: #080a1e !important; }
+    html.dark #courses .bg-orange-50 { background: #130c05 !important; }
+    html.dark #courses .bg-emerald-50{ background: #051610 !important; }
+    html.dark #courses .bg-purple-50 { background: #0f0618 !important; }
+    html.dark #courses .border-rose-200   { border-color: rgba(244,63,94,.22) !important; }
+    html.dark #courses .border-indigo-200 { border-color: rgba(99,102,241,.22) !important; }
+    html.dark #courses .border-orange-200 { border-color: rgba(249,115,22,.22) !important; }
+    html.dark #courses .border-emerald-200{ border-color: rgba(16,185,129,.22) !important; }
+    html.dark #courses .border-purple-200 { border-color: rgba(168,85,247,.22) !important; }
+    html.dark #courses .text-rose-700   { color: #fda4af !important; }
+    html.dark #courses .text-indigo-700 { color: #a5b4fc !important; }
+    html.dark #courses .text-orange-700 { color: #fb923c !important; }
+    html.dark #courses .text-emerald-700{ color: #6ee7b7 !important; }
+    html.dark #courses .text-purple-700 { color: #d8b4fe !important; }
+    html.dark #courses .text-rose-400   { color: rgba(253,164,175,.65) !important; }
+    html.dark #courses .text-indigo-400 { color: rgba(165,180,252,.65) !important; }
+    html.dark #courses .text-orange-400 { color: rgba(251,146,60,.65) !important; }
+    html.dark #courses .text-emerald-400{ color: rgba(110,231,183,.65) !important; }
+    html.dark #courses .text-purple-400 { color: rgba(216,180,254,.65) !important; }
 
-    /* ── PWA Install banner ── */
+    /* ── FAQ ── */
+    html.dark #faq .faq-item { background: #0a1228 !important; border-color: rgba(57,145,255,.14) !important; }
+    html.dark #faq .faq-item:hover { border-color: rgba(57,145,255,.3) !important; box-shadow: 0 4px 20px rgba(0,0,28,.4) !important; }
+    html.dark #faq .faq-btn span { color: #e2eeff !important; }
+    html.dark #faq .faq-body p { color: #7aa4cc !important; }
+    html.dark #faq .faq-body a { color: #7ec8ff !important; }
+
+    /* ── Contact ── */
+    html.dark #contact .bg-slate-50 { background: #0a1228 !important; }
+    html.dark #contact .border-slate-200 { border-color: rgba(57,145,255,.14) !important; }
+    html.dark #contact .text-slate-800 { color: #e2eeff !important; }
+    html.dark #contact .text-slate-400 { color: rgba(122,164,204,.7) !important; }
+    html.dark #contact .bg-indigo-100 { background: rgba(99,102,241,.15) !important; }
+    html.dark #contact .bg-green-100  { background: rgba(16,185,129,.15) !important; }
+    html.dark #contact .bg-orange-100 { background: rgba(249,115,22,.15) !important; }
+
+    /* ── Footer ── */
+    html.dark footer { background: #030a1a !important; }
+    html.dark footer.bg-slate-900 { background: #030a1a !important; }
+
+    /* ── PWA banner ── */
     #pwa-banner {
-      display: none;
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 999;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a21caf 100%);
-      color: #fff;
-      padding: 1rem 1.1rem 1rem 1rem;
-      border-radius: 20px;
-      box-shadow: 0 12px 40px rgba(99,102,241,0.55), 0 0 0 1px rgba(255,255,255,0.12) inset;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.88rem;
-      font-weight: 600;
-      align-items: center;
-      gap: 0.85rem;
-      max-width: 300px;
-      width: calc(100% - 2.5rem);
-      animation: bannerSlideIn .45s cubic-bezier(0.16,1,0.3,1) both;
-    }
-    #pwa-banner::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 20px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
-      pointer-events: none;
+      display: none; position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: linear-gradient(135deg,#0d1f4a 0%,#1a0d40 50%,#001a3a 100%);
+      color: #fff; padding: 1rem 1.1rem 1rem 1rem; border-radius: 20px;
+      border: 1px solid rgba(57,145,255,.28);
+      box-shadow: 0 12px 40px rgba(0,0,32,.7), 0 0 0 1px rgba(57,145,255,.06) inset;
+      font-family: 'Figtree', sans-serif; font-size: 0.88rem; font-weight: 600;
+      align-items: center; gap: 0.85rem; max-width: 300px;
+      width: calc(100% - 2.5rem); animation: bannerSlideIn .45s cubic-bezier(0.16,1,0.3,1) both;
     }
     #pwa-banner.show { display: flex; }
-    @keyframes bannerSlideIn {
-      from { opacity:0; transform:translateX(30px) translateY(10px); }
-      to   { opacity:1; transform:none; }
-    }
-    #pwa-banner img { width:42px; height:42px; border-radius:12px; object-fit:cover; flex-shrink:0; border:2px solid rgba(255,255,255,0.35); box-shadow:0 4px 12px rgba(0,0,0,0.25); }
+    @keyframes bannerSlideIn { from{opacity:0;transform:translateX(30px) translateY(10px)} to{opacity:1;transform:none} }
+    #pwa-banner img { width:42px; height:42px; border-radius:12px; object-fit:cover; flex-shrink:0; border:2px solid rgba(57,145,255,.35); box-shadow:0 4px 12px rgba(0,0,0,.3); }
     #pwa-banner .pwa-text { flex:1; line-height:1.35; }
-    #pwa-banner .pwa-text small { display:block; font-weight:400; opacity:.75; font-size:0.73rem; margin-top:1px; }
+    #pwa-banner .pwa-text small { display:block; font-weight:400; opacity:.7; font-size:0.73rem; margin-top:1px; }
     #pwa-install-btn {
-      background: rgba(255,255,255,0.95);
-      color: #4f46e5;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 12px;
-      font-weight: 800;
-      font-size: 0.8rem;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: transform .15s, box-shadow .15s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      background: rgba(57,145,255,.9); color: #fff; border: none;
+      padding: 0.5rem 1rem; border-radius: 12px; font-weight: 800; font-size: 0.8rem;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      transition: transform .15s, box-shadow .15s; box-shadow: 0 2px 8px rgba(57,145,255,.3);
     }
-    #pwa-install-btn:hover { transform: scale(1.07); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+    #pwa-install-btn:hover { transform: scale(1.07); box-shadow: 0 4px 16px rgba(57,145,255,.5); }
     #pwa-close-btn {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: rgba(30,20,60,0.85);
-      border: 1.5px solid rgba(255,255,255,0.2);
-      color: rgba(255,255,255,0.85);
-      cursor: pointer;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      font-size: 0.65rem;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: background .15s;
+      position: absolute; top: -8px; right: -8px; background: rgba(2,8,18,.9);
+      border: 1.5px solid rgba(57,145,255,.22); color: rgba(200,220,255,.85); cursor: pointer;
+      width: 22px; height: 22px; border-radius: 50%; font-size: 0.65rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s;
     }
-    #pwa-close-btn:hover { background: rgba(0,0,0,0.9); }
-    @media (max-width: 480px) {
-      #pwa-banner { right: 12px; bottom: 12px; max-width: calc(100vw - 24px); }
+    #pwa-close-btn:hover { background: rgba(0,0,0,.95); }
+    @media (max-width: 480px) { #pwa-banner { right:12px; bottom:12px; max-width:calc(100vw - 24px); } }
+
+    /* ── WhatsApp ── */
+    .whatsapp-btn { position:fixed; bottom:24px; right:24px; z-index:1000; width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,#25d366,#128c7e); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 22px rgba(37,211,102,.45); transition:transform .2s; }
+    .whatsapp-btn:hover { transform:scale(1.1); }
+
+    /* ── Mobile menu ── */
+    #mobile-menu {
+      display: none; flex-direction: column; gap: 0.25rem;
+      padding: 0.75rem 1.25rem 1.25rem;
+      border-top: 1px solid rgba(57,145,255,.1);
+      background: rgba(2,8,18,.98); backdrop-filter: blur(16px);
     }
-
-    /* ── Dark mode: testimonials + FAQ + CTA ── */
-    html.dark #testimonials { background: #05060f !important; }
-    html.dark #faq { background: #08091a !important; }
-    html.dark #faq .faq-item { background: rgba(255,255,255,0.04) !important; border-color: rgba(255,255,255,0.1) !important; }
-    html.dark #faq .faq-btn span { color: #f0f2ff !important; }
-    html.dark #faq .faq-body p { color: #8891b4 !important; }
-    html.dark #faq .faq-body a { color: #a5b4fc !important; }
-    html.dark #faq h2 { color: #f0f2ff !important; }
-    html.dark #faq p.text-slate-500 { color: #8891b4 !important; }
-
-    /* FAQ responsive */
-    @media (max-width: 600px) {
-      #demo h2 { font-size: 2rem !important; }
+    #mobile-menu.open { display: flex; animation: slideDown .2s ease; }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
+    #mobile-menu a {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.75rem 1rem; border-radius: 12px;
+      font-weight: 600; font-size: 0.95rem; color: #7aa4cc;
+      text-decoration: none; transition: background 0.15s, color 0.15s;
     }
+    #mobile-menu a:hover { background: rgba(57,145,255,.07); color: #fb923c; }
+    #mobile-menu .mob-divider { height:1px; background:rgba(57,145,255,.1); margin:0.25rem 0; }
+    #mobile-menu .mob-login { border:1.5px solid rgba(249,115,22,.6); color:#fb923c !important; }
+    #mobile-menu .mob-login:hover { background:rgba(249,115,22,.08) !important; }
+    #mobile-menu .mob-signup { background:linear-gradient(135deg,#3991ff,#a855f7) !important; color:#fff !important; }
 
+    /* ── Hamburger ── */
     #hamburger-btn {
-      display: none;
-      padding: 0.45rem;
-      border-radius: 10px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      color: #475569;
-      transition: background 0.15s;
+      display: none; padding: 0.45rem; border-radius: 10px;
+      border: none; background: transparent; cursor: pointer;
+      color: #7aa4cc; transition: background 0.15s;
     }
-    html.dark #hamburger-btn { color: #94a3b8; }
-    #hamburger-btn:hover { background: #f1f5f9; }
-    html.dark #hamburger-btn:hover { background: rgba(255,255,255,0.08); }
-    @media (max-width: 767px) {
-      #hamburger-btn { display: flex; align-items: center; justify-content: center; }
+    #hamburger-btn:hover { background: rgba(57,145,255,.07); }
+    @media (max-width: 767px) { #hamburger-btn { display: flex; align-items: center; justify-content: center; } }
+
+    /* ── Hero section orbital ring decoration ── */
+    .orbital-ring {
+      position:absolute; border-radius:50%; border:1px solid rgba(57,145,255,.08);
+      pointer-events:none; animation:orbitSpin linear infinite;
     }
+    @keyframes orbitSpin { to { transform:rotate(360deg); } }
+    @keyframes orbitSpinRev { to { transform:rotate(-360deg); } }
+
+    /* ── FAQ responsive ── */
+    @media (max-width: 600px) { #demo h2 { font-size: 2rem !important; } }
   </style>
 </head>
-<body class="bg-white text-slate-900 antialiased">
+<body class="antialiased">
 
 <!-- ANNOUNCEMENT TICKER -->
 <div style="background:linear-gradient(90deg,#1e1b4b,#312e81)" class="text-white text-sm overflow-hidden py-2">
@@ -396,7 +405,7 @@
 
   <!-- Wave -->
   <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
-    <svg viewBox="0 0 1440 60" preserveAspectRatio="none" class="w-full h-12 fill-white"><path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z"/></svg>
+    <svg viewBox="0 0 1440 60" preserveAspectRatio="none" class="w-full h-12" style="fill:#020812"><path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z"/></svg>
   </div>
 </section>
 
@@ -412,7 +421,7 @@
 </div>
 
 <!-- HOW IT WORKS -->
-<section id="how" class="py-20 bg-white reveal">
+<section id="how" class="py-20 reveal">
   <div class="max-w-5xl mx-auto px-5">
     <div class="text-center mb-14">
       <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Simple Process</span>
@@ -447,7 +456,7 @@
 
 
 <!-- EXAM STREAMS COVERED -->
-<section id="courses" class="py-20 bg-gradient-to-b from-slate-50 to-white reveal">
+<section id="courses" class="py-20 reveal">
   <div class="max-w-5xl mx-auto px-5">
     <div class="text-center mb-10">
       <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">What We Teach</span>
@@ -491,7 +500,7 @@
 
 
 <!-- TESTIMONIALS -->
-<section id="testimonials" class="py-20 bg-white reveal">
+<section id="testimonials" class="py-20 reveal">
   <div class="max-w-5xl mx-auto px-5">
     <div class="text-center mb-14">
       <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Student Stories</span>
@@ -554,7 +563,7 @@
 
 
 <!-- FAQ -->
-<section id="faq" class="py-20 bg-gradient-to-b from-slate-50 to-white reveal">
+<section id="faq" class="py-20 reveal">
   <div class="max-w-3xl mx-auto px-5">
     <div class="text-center mb-14">
       <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Got Questions?</span>
@@ -673,7 +682,7 @@
 
 
 <!-- CONTACT / ENQUIRY -->
-<section id="contact" class="py-20 bg-white reveal">
+<section id="contact" class="py-20 reveal">
   <div class="max-w-5xl mx-auto px-5 grid md:grid-cols-2 gap-12 items-center">
     <div>
       <span class="text-orange-500 font-bold uppercase tracking-widest text-xs">Get In Touch</span>

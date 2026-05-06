@@ -1,6 +1,6 @@
-// Apply saved theme to <html> before first paint — prevents flash of wrong theme
+// Apply saved theme — dark is the default unless user explicitly chose light
 (function() {
-  if (localStorage.getItem('la_theme') === 'dark') {
+  if (localStorage.getItem('la_theme') !== 'light') {
     document.documentElement.classList.add('dark');
   }
 })();

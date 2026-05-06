@@ -2554,6 +2554,144 @@ def sales_outreach_create():
     conn.close()
     return jsonify(row), 201
 
+SALES_STATUS_NEXT = {
+    'New':          'Contacted',
+    'Contacted':    'Negotiating',
+    'Negotiating':  'Order Placed',
+    'Order Placed': 'Order Placed',
+}
+
+def _sales_send_email(lead, subject, message_text):
+    """Send a plain outreach email to a sales lead using existing SMTP."""
+    if not lead.get('email'):
+        return False, 'No email address on lead'
+    body_html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+      <p style="color:#333;line-height:1.6">{message_text.replace(chr(10), '<br>')}</p>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+      <p style="font-size:12px;color:#999">
+        NR AI Orbit Learning Portal &nbsp;·&nbsp; Hyderabad, Telangana<br/>
+        To unsubscribe, reply with "STOP".
+      </p>
+    </div>"""
+    try:
+        send_email(lead['email'], subject, body_html)
+        return True, 'sent'
+    except Exception as ex:
+        return False, str(ex)
+
+
+@app.route('/api/admin/sales/outreach/<int:oid>/send', methods=['POST'])
+def sales_outreach_send(oid):
+    """Send the email for an outreach log entry and move lead to Contacted."""
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    entry = conn.execute("SELECT * FROM sales_outreach WHERE id=?", (oid,)).fetchone()
+    if not entry:
+        conn.close()
+        return jsonify({'error': 'Outreach not found'}), 404
+    entry = dict(entry)
+    lead  = conn.execute("SELECT * FROM sales_leads WHERE id=?", (entry['lead_id'],)).fetchone()
+    if not lead:
+        conn.close()
+        return jsonify({'error': 'Lead not found'}), 404
+    lead = dict(lead)
+    ok, reason = _sales_send_email(lead, f"Physics courses at NR AI Orbit — {lead['name']}", entry['message'])
+    new_status = 'Sent' if ok else entry['delivery_status']
+    conn.execute("UPDATE sales_outreach SET delivery_status=? WHERE id=?", (new_status, oid))
+    if ok and lead['status'] == 'New':
+        conn.execute(
+            "UPDATE sales_leads SET status='Contacted', updated_at=datetime('now') WHERE id=?",
+            (lead['id'],)
+        )
+        lead['status'] = 'Contacted'
+    conn.commit()
+    updated_entry = dict(conn.execute(
+        "SELECT o.*, l.name AS lead_name FROM sales_outreach o LEFT JOIN sales_leads l ON o.lead_id=l.id WHERE o.id=?",
+        (oid,)
+    ).fetchone())
+    updated_lead = dict(conn.execute("SELECT * FROM sales_leads WHERE id=?", (lead['id'],)).fetchone())
+    conn.close()
+    return jsonify({'outreach': updated_entry, 'lead': updated_lead, 'email_sent': ok, 'reason': reason})
+
+
+@app.route('/api/admin/sales/leads/<int:lid>/respond', methods=['POST'])
+def sales_lead_respond(lid):
+    """Log a response from the lead, advance status, AI-draft + send follow-up."""
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    lead = conn.execute("SELECT * FROM sales_leads WHERE id=?", (lid,)).fetchone()
+    if not lead:
+        conn.close()
+        return jsonify({'error': 'Lead not found'}), 404
+    lead = dict(lead)
+
+    # 1 — advance status
+    next_status = SALES_STATUS_NEXT.get(lead['status'], lead['status'])
+    conn.execute(
+        "UPDATE sales_leads SET status=?, updated_at=datetime('now') WHERE id=?",
+        (next_status, lid)
+    )
+    lead['status'] = next_status
+
+    # 2 — log the response
+    conn.execute(
+        "INSERT INTO sales_outreach (lead_id, channel, message, delivery_status) VALUES (?,?,?,?)",
+        (lid, 'Email', f"[Response received from {lead['name']}]", 'Read')
+    )
+    conn.commit()
+
+    # 3 — AI-draft follow-up if not at final stage
+    follow_up = None
+    email_sent = False
+    if next_status != 'Order Placed' and ANTHROPIC_API_KEY and lead.get('email'):
+        stage_context = {
+            'Contacted':   'They showed interest. Now pitch specific course details, pricing, and offer a demo.',
+            'Negotiating': 'They are seriously considering. Address objections, offer a discount or payment plan.',
+        }.get(next_status, 'Continue the conversation.')
+        prompt = f"""You are a sales assistant for NR AI Orbit Learning Portal, a physics coaching academy.
+
+The lead has responded and their status is now "{next_status}". Write a follow-up email.
+
+Lead: {lead['name']} | Course: {lead['course_interest'] or 'Physics'} | Location: {lead['location'] or 'AP/TS'}
+Stage context: {stage_context}
+
+Write a short, warm follow-up email (3-4 sentences). No subject line. Address them by first name. Be helpful and specific. Under 100 words."""
+        try:
+            resp = http_requests.post(
+                'https://api.anthropic.com/v1/messages',
+                headers={'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
+                json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 200,
+                      'messages': [{'role': 'user', 'content': prompt}]},
+                timeout=20
+            )
+            if resp.ok:
+                follow_up = resp.json()['content'][0]['text'].strip()
+                ok, _ = _sales_send_email(lead, f"Following up — {lead['course_interest'] or 'Physics'} at NR AI Orbit", follow_up)
+                email_sent = ok
+                status = 'Sent' if ok else 'Draft'
+                cur = conn.execute(
+                    "INSERT INTO sales_outreach (lead_id, channel, message, delivery_status) VALUES (?,?,?,?)",
+                    (lid, 'Email', follow_up, status)
+                )
+                conn.commit()
+        except Exception:
+            pass
+
+    updated_lead = dict(conn.execute("SELECT * FROM sales_leads WHERE id=?", (lid,)).fetchone())
+    conn.close()
+    return jsonify({
+        'lead': updated_lead,
+        'follow_up_drafted': follow_up is not None,
+        'follow_up_sent': email_sent,
+        'new_status': next_status
+    })
+
+
 @app.route('/api/admin/sales/sync-enquiries', methods=['POST'])
 def sales_sync_enquiries():
     session, err_resp, err_code = require_role('admin')

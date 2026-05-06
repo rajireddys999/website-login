@@ -1346,7 +1346,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th>#</th><th>Lead</th><th>Channel</th><th>Message</th><th>Status</th><th>When</th></tr></thead>
+                  <thead><tr><th>#</th><th>Lead</th><th>Channel</th><th>Message</th><th>Status</th><th>When</th><th></th></tr></thead>
                   <tbody id="outreach-tbody"></tbody>
                 </table>
               </div>
@@ -2765,24 +2765,45 @@
     populateOutreachLeadSelect();
     populateOrderLeadSelect();
 
-    // 3 — for each new lead: AI-draft a WhatsApp message, save as Draft outreach
+    // 3 — for each new lead: AI-draft → save outreach → auto-send email if available
+    let emailsSent = 0;
     for (const lead of newLeads) {
+      const channel = lead.email ? 'Email' : 'WhatsApp';
       const dr = await api('/api/admin/sales/draft-message', {
         method: 'POST',
-        body: JSON.stringify({ lead_id: lead.id, channel: 'WhatsApp' })
+        body: JSON.stringify({ lead_id: lead.id, channel })
       });
       if (!dr.ok) continue;
       const or = await api('/api/admin/sales/outreach', {
         method: 'POST',
-        body: JSON.stringify({ lead_id: lead.id, channel: 'WhatsApp', message: dr.data.message, delivery_status: 'Draft' })
+        body: JSON.stringify({ lead_id: lead.id, channel, message: dr.data.message, delivery_status: 'Draft' })
       });
-      if (or.ok) allOutreach.unshift(or.data);
+      if (!or.ok) continue;
+      allOutreach.unshift(or.data);
+
+      // auto-send email if lead has an email address
+      if (lead.email) {
+        const sr = await api(`/api/admin/sales/outreach/${or.data.id}/send`, { method:'POST' });
+        if (sr.ok) {
+          // update local state with sent status + new lead status
+          const idx = allOutreach.findIndex(o => o.id === or.data.id);
+          if (idx !== -1) allOutreach[idx] = sr.data.outreach;
+          const li = allLeads.findIndex(l => l.id === lead.id);
+          if (li !== -1) allLeads[li] = sr.data.lead;
+          if (sr.data.email_sent) emailsSent++;
+        }
+      }
     }
 
+    renderLeads(allLeads);
+    filterLeads();
     renderOutreach(allOutreach);
     saveAgentCheckpoint({ status:'running', last_sync: new Date().toISOString(), leads_imported: newLeads.length });
     updateAgentLastSeen();
-    toast(`🤖 Agent: ${newLeads.length} new lead${newLeads.length>1?'s':''} synced + message${newLeads.length>1?'s':''} drafted`, 'success');
+    const msg = emailsSent > 0
+      ? `🤖 Agent: ${newLeads.length} lead${newLeads.length>1?'s':''} synced · ${emailsSent} email${emailsSent>1?'s':''} sent`
+      : `🤖 Agent: ${newLeads.length} lead${newLeads.length>1?'s':''} synced · messages drafted`;
+    toast(msg, 'success');
   }
 
   function updateAgentLastSeen() {
@@ -2898,6 +2919,7 @@
         <td>
           <div class="action-group">
             <button class="action-btn btn-view"   onclick="openLeadModal(${l.id})">Edit</button>
+            ${l.status !== 'Order Placed' ? `<button class="action-btn" style="background:rgba(34,197,94,.1);color:#16a34a;border:1px solid rgba(34,197,94,.2)" onclick="markResponded(${l.id})" title="Log response & send follow-up">✅ Responded</button>` : ''}
             <button class="action-btn btn-delete" onclick="confirmDeleteLead(${l.id}, '${escHtml(l.name).replace(/'/g,"\\'")}')">Delete</button>
           </div>
         </td>
@@ -3037,6 +3059,9 @@
         <td style="font-size:.78rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(o.message||'')}</td>
         <td><span class="badge ${statusBadge[o.delivery_status]||'badge-orange'}">${escHtml(o.delivery_status)}</span></td>
         <td style="color:var(--muted);font-size:.76rem">${fmtDateTime(o.created_at)}</td>
+        <td>${(o.delivery_status==='Draft'||o.delivery_status==='Sent') && o.channel==='Email'
+          ? `<button class="action-btn btn-view" style="font-size:.72rem;padding:.3rem .6rem" onclick="sendOutreachEmail(${o.id})">📧 Send</button>`
+          : ''}</td>
       </tr>`).join('');
   }
 
@@ -3079,6 +3104,41 @@
     if (!r.ok) { toast(r.data?.error || 'AI draft failed', 'error'); return; }
     document.getElementById('outreach-message').value = r.data.message;
     toast('AI message drafted — review and edit before sending', 'success');
+  }
+
+  async function sendOutreachEmail(oid) {
+    const r = await api(`/api/admin/sales/outreach/${oid}/send`, { method:'POST' });
+    if (!r.ok) { toast(r.data?.error || 'Send failed', 'error'); return; }
+    if (r.data.email_sent) {
+      // update local outreach + lead status
+      const oi = allOutreach.findIndex(o => o.id === oid);
+      if (oi !== -1) allOutreach[oi] = r.data.outreach;
+      const li = allLeads.findIndex(l => l.id === r.data.lead.id);
+      if (li !== -1) allLeads[li] = r.data.lead;
+      renderOutreach(allOutreach);
+      filterLeads();
+      toast(`📧 Email sent to ${r.data.lead.name} · status → ${r.data.lead.status}`, 'success');
+    } else {
+      toast(`Email not sent: ${r.data.reason}`, 'error');
+    }
+  }
+
+  async function markResponded(lid) {
+    const btn = event.target;
+    btn.textContent = '…'; btn.disabled = true;
+    const r = await api(`/api/admin/sales/leads/${lid}/respond`, { method:'POST' });
+    btn.disabled = false;
+    if (!r.ok) { btn.textContent = '✅ Responded'; toast('Failed', 'error'); return; }
+    // update lead in local state
+    const li = allLeads.findIndex(l => l.id === lid);
+    if (li !== -1) allLeads[li] = r.data.lead;
+    filterLeads();
+    renderKanban(allLeads);
+    // refresh outreach list from server to show new follow-up
+    const outr = await api('/api/admin/sales/outreach');
+    if (outr.ok) { allOutreach = outr.data; renderOutreach(allOutreach); }
+    const sent = r.data.follow_up_sent ? '· follow-up email sent' : r.data.follow_up_drafted ? '· follow-up drafted' : '';
+    toast(`✅ ${r.data.lead.name} → ${r.data.new_status} ${sent}`, 'success');
   }
 
   // ── ORDERS ────────────────────────────────────────────────────

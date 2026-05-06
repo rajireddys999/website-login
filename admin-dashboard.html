@@ -770,9 +770,9 @@
 </div>
 
 <!-- Sales Lead Modal -->
-<div class="modal" id="lead-modal">
-  <div class="modal-box" style="max-width:520px">
-    <div class="modal-title" id="lm-title">Add Lead</div>
+<div class="modal-overlay" id="lead-modal">
+  <div class="modal modal-lg">
+    <h3 id="lm-title">Add Lead</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
       <div style="grid-column:1/-1">
         <label class="form-label">Name *</label>
@@ -1258,6 +1258,14 @@
       <div class="page" id="page-sales">
         <div class="sec-title">
           <div class="sec-title-left">🎯 Sales Agent</div>
+          <div style="display:flex;align-items:center;gap:.6rem">
+            <span id="agent-status-dot" style="width:9px;height:9px;border-radius:50%;background:#6b7280;display:inline-block;transition:background .3s"></span>
+            <span id="agent-status-label" style="font-size:.78rem;font-weight:700;color:var(--muted)">Agent Stopped</span>
+            <button id="agent-toggle-btn" onclick="toggleSalesAgent()"
+              style="padding:.42rem 1rem;border-radius:10px;border:none;font-size:.8rem;font-weight:800;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;box-shadow:0 2px 8px rgba(34,197,94,.3)">
+              ▶ Start Agent
+            </button>
+          </div>
         </div>
 
         <!-- Sales Sub-tabs -->
@@ -2685,6 +2693,57 @@
   let salesReport = {};
   const DAILY_TARGETS = { leads: 5, orders: 2, outreach: 10, revenue: 5000 };
 
+  // ── Agent Start / Stop ────────────────────────────────────────
+  let agentRunning = localStorage.getItem('sales_agent_running') === 'true';
+
+  function syncAgentUI() {
+    const dot   = document.getElementById('agent-status-dot');
+    const label = document.getElementById('agent-status-label');
+    const btn   = document.getElementById('agent-toggle-btn');
+    if (!dot) return;
+    if (agentRunning) {
+      dot.style.background   = '#22c55e';
+      dot.style.boxShadow    = '0 0 6px rgba(34,197,94,.7)';
+      label.textContent      = 'Agent Running';
+      label.style.color      = '#22c55e';
+      btn.textContent        = '⏹ Stop Agent';
+      btn.style.background   = 'linear-gradient(135deg,#ef4444,#dc2626)';
+      btn.style.boxShadow    = '0 2px 8px rgba(239,68,68,.3)';
+    } else {
+      dot.style.background   = '#6b7280';
+      dot.style.boxShadow    = 'none';
+      label.textContent      = 'Agent Stopped';
+      label.style.color      = 'var(--muted)';
+      btn.textContent        = '▶ Start Agent';
+      btn.style.background   = 'linear-gradient(135deg,#22c55e,#16a34a)';
+      btn.style.boxShadow    = '0 2px 8px rgba(34,197,94,.3)';
+    }
+  }
+
+  function toggleSalesAgent() {
+    agentRunning = !agentRunning;
+    localStorage.setItem('sales_agent_running', agentRunning);
+    if (agentRunning) {
+      saveAgentCheckpoint({ status:'running', started_at: new Date().toISOString(), last_lead_processed: null, notes:'Agent started from admin UI' });
+      toast('Sales Agent started', 'success');
+    } else {
+      saveAgentCheckpoint({ status:'stopped', stopped_at: new Date().toISOString(), notes:'Agent stopped by admin' });
+      toast('Sales Agent stopped — checkpoint saved', 'success');
+    }
+    syncAgentUI();
+  }
+
+  function saveAgentCheckpoint(state) {
+    const checkpoint = {
+      ...state,
+      leads_total: allLeads.length,
+      orders_total: allOrders.length,
+      outreach_total: allOutreach.length,
+      saved_at: new Date().toISOString(),
+    };
+    localStorage.setItem('sales_agent_checkpoint', JSON.stringify(checkpoint));
+  }
+
   // ── Sub-tab switching ─────────────────────────────────────────
   function showSalesTab(tab) {
     document.querySelectorAll('.sales-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -2710,6 +2769,7 @@
     renderLeads(allLeads);
     populateOutreachLeadSelect();
     populateOrderLeadSelect();
+    syncAgentUI();
   }
 
   // ── LEADS ─────────────────────────────────────────────────────

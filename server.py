@@ -38,7 +38,7 @@ def send_email(to_addr, subject, body_html):
         return
     msg = MIMEText(body_html, 'html')
     msg['Subject'] = subject
-    msg['From']    = f"Laxmi Academy <{FROM_EMAIL}>"
+    msg['From']    = f"NR AI Orbit Learning Portal <{FROM_EMAIL}>"
     msg['To']      = to_addr
     try:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
@@ -52,11 +52,11 @@ def send_verification_email(email, full_name, token):
     verify_url = f"{APP_BASE_URL}/verify-email.html?token={token}"
     body = f"""
     <p>Hi {full_name},</p>
-    <p>Please verify your email address to activate your Laxmi Academy account:</p>
+    <p>Please verify your email address to activate your NR AI Orbit Learning Portal account:</p>
     <p><a href="{verify_url}" style="background:#6366f1;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Verify Email</a></p>
     <p>This link expires in 24 hours. If you did not sign up, ignore this email.</p>
     """
-    send_email(email, "Verify your Laxmi Academy account", body)
+    send_email(email, "Verify your NR AI Orbit Learning Portal account", body)
 
 # ── PhonePe config (UAT sandbox by default) ───────────────────────
 PHONEPE_MERCHANT_ID = os.environ.get('PHONEPE_MERCHANT_ID', 'PGTESTPAYUAT86')
@@ -254,7 +254,7 @@ def register():
     session_token = create_session(student_id, 'student')
     return jsonify({
         'token': session_token, 'role': 'student', 'student_id': student_id,
-        'message': 'Account created successfully. Welcome to Laxmi Academy!',
+        'message': 'Account created successfully. Welcome to NR AI Orbit Learning Portal!',
     }), 201
 
 # ── GET /api/verify-email?token= ────────────────────────────────
@@ -360,11 +360,11 @@ def forgot_password():
     reset_url = f"{APP_BASE_URL}/reset-password.html?token={reset_token}"
     body = f"""
     <p>Hi {student['full_name']},</p>
-    <p>We received a request to reset your Laxmi Academy password. Click the button below to choose a new password:</p>
+    <p>We received a request to reset your NR AI Orbit Learning Portal password. Click the button below to choose a new password:</p>
     <p><a href="{reset_url}" style="background:#6366f1;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Reset Password</a></p>
     <p>This link expires in <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email.</p>
     """
-    send_email(email, "Reset your Laxmi Academy password", body)
+    send_email(email, "Reset your NR AI Orbit Learning Portal password", body)
     return jsonify({'message': generic_msg})
 
 # ── POST /api/reset-password ──────────────────────────────────────
@@ -1266,7 +1266,7 @@ def download_invoice(payment_id):
     pdf.set_text_color(255, 255, 255)
     pdf.set_font('Helvetica', 'B', 18)
     pdf.set_xy(10, 7)
-    pdf.cell(0, 12, 'Laxmi Academy', **NL)
+    pdf.cell(0, 12, 'NR AI Orbit Learning Portal', **NL)
     pdf.set_font('Helvetica', '', 9)
     pdf.set_xy(10, 19)
     pdf.cell(0, 6, 'Physics Excellence - Payment Invoice')
@@ -1329,7 +1329,7 @@ def download_invoice(payment_id):
     pdf.ln(10)
     pdf.set_font('Helvetica', 'I', 8)
     pdf.set_text_color(130, 130, 150)
-    pdf.cell(0, 6, 'Thank you for choosing Laxmi Academy. This is a computer-generated invoice.', align='C', **NL)
+    pdf.cell(0, 6, 'Thank you for choosing NR AI Orbit Learning Portal. This is a computer-generated invoice.', align='C', **NL)
 
     pdf_bytes = pdf.output()
     response = app.response_class(bytes(pdf_bytes), mimetype='application/pdf')
@@ -1386,7 +1386,7 @@ def ai_assist():
     if not ANTHROPIC_API_KEY:
         return jsonify({'error': 'ANTHROPIC_API_KEY not set. Add it to your Render environment variables.'}), 503
 
-    system = f"""You are an AI operations assistant embedded in the Mission Control dashboard for Laxmi Academy — a physics coaching centre in Hyderabad, India.
+    system = f"""You are an AI operations assistant embedded in the Mission Control dashboard for NR AI Orbit Learning Portal — a physics coaching centre in Hyderabad, India.
 
 Live academy stats right now:
 {json.dumps(context, indent=2)}
@@ -1774,7 +1774,7 @@ def public_chat():
     finally:
         conn.close()
 
-    system = f"""You are Priya, a warm and knowledgeable Admissions Advisor at Laxmi Academy — a Physics coaching centre in Hyderabad, India. You help students choose the right course, understand fees, and guide them toward enrolling or booking a free demo.
+    system = f"""You are Priya, a warm and knowledgeable Admissions Advisor at NR AI Orbit Learning Portal — a Physics coaching centre in Hyderabad, India. You help students choose the right course, understand fees, and guide them toward enrolling or booking a free demo.
 
 ACADEMY:
 - Location: Hyderabad, India | Specialisation: Physics for JEE Mains, JEE Advanced, NEET, EAMCET, Class 11 & 12
@@ -1886,7 +1886,7 @@ HOW TO BEHAVE AS PRIYA:
                 reply = "We offer Physics courses for **JEE Mains, JEE Advanced, NEET, EAMCET, Class 11 & 12**, and a **Physics Foundation** course for beginners.\n\nWhich exam are you preparing for?"
 
         elif any(k in msg_l for k in ['mobile', 'app', 'phone', 'android', 'iphone', 'install', 'pwa', 'download']):
-            reply = "Yes! Laxmi Academy works as a **mobile app** (PWA):\n\n- **Android**: open Chrome → menu → *Add to Home Screen*\n- **iPhone**: open Safari → Share → *Add to Home Screen*\n\nOnce installed it works like a native app — even offline!"
+            reply = "Yes! NR AI Orbit Learning Portal works as a **mobile app** (PWA):\n\n- **Android**: open Chrome → menu → *Add to Home Screen*\n- **iPhone**: open Safari → Share → *Add to Home Screen*\n\nOnce installed it works like a native app — even offline!"
 
         elif any(k in msg_l for k in ['doubt', 'doubts', 'question', 'help', 'support', 'stuck', 'clear']):
             reply = "Our instructors typically respond to student doubts within **30 minutes** during working hours.\n\nYou can submit doubts directly from your **Student Dashboard** after enrolling. You can also WhatsApp us at **+91 72078 98999** for urgent queries."
@@ -2413,5 +2413,5 @@ if __name__ == '__main__':
     port  = int(os.environ.get("PORT", 3000))
     debug = os.environ.get("FLASK_ENV", "production") == "development"
 
-    print(f"\n  Laxmi Academy server  ->  http://0.0.0.0:{port}")
+    print(f"\n  NR AI Orbit Learning Portal server  ->  http://0.0.0.0:{port}")
     app.run(host="0.0.0.0", port=port, debug=debug)

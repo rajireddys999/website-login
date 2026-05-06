@@ -4,10 +4,10 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="theme-color" content="#6366f1">
-  <title>Mission Control — Laxmi Academy</title>
+  <title>Mission Control — NR AI Orbit Learning Portal</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Laxmi Academy">
+  <meta name="apple-mobile-web-app-title" content="NR AI Orbit Learning Portal">
   <link rel="apple-touch-icon" href="/logo.png.jpeg">
   <script src="theme.js"></script>
   <link rel="stylesheet" href="theme.css">
@@ -725,7 +725,7 @@
     <div class="sidebar-logo">
       <img src="logo.png.jpeg" alt="Logo" loading="lazy"/>
       <div>
-        <div class="logo-text">Laxmi Academy</div>
+        <div class="logo-text">NR AI Orbit Learning Portal</div>
         <div class="logo-sub">Mission Control<span class="auto-refresh-dot"></span></div>
       </div>
     </div>
@@ -1890,7 +1890,7 @@
     if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
     empty.style.display = 'none';
     tbody.innerHTML = list.map((e,i) => {
-      const waMsg  = encodeURIComponent(`Hi ${e.full_name}, thanks for your enquiry about ${e.course||'our courses'} at Laxmi Academy! 🎓`);
+      const waMsg  = encodeURIComponent(`Hi ${e.full_name}, thanks for your enquiry about ${e.course||'our courses'} at NR AI Orbit Learning Portal! 🎓`);
       const waLink = `https://wa.me/91${(e.phone||'').replace(/\D/g,'')}?text=${waMsg}`;
       return `<tr id="enq-row-${e.id}">
         <td style="color:var(--muted);font-size:.78rem">${i+1}</td>

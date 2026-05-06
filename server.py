@@ -2392,6 +2392,196 @@ def apply_discount():
         return jsonify({'error': 'Invalid or expired discount code.'}), 404
     return jsonify({'discount_percent': row['discount_percent'], 'code': code})
 
+# ── Sales Agent ──────────────────────────────────────────────────
+
+@app.route('/api/admin/sales/leads', methods=['GET'])
+def sales_leads_list():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    status   = request.args.get('status', '')
+    type_    = request.args.get('type', '')
+    location = request.args.get('location', '')
+    search   = request.args.get('search', '')
+    sql    = "SELECT * FROM sales_leads WHERE 1=1"
+    params = []
+    if status:   sql += " AND status = ?";   params.append(status)
+    if type_:    sql += " AND type = ?";     params.append(type_)
+    if location: sql += " AND location = ?"; params.append(location)
+    if search:
+        sql += " AND (name ILIKE ? OR phone ILIKE ? OR email ILIKE ?)"
+        params += [f'%{search}%', f'%{search}%', f'%{search}%']
+    sql += " ORDER BY created_at DESC"
+    rows = [dict(r) for r in conn.execute(sql, params).fetchall()]
+    conn.close()
+    return jsonify(rows)
+
+@app.route('/api/admin/sales/leads', methods=['POST'])
+def sales_leads_create():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    d = request.get_json() or {}
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO sales_leads (name, type, phone, email, location, course_interest, status, notes) VALUES (?,?,?,?,?,?,?,?)",
+        (d.get('name',''), d.get('type','Student'), d.get('phone',''), d.get('email',''),
+         d.get('location',''), d.get('course_interest',''), d.get('status','New'), d.get('notes',''))
+    )
+    lid = cur.lastrowid
+    conn.commit()
+    row = dict(conn.execute("SELECT * FROM sales_leads WHERE id=?", (lid,)).fetchone())
+    conn.close()
+    return jsonify(row), 201
+
+@app.route('/api/admin/sales/leads/<int:lid>', methods=['PUT'])
+def sales_leads_update(lid):
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    d = request.get_json() or {}
+    conn = get_conn()
+    conn.execute(
+        "UPDATE sales_leads SET name=?,type=?,phone=?,email=?,location=?,course_interest=?,status=?,notes=?,updated_at=datetime('now') WHERE id=?",
+        (d.get('name',''), d.get('type','Student'), d.get('phone',''), d.get('email',''),
+         d.get('location',''), d.get('course_interest',''), d.get('status','New'), d.get('notes',''), lid)
+    )
+    conn.commit()
+    row = dict(conn.execute("SELECT * FROM sales_leads WHERE id=?", (lid,)).fetchone())
+    conn.close()
+    return jsonify(row)
+
+@app.route('/api/admin/sales/leads/<int:lid>', methods=['DELETE'])
+def sales_leads_delete(lid):
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    conn.execute("DELETE FROM sales_leads WHERE id=?", (lid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/sales/orders', methods=['GET'])
+def sales_orders_list():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    rows = [dict(r) for r in conn.execute("SELECT * FROM sales_orders ORDER BY created_at DESC").fetchall()]
+    conn.close()
+    return jsonify(rows)
+
+@app.route('/api/admin/sales/orders', methods=['POST'])
+def sales_orders_create():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    d = request.get_json() or {}
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO sales_orders (lead_id, lead_name, course_name, amount, order_date, status, notes) VALUES (?,?,?,?,?,?,?)",
+        (d.get('lead_id') or None, d.get('lead_name',''), d.get('course_name',''),
+         float(d.get('amount', 0)), d.get('order_date',''), d.get('status','Pending'), d.get('notes',''))
+    )
+    oid = cur.lastrowid
+    conn.commit()
+    row = dict(conn.execute("SELECT * FROM sales_orders WHERE id=?", (oid,)).fetchone())
+    conn.close()
+    return jsonify(row), 201
+
+@app.route('/api/admin/sales/orders/<int:oid>', methods=['PUT'])
+def sales_orders_update(oid):
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    d = request.get_json() or {}
+    conn = get_conn()
+    conn.execute(
+        "UPDATE sales_orders SET lead_name=?,course_name=?,amount=?,order_date=?,status=?,notes=? WHERE id=?",
+        (d.get('lead_name',''), d.get('course_name',''), float(d.get('amount',0)),
+         d.get('order_date',''), d.get('status','Pending'), d.get('notes',''), oid)
+    )
+    conn.commit()
+    row = dict(conn.execute("SELECT * FROM sales_orders WHERE id=?", (oid,)).fetchone())
+    conn.close()
+    return jsonify(row)
+
+@app.route('/api/admin/sales/orders/<int:oid>', methods=['DELETE'])
+def sales_orders_delete(oid):
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    conn.execute("DELETE FROM sales_orders WHERE id=?", (oid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/sales/outreach', methods=['GET'])
+def sales_outreach_list():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    lead_id = request.args.get('lead_id', '')
+    sql = "SELECT o.*, l.name AS lead_name FROM sales_outreach o LEFT JOIN sales_leads l ON o.lead_id=l.id WHERE 1=1"
+    params = []
+    if lead_id: sql += " AND o.lead_id=?"; params.append(int(lead_id))
+    sql += " ORDER BY o.created_at DESC"
+    rows = [dict(r) for r in conn.execute(sql, params).fetchall()]
+    conn.close()
+    return jsonify(rows)
+
+@app.route('/api/admin/sales/outreach', methods=['POST'])
+def sales_outreach_create():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    d = request.get_json() or {}
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO sales_outreach (lead_id, channel, message, delivery_status) VALUES (?,?,?,?)",
+        (d.get('lead_id'), d.get('channel','WhatsApp'), d.get('message',''), d.get('delivery_status','Sent'))
+    )
+    rid = cur.lastrowid
+    conn.commit()
+    row = dict(conn.execute(
+        "SELECT o.*, l.name AS lead_name FROM sales_outreach o LEFT JOIN sales_leads l ON o.lead_id=l.id WHERE o.id=?",
+        (rid,)
+    ).fetchone())
+    conn.close()
+    return jsonify(row), 201
+
+@app.route('/api/admin/sales/report/daily', methods=['GET'])
+def sales_report_daily():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    from datetime import date as _date
+    today = _date.today().isoformat()
+    conn = get_conn()
+    leads_today    = conn.execute("SELECT COUNT(*) FROM sales_leads WHERE DATE(created_at)=?",   (today,)).fetchone()[0]
+    orders_today   = conn.execute("SELECT COUNT(*) FROM sales_orders WHERE DATE(created_at)=?",  (today,)).fetchone()[0]
+    outreach_today = conn.execute("SELECT COUNT(*) FROM sales_outreach WHERE DATE(created_at)=?",(today,)).fetchone()[0]
+    revenue_today  = conn.execute("SELECT COALESCE(SUM(amount),0) FROM sales_orders WHERE DATE(created_at)=? AND status!='Cancelled'", (today,)).fetchone()[0]
+    total_leads    = conn.execute("SELECT COUNT(*) FROM sales_leads").fetchone()[0]
+    total_revenue  = conn.execute("SELECT COALESCE(SUM(amount),0) FROM sales_orders WHERE status!='Cancelled'").fetchone()[0]
+    converted      = conn.execute("SELECT COUNT(*) FROM sales_leads WHERE status='Order Placed'").fetchone()[0]
+    conversion_rate = round((converted / total_leads * 100) if total_leads else 0, 1)
+    pipeline = {}
+    for s in ['New','Contacted','Negotiating','Order Placed']:
+        pipeline[s] = conn.execute("SELECT COUNT(*) FROM sales_leads WHERE status=?", (s,)).fetchone()[0]
+    conn.close()
+    return jsonify({
+        'leads_today': leads_today, 'orders_today': orders_today,
+        'outreach_today': outreach_today, 'revenue_today': float(revenue_today),
+        'total_leads': total_leads, 'total_revenue': float(total_revenue),
+        'conversion_rate': conversion_rate, 'pipeline': pipeline
+    })
+
+
 # ── Main ─────────────────────────────────────────────────────────
 
 if __name__ == '__main__':

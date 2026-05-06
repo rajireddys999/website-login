@@ -573,6 +573,60 @@
       .topbar { padding:.6rem .9rem; }
       .stat-value { font-size:1.6rem; }
     }
+
+    /* ── Sales Agent ──────────────────────────────────────────── */
+    .sales-tabs {
+      display:flex; gap:.35rem; flex-wrap:wrap;
+      border-bottom:1px solid var(--border);
+      margin-bottom:1rem; padding-bottom:.6rem;
+    }
+    .sales-tab {
+      padding:.42rem .9rem; border-radius:8px; border:1px solid var(--border);
+      background:var(--surface); color:var(--muted); font-size:.8rem; font-weight:700;
+      cursor:pointer; transition:all .15s;
+    }
+    .sales-tab:hover  { border-color:var(--accent); color:var(--accent); }
+    .sales-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+    .sales-panel { display:none; }
+    .sales-panel.active { display:block; animation:fadeIn .2s ease; }
+
+    /* Kanban */
+    .kanban-col {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:.65rem; min-height:200px;
+      transition:background .15s;
+    }
+    .kanban-col[ondragover] { /* hover style applied via JS */ }
+    .kanban-col-head {
+      display:flex; align-items:center; gap:.4rem;
+      font-size:.75rem; font-weight:800; text-transform:uppercase;
+      letter-spacing:.04em; color:var(--muted); margin-bottom:.6rem;
+    }
+    .kanban-dot   { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .kanban-count {
+      margin-left:auto; background:var(--border); color:var(--text);
+      font-size:.7rem; font-weight:700; padding:.1rem .42rem;
+      border-radius:99px;
+    }
+    .kanban-card {
+      background:var(--bg); border:1px solid var(--border);
+      border-radius:10px; padding:.6rem .75rem; margin-bottom:.45rem;
+      cursor:grab; transition:box-shadow .15s, transform .1s;
+    }
+    .kanban-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.1); transform:translateY(-2px); }
+    .kanban-card:active { cursor:grabbing; }
+    html.dark .kanban-card { background:rgba(255,255,255,.04); }
+
+    /* Outreach & Orders panels responsive */
+    @media (max-width: 768px) {
+      #sales-panel-outreach > div,
+      #sales-panel-orders > div { grid-template-columns:1fr !important; }
+      #kanban-board { grid-template-columns:1fr 1fr !important; }
+    }
+    @media (max-width: 480px) {
+      #kanban-board { grid-template-columns:1fr !important; }
+    }
   </style>
 </head>
 <body>
@@ -715,6 +769,62 @@
   </div>
 </div>
 
+<!-- Sales Lead Modal -->
+<div class="modal" id="lead-modal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title" id="lm-title">Add Lead</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
+      <div style="grid-column:1/-1">
+        <label class="form-label">Name *</label>
+        <input class="form-input" id="lm-name" type="text" placeholder="Full name or college name"/>
+      </div>
+      <div>
+        <label class="form-label">Type</label>
+        <select class="form-input" id="lm-type">
+          <option>Student</option><option>College</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Status</label>
+        <select class="form-input" id="lm-status">
+          <option>New</option><option>Contacted</option><option>Negotiating</option><option>Order Placed</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="lm-phone" type="tel" placeholder="9XXXXXXXXX"/>
+      </div>
+      <div>
+        <label class="form-label">Email</label>
+        <input class="form-input" id="lm-email" type="email" placeholder="email@example.com"/>
+      </div>
+      <div>
+        <label class="form-label">Location</label>
+        <select class="form-input" id="lm-location">
+          <option value="">Select city…</option>
+          <option>Hyderabad</option><option>Vijayawada</option><option>Guntur</option>
+          <option>Tirupati</option><option>Warangal</option><option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Course Interest</label>
+        <select class="form-input" id="lm-course">
+          <option value="">Select…</option>
+          <option>MPC</option><option>BiPC</option><option>Commerce</option><option>Others</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input" id="lm-notes" rows="2" placeholder="Any notes…" style="resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeLeadModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveLead()">Save Lead</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"><span id="toast-icon">✓</span><span id="toast-msg"></span></div>
 
@@ -742,6 +852,9 @@
     <button class="nav-btn" id="nav-lessons"  onclick="showPage('lessons')">  <span class="nav-icon">🎬</span> Lessons</button>
     <button class="nav-btn" id="nav-payments" onclick="showPage('payments')"> <span class="nav-icon">💳</span> Payments</button>
     <button class="nav-btn" id="nav-sessions" onclick="showPage('sessions')"> <span class="nav-icon">🔑</span> Sessions</button>
+
+    <div class="nav-group">Sales</div>
+    <button class="nav-btn" id="nav-sales" onclick="showPage('sales')"><span class="nav-icon">🎯</span> Sales Agent <span class="badge-nav" id="badge-sales">0</span></button>
 
     <div class="nav-group">Site</div>
     <a href="mission-control.html" class="nav-btn" style="color:var(--accent);font-weight:700"><span class="nav-icon">🚀</span> Mission Control</a>
@@ -1141,6 +1254,172 @@
         </div>
       </div>
 
+      <!-- ══════════════════ SALES AGENT PAGE ══════════════════ -->
+      <div class="page" id="page-sales">
+        <div class="sec-title">
+          <div class="sec-title-left">🎯 Sales Agent</div>
+        </div>
+
+        <!-- Sales Sub-tabs -->
+        <div class="sales-tabs" id="sales-tabs">
+          <button class="sales-tab active" data-tab="leads"   onclick="showSalesTab('leads')">📋 Leads</button>
+          <button class="sales-tab"        data-tab="pipeline" onclick="showSalesTab('pipeline')">🔄 Pipeline</button>
+          <button class="sales-tab"        data-tab="outreach" onclick="showSalesTab('outreach')">📤 Outreach</button>
+          <button class="sales-tab"        data-tab="orders"   onclick="showSalesTab('orders')">🧾 Orders</button>
+          <button class="sales-tab"        data-tab="report"   onclick="showSalesTab('report')">📊 Daily Report</button>
+        </div>
+
+        <!-- ── LEADS TAB ── -->
+        <div class="sales-panel active" id="sales-panel-leads">
+          <div class="toolbar" style="flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem">
+            <div class="search-wrap" style="flex:1;min-width:180px">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+              <input type="text" id="leads-search" placeholder="Search name, phone, email…" oninput="filterLeads()"/>
+            </div>
+            <select class="filter-select" id="leads-status-filter" onchange="filterLeads()">
+              <option value="">All Status</option>
+              <option>New</option><option>Contacted</option><option>Negotiating</option><option>Order Placed</option>
+            </select>
+            <select class="filter-select" id="leads-type-filter" onchange="filterLeads()">
+              <option value="">All Types</option>
+              <option>Student</option><option>College</option>
+            </select>
+            <select class="filter-select" id="leads-loc-filter" onchange="filterLeads()">
+              <option value="">All Locations</option>
+              <option>Hyderabad</option><option>Vijayawada</option><option>Guntur</option><option>Tirupati</option><option>Warangal</option>
+            </select>
+            <button class="action-btn btn-view" style="background:var(--accent);color:#fff" onclick="openLeadModal()">+ Add Lead</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Phone</th><th>Location</th><th>Course</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="leads-tbody"></tbody>
+            </table>
+          </div>
+          <div id="leads-empty" class="empty" style="display:none"><div class="empty-icon">📋</div><p>No leads found.</p></div>
+        </div>
+
+        <!-- ── PIPELINE TAB ── -->
+        <div class="sales-panel" id="sales-panel-pipeline">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;min-width:0" id="kanban-board">
+            <div class="kanban-col" data-status="New"          ondragover="event.preventDefault()" ondrop="kanbanDrop(event,'New')">
+              <div class="kanban-col-head"><span class="kanban-dot" style="background:#6b7280"></span>New <span class="kanban-count" id="kc-new">0</span></div>
+              <div class="kanban-cards" id="kc-cards-New"></div>
+            </div>
+            <div class="kanban-col" data-status="Contacted"    ondragover="event.preventDefault()" ondrop="kanbanDrop(event,'Contacted')">
+              <div class="kanban-col-head"><span class="kanban-dot" style="background:#3b82f6"></span>Contacted <span class="kanban-count" id="kc-contacted">0</span></div>
+              <div class="kanban-cards" id="kc-cards-Contacted"></div>
+            </div>
+            <div class="kanban-col" data-status="Negotiating"  ondragover="event.preventDefault()" ondrop="kanbanDrop(event,'Negotiating')">
+              <div class="kanban-col-head"><span class="kanban-dot" style="background:#f59e0b"></span>Negotiating <span class="kanban-count" id="kc-negotiating">0</span></div>
+              <div class="kanban-cards" id="kc-cards-Negotiating"></div>
+            </div>
+            <div class="kanban-col" data-status="Order Placed" ondragover="event.preventDefault()" ondrop="kanbanDrop(event,'Order Placed')">
+              <div class="kanban-col-head"><span class="kanban-dot" style="background:#22c55e"></span>Order Placed <span class="kanban-count" id="kc-placed">0</span></div>
+              <div class="kanban-cards" id="kc-cards-Order Placed"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── OUTREACH TAB ── -->
+        <div class="sales-panel" id="sales-panel-outreach">
+          <div style="display:grid;grid-template-columns:1fr 340px;gap:1rem;align-items:start">
+            <div>
+              <div class="toolbar" style="margin-bottom:.75rem">
+                <select class="filter-select" id="outreach-lead-filter" onchange="filterOutreach()" style="flex:1">
+                  <option value="">All Leads</option>
+                </select>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>#</th><th>Lead</th><th>Channel</th><th>Message</th><th>Status</th><th>When</th></tr></thead>
+                  <tbody id="outreach-tbody"></tbody>
+                </table>
+              </div>
+              <div id="outreach-empty" class="empty" style="display:none"><div class="empty-icon">📤</div><p>No outreach logged yet.</p></div>
+            </div>
+            <div class="card" style="padding:1rem">
+              <div class="card-title" style="margin-bottom:.75rem">Log Outreach</div>
+              <div style="display:flex;flex-direction:column;gap:.55rem">
+                <select class="form-input" id="outreach-lead-id">
+                  <option value="">Select Lead…</option>
+                </select>
+                <select class="form-input" id="outreach-channel">
+                  <option>WhatsApp</option><option>Email</option><option>SMS</option>
+                </select>
+                <textarea class="form-input" id="outreach-message" rows="3" placeholder="Message content…" style="resize:vertical"></textarea>
+                <select class="form-input" id="outreach-delivery">
+                  <option>Sent</option><option>Delivered</option><option>Read</option><option>Failed</option>
+                </select>
+                <button class="btn-primary" onclick="saveOutreach()">Log Outreach</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ORDERS TAB ── -->
+        <div class="sales-panel" id="sales-panel-orders">
+          <div style="display:grid;grid-template-columns:1fr 340px;gap:1rem;align-items:start">
+            <div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>#</th><th>Lead</th><th>Course</th><th>Amount</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody id="orders-tbody"></tbody>
+                </table>
+              </div>
+              <div id="orders-empty" class="empty" style="display:none"><div class="empty-icon">🧾</div><p>No orders yet.</p></div>
+              <div id="orders-total" style="text-align:right;font-weight:800;font-size:.9rem;padding:.6rem 1rem;color:var(--green)"></div>
+            </div>
+            <div class="card" style="padding:1rem">
+              <div class="card-title" style="margin-bottom:.75rem" id="order-form-title">New Order</div>
+              <div style="display:flex;flex-direction:column;gap:.55rem">
+                <select class="form-input" id="order-lead-id" onchange="prefillOrderLead()">
+                  <option value="">Select Lead…</option>
+                </select>
+                <input class="form-input" id="order-lead-name"   type="text"   placeholder="Lead name"/>
+                <input class="form-input" id="order-course"      type="text"   placeholder="Course name"/>
+                <input class="form-input" id="order-amount"      type="number" placeholder="Amount (₹)" min="0"/>
+                <input class="form-input" id="order-date"        type="date"/>
+                <select class="form-input" id="order-status">
+                  <option>Pending</option><option>Confirmed</option><option>Cancelled</option>
+                </select>
+                <input class="form-input" id="order-notes" type="text" placeholder="Notes (optional)"/>
+                <input type="hidden" id="order-edit-id" value=""/>
+                <div style="display:flex;gap:.5rem">
+                  <button class="btn-primary" onclick="saveOrder()" style="flex:1">Save Order</button>
+                  <button class="btn-cancel"  onclick="clearOrderForm()" id="order-cancel-btn" style="display:none">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── DAILY REPORT TAB ── -->
+        <div class="sales-panel" id="sales-panel-report">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:.75rem">
+            <button class="action-btn btn-view" onclick="loadSalesReport()">↻ Refresh</button>
+            <button class="action-btn" style="margin-left:.5rem;background:rgba(34,197,94,.1);color:#16a34a;border:1px solid rgba(34,197,94,.2)" onclick="exportSalesCSV()">⬇ Export CSV</button>
+          </div>
+          <div class="stats-grid" style="margin-bottom:1rem" id="sales-report-cards">
+            <div class="stat-card indigo"><div class="stat-label">Leads Today</div><div class="stat-value" id="rpt-leads">—</div><div class="stat-icon">📋</div></div>
+            <div class="stat-card green" ><div class="stat-label">Orders Today</div><div class="stat-value" id="rpt-orders">—</div><div class="stat-icon">🧾</div></div>
+            <div class="stat-card teal"  ><div class="stat-label">Outreach Today</div><div class="stat-value" id="rpt-outreach">—</div><div class="stat-icon">📤</div></div>
+            <div class="stat-card orange"><div class="stat-label">Revenue Today</div><div class="stat-value" id="rpt-revenue" style="font-size:1.4rem">—</div><div class="stat-icon">💰</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="card" style="padding:1rem">
+              <div class="card-title">Pipeline Breakdown</div>
+              <div id="rpt-pipeline" style="margin-top:.75rem"></div>
+            </div>
+            <div class="card" style="padding:1rem">
+              <div class="card-title">Daily Targets</div>
+              <div id="rpt-targets" style="margin-top:.75rem"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /page-sales -->
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /layout -->
@@ -1152,6 +1431,7 @@
   <button class="bottom-nav-item"        data-page="enquiries"   onclick="showPage('enquiries')">  <span class="bn-icon">📩</span><span>Enquiries</span></button>
   <button class="bottom-nav-item"        data-page="payments"    onclick="showPage('payments')">   <span class="bn-icon">💳</span><span>Payments</span></button>
   <button class="bottom-nav-item"        data-page="sessions"    onclick="showPage('sessions')">   <span class="bn-icon">🔑</span><span>Sessions</span></button>
+  <button class="bottom-nav-item"        data-page="sales"       onclick="showPage('sales')">       <span class="bn-icon">🎯</span><span>Sales</span></button>
 </nav>
 
 <script>
@@ -1161,7 +1441,8 @@
 
   const pageTitles = {
     overview:'Dashboard', students:'Students', enquiries:'Enquiries',
-    instructors:'Instructors', lessons:'Lessons', payments:'Payments', sessions:'Active Sessions'
+    instructors:'Instructors', lessons:'Lessons', payments:'Payments', sessions:'Active Sessions',
+    sales: 'Sales Agent'
   };
 
   let allStudents    = [];
@@ -1231,6 +1512,7 @@
     if (name==='lessons')     loadLessons();
     if (name==='payments')    loadPayments();
     if (name==='sessions')    loadSessions();
+    if (name==='sales')       loadSalesPage();
   }
 
   function refreshCurrent() {
@@ -1244,6 +1526,7 @@
     if (currentPage==='lessons')     loadLessons();
     if (currentPage==='payments')    loadPayments();
     if (currentPage==='sessions')    loadSessions();
+    if (currentPage==='sales')       loadSalesPage();
   }
 
   function toggleProfileMenu(e) {
@@ -2390,6 +2673,405 @@
         <td style="color:var(--muted);font-size:.76rem">${fmtDate(s.created_at)}</td>
         <td style="color:var(--muted);font-size:.76rem">${fmtDate(s.expires_at)}</td>
       </tr>`).join('');
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SALES AGENT
+  // ══════════════════════════════════════════════════════════════
+
+  let allLeads    = [];
+  let allOrders   = [];
+  let allOutreach = [];
+  let salesReport = {};
+  const DAILY_TARGETS = { leads: 5, orders: 2, outreach: 10, revenue: 5000 };
+
+  // ── Sub-tab switching ─────────────────────────────────────────
+  function showSalesTab(tab) {
+    document.querySelectorAll('.sales-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.sales-panel').forEach(p => p.classList.toggle('active', p.id === 'sales-panel-' + tab));
+    if (tab === 'leads')    renderLeads(allLeads);
+    if (tab === 'pipeline') renderKanban(allLeads);
+    if (tab === 'outreach') { populateOutreachLeadSelect(); renderOutreach(allOutreach); }
+    if (tab === 'orders')   { populateOrderLeadSelect(); renderOrders(allOrders); }
+    if (tab === 'report')   loadSalesReport();
+  }
+
+  // ── Initial load ──────────────────────────────────────────────
+  async function loadSalesPage() {
+    const [lr, or_, outr] = await Promise.all([
+      api('/api/admin/sales/leads'),
+      api('/api/admin/sales/orders'),
+      api('/api/admin/sales/outreach'),
+    ]);
+    allLeads    = lr.ok    ? lr.data    : [];
+    allOrders   = or_.ok   ? or_.data   : [];
+    allOutreach = outr.ok  ? outr.data  : [];
+    document.getElementById('badge-sales').textContent = allLeads.length;
+    renderLeads(allLeads);
+    populateOutreachLeadSelect();
+    populateOrderLeadSelect();
+  }
+
+  // ── LEADS ─────────────────────────────────────────────────────
+  function leadStatusBadge(s) {
+    const map = { 'New':'badge-orange','Contacted':'badge-blue','Negotiating':'badge-purple','Order Placed':'badge-green' };
+    return `<span class="badge ${map[s]||'badge-orange'}">${escHtml(s)}</span>`;
+  }
+  function leadTypeBadge(t) {
+    return t === 'College'
+      ? '<span class="badge badge-teal">🏫 College</span>'
+      : '<span class="badge badge-indigo">🎓 Student</span>';
+  }
+
+  function renderLeads(list) {
+    const tbody = document.getElementById('leads-tbody');
+    const empty = document.getElementById('leads-empty');
+    if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    tbody.innerHTML = list.map((l, i) => `
+      <tr id="lead-row-${l.id}">
+        <td style="color:var(--muted);font-size:.78rem">${i+1}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:.55rem">
+            <div class="recent-avatar" style="background:linear-gradient(135deg,${l.type==='College'?'#0891b2,#06b6d4':'#6366f1,#818cf8'})">${escHtml(l.name).charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="cell-name">${escHtml(l.name)}</div>
+              <div class="cell-sub">${escHtml(l.email||'')}</div>
+            </div>
+          </div>
+        </td>
+        <td>${leadTypeBadge(l.type)}</td>
+        <td style="color:var(--muted);font-size:.8rem">${escHtml(l.phone||'')}</td>
+        <td style="color:var(--muted);font-size:.8rem">${escHtml(l.location||'')}</td>
+        <td style="font-size:.8rem">${escHtml(l.course_interest||'')}</td>
+        <td>${leadStatusBadge(l.status)}</td>
+        <td>
+          <div class="action-group">
+            <button class="action-btn btn-view"   onclick="openLeadModal(${l.id})">Edit</button>
+            <button class="action-btn btn-delete" onclick="confirmDeleteLead(${l.id}, '${escHtml(l.name).replace(/'/g,"\\'")}')">Delete</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  function filterLeads() {
+    const q    = document.getElementById('leads-search').value.toLowerCase();
+    const st   = document.getElementById('leads-status-filter').value;
+    const ty   = document.getElementById('leads-type-filter').value;
+    const loc  = document.getElementById('leads-loc-filter').value;
+    renderLeads(allLeads.filter(l =>
+      (!q   || l.name.toLowerCase().includes(q) || (l.phone||'').includes(q) || (l.email||'').toLowerCase().includes(q)) &&
+      (!st  || l.status === st) &&
+      (!ty  || l.type   === ty) &&
+      (!loc || l.location === loc)
+    ));
+  }
+
+  // ── Lead modal ────────────────────────────────────────────────
+  let editLeadId = null;
+  function openLeadModal(id) {
+    editLeadId = id || null;
+    const lead = id ? allLeads.find(l => l.id === id) : null;
+    const f = (sel, val) => { const el = document.getElementById(sel); if(el) el.value = val || ''; };
+    f('lm-name',   lead?.name);
+    f('lm-type',   lead?.type    || 'Student');
+    f('lm-phone',  lead?.phone);
+    f('lm-email',  lead?.email);
+    f('lm-location', lead?.location);
+    f('lm-course',   lead?.course_interest);
+    f('lm-status',   lead?.status || 'New');
+    f('lm-notes',    lead?.notes);
+    document.getElementById('lm-title').textContent = id ? 'Edit Lead' : 'Add Lead';
+    document.getElementById('lead-modal').classList.add('show');
+  }
+  function closeLeadModal() { document.getElementById('lead-modal').classList.remove('show'); }
+
+  async function saveLead() {
+    const val = id => document.getElementById(id)?.value || '';
+    const payload = {
+      name: val('lm-name'), type: val('lm-type'), phone: val('lm-phone'),
+      email: val('lm-email'), location: val('lm-location'), course_interest: val('lm-course'),
+      status: val('lm-status'), notes: val('lm-notes')
+    };
+    if (!payload.name.trim()) { toast('Name is required', 'error'); return; }
+    const r = editLeadId
+      ? await api(`/api/admin/sales/leads/${editLeadId}`, { method:'PUT',  body: JSON.stringify(payload) })
+      : await api('/api/admin/sales/leads',               { method:'POST', body: JSON.stringify(payload) });
+    if (!r.ok) { toast('Failed to save lead', 'error'); return; }
+    closeLeadModal();
+    toast(editLeadId ? 'Lead updated' : 'Lead added', 'success');
+    if (editLeadId) {
+      allLeads = allLeads.map(l => l.id === editLeadId ? r.data : l);
+    } else {
+      allLeads.unshift(r.data);
+    }
+    document.getElementById('badge-sales').textContent = allLeads.length;
+    filterLeads();
+    renderKanban(allLeads);
+    populateOutreachLeadSelect();
+    populateOrderLeadSelect();
+  }
+
+  function confirmDeleteLead(id, name) {
+    showModal('Delete Lead?', `Delete "${name}"? This will also remove their outreach logs.`, 'Delete', 'action-btn btn-delete', async () => {
+      const r = await api(`/api/admin/sales/leads/${id}`, { method:'DELETE' });
+      if (!r.ok) { toast('Delete failed', 'error'); return; }
+      allLeads = allLeads.filter(l => l.id !== id);
+      document.getElementById('badge-sales').textContent = allLeads.length;
+      filterLeads();
+      renderKanban(allLeads);
+      toast('Lead deleted', 'success');
+    });
+  }
+
+  // ── PIPELINE / KANBAN ─────────────────────────────────────────
+  function renderKanban(leads) {
+    const cols = ['New','Contacted','Negotiating','Order Placed'];
+    cols.forEach(status => {
+      const container = document.getElementById('kc-cards-' + status);
+      if (!container) return;
+      const items = leads.filter(l => l.status === status);
+      const countId = { 'New':'kc-new','Contacted':'kc-contacted','Negotiating':'kc-negotiating','Order Placed':'kc-placed' }[status];
+      document.getElementById(countId).textContent = items.length;
+      container.innerHTML = items.map(l => `
+        <div class="kanban-card" draggable="true"
+             ondragstart="kanbanDragStart(event, ${l.id})"
+             ondragend="kanbanDragEnd(event)">
+          <div style="font-weight:700;font-size:.82rem;margin-bottom:.3rem">${escHtml(l.name)}</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:.25rem">${leadTypeBadge(l.type)}</div>
+          <div style="font-size:.72rem;color:var(--muted)">${escHtml(l.location||'')} · ${escHtml(l.course_interest||'')}</div>
+        </div>`).join('');
+    });
+  }
+
+  let dragLeadId = null;
+  function kanbanDragStart(e, id) { dragLeadId = id; e.target.style.opacity = '.45'; }
+  function kanbanDragEnd(e)        { e.target.style.opacity = '1'; }
+  async function kanbanDrop(e, newStatus) {
+    e.preventDefault();
+    if (!dragLeadId) return;
+    const lead = allLeads.find(l => l.id === dragLeadId);
+    if (!lead || lead.status === newStatus) return;
+    const r = await api(`/api/admin/sales/leads/${dragLeadId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...lead, status: newStatus })
+    });
+    if (!r.ok) { toast('Update failed', 'error'); return; }
+    allLeads = allLeads.map(l => l.id === dragLeadId ? r.data : l);
+    renderKanban(allLeads);
+    toast(`Moved to "${newStatus}"`, 'success');
+    dragLeadId = null;
+  }
+
+  // ── OUTREACH ──────────────────────────────────────────────────
+  function populateOutreachLeadSelect() {
+    const opts = '<option value="">All Leads</option>' + allLeads.map(l => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('');
+    const filter = document.getElementById('outreach-lead-filter');
+    const form   = document.getElementById('outreach-lead-id');
+    if (filter) filter.innerHTML = opts;
+    if (form)   form.innerHTML = '<option value="">Select Lead…</option>' + allLeads.map(l => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('');
+  }
+
+  function renderOutreach(list) {
+    const tbody = document.getElementById('outreach-tbody');
+    const empty = document.getElementById('outreach-empty');
+    if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    const channelIcon = { WhatsApp:'💬', Email:'📧', SMS:'💬' };
+    const statusBadge = { Sent:'badge-orange', Delivered:'badge-blue', Read:'badge-green', Failed:'badge-red' };
+    tbody.innerHTML = list.map((o, i) => `
+      <tr>
+        <td style="color:var(--muted);font-size:.78rem">${i+1}</td>
+        <td><div class="cell-name">${escHtml(o.lead_name||'—')}</div></td>
+        <td><span class="badge badge-indigo">${channelIcon[o.channel]||''} ${escHtml(o.channel)}</span></td>
+        <td style="font-size:.78rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(o.message||'')}</td>
+        <td><span class="badge ${statusBadge[o.delivery_status]||'badge-orange'}">${escHtml(o.delivery_status)}</span></td>
+        <td style="color:var(--muted);font-size:.76rem">${fmtDateTime(o.created_at)}</td>
+      </tr>`).join('');
+  }
+
+  function filterOutreach() {
+    const lid = document.getElementById('outreach-lead-filter')?.value;
+    renderOutreach(lid ? allOutreach.filter(o => String(o.lead_id) === lid) : allOutreach);
+  }
+
+  async function saveOutreach() {
+    const lid = document.getElementById('outreach-lead-id').value;
+    const channel = document.getElementById('outreach-channel').value;
+    const message = document.getElementById('outreach-message').value.trim();
+    const delivery_status = document.getElementById('outreach-delivery').value;
+    if (!lid)     { toast('Select a lead', 'error'); return; }
+    if (!message) { toast('Enter a message', 'error'); return; }
+    const r = await api('/api/admin/sales/outreach', {
+      method: 'POST',
+      body: JSON.stringify({ lead_id: parseInt(lid), channel, message, delivery_status })
+    });
+    if (!r.ok) { toast('Failed to log outreach', 'error'); return; }
+    allOutreach.unshift(r.data);
+    renderOutreach(allOutreach);
+    document.getElementById('outreach-message').value = '';
+    toast('Outreach logged', 'success');
+  }
+
+  // ── ORDERS ────────────────────────────────────────────────────
+  function populateOrderLeadSelect() {
+    const el = document.getElementById('order-lead-id');
+    if (!el) return;
+    el.innerHTML = '<option value="">Select Lead…</option>' + allLeads.map(l => `<option value="${l.id}" data-name="${escHtml(l.name)}">${escHtml(l.name)}</option>`).join('');
+  }
+
+  function prefillOrderLead() {
+    const sel = document.getElementById('order-lead-id');
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.value) document.getElementById('order-lead-name').value = opt.dataset.name || '';
+  }
+
+  function renderOrders(list) {
+    const tbody = document.getElementById('orders-tbody');
+    const empty = document.getElementById('orders-empty');
+    const total = document.getElementById('orders-total');
+    if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; total.textContent=''; return; }
+    empty.style.display = 'none';
+    const stBadge = { Pending:'badge-orange', Confirmed:'badge-green', Cancelled:'badge-red' };
+    tbody.innerHTML = list.map((o, i) => `
+      <tr>
+        <td style="color:var(--muted);font-size:.78rem">${i+1}</td>
+        <td><div class="cell-name">${escHtml(o.lead_name)}</div></td>
+        <td style="font-size:.8rem">${escHtml(o.course_name)}</td>
+        <td style="font-weight:700;color:var(--green)">₹${Number(o.amount).toLocaleString('en-IN')}</td>
+        <td style="color:var(--muted);font-size:.78rem">${o.order_date||fmtDate(o.created_at)}</td>
+        <td><span class="badge ${stBadge[o.status]||'badge-orange'}">${escHtml(o.status)}</span></td>
+        <td>
+          <div class="action-group">
+            <button class="action-btn btn-view"   onclick="editOrder(${o.id})">Edit</button>
+            <button class="action-btn btn-delete" onclick="confirmDeleteOrder(${o.id})">Delete</button>
+          </div>
+        </td>
+      </tr>`).join('');
+    const confirmed = list.filter(o => o.status !== 'Cancelled').reduce((s, o) => s + Number(o.amount), 0);
+    total.textContent = `Total Confirmed: ₹${confirmed.toLocaleString('en-IN')}`;
+  }
+
+  function editOrder(id) {
+    const o = allOrders.find(x => x.id === id);
+    if (!o) return;
+    document.getElementById('order-edit-id').value   = o.id;
+    document.getElementById('order-lead-name').value = o.lead_name;
+    document.getElementById('order-course').value    = o.course_name;
+    document.getElementById('order-amount').value    = o.amount;
+    document.getElementById('order-date').value      = o.order_date || fmtDate(o.created_at);
+    document.getElementById('order-status').value    = o.status;
+    document.getElementById('order-notes').value     = o.notes || '';
+    document.getElementById('order-form-title').textContent = 'Edit Order';
+    document.getElementById('order-cancel-btn').style.display = 'inline-flex';
+  }
+
+  function clearOrderForm() {
+    ['order-edit-id','order-lead-id','order-lead-name','order-course','order-amount','order-date','order-notes'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('order-status').value = 'Pending';
+    document.getElementById('order-form-title').textContent = 'New Order';
+    document.getElementById('order-cancel-btn').style.display = 'none';
+  }
+
+  async function saveOrder() {
+    const v = id => document.getElementById(id)?.value?.trim() || '';
+    const eid = v('order-edit-id');
+    const payload = {
+      lead_id: document.getElementById('order-lead-id')?.value || null,
+      lead_name: v('order-lead-name'), course_name: v('order-course'),
+      amount: parseFloat(v('order-amount')) || 0,
+      order_date: v('order-date'), status: v('order-status'), notes: v('order-notes')
+    };
+    if (!payload.lead_name) { toast('Lead name required', 'error'); return; }
+    if (!payload.course_name) { toast('Course name required', 'error'); return; }
+    const r = eid
+      ? await api(`/api/admin/sales/orders/${eid}`, { method:'PUT',  body: JSON.stringify(payload) })
+      : await api('/api/admin/sales/orders',         { method:'POST', body: JSON.stringify(payload) });
+    if (!r.ok) { toast('Failed to save order', 'error'); return; }
+    if (eid) {
+      allOrders = allOrders.map(o => o.id === parseInt(eid) ? r.data : o);
+    } else {
+      allOrders.unshift(r.data);
+    }
+    renderOrders(allOrders);
+    clearOrderForm();
+    toast(eid ? 'Order updated' : 'Order added', 'success');
+  }
+
+  function confirmDeleteOrder(id) {
+    showModal('Delete Order?', 'This action cannot be undone.', 'Delete', 'action-btn btn-delete', async () => {
+      const r = await api(`/api/admin/sales/orders/${id}`, { method:'DELETE' });
+      if (!r.ok) { toast('Delete failed', 'error'); return; }
+      allOrders = allOrders.filter(o => o.id !== id);
+      renderOrders(allOrders);
+      toast('Order deleted', 'success');
+    });
+  }
+
+  // ── DAILY REPORT ──────────────────────────────────────────────
+  async function loadSalesReport() {
+    const r = await api('/api/admin/sales/report/daily');
+    if (!r.ok) return;
+    const d = r.data;
+    salesReport = d;
+    animateValue(document.getElementById('rpt-leads'),    d.leads_today);
+    animateValue(document.getElementById('rpt-orders'),   d.orders_today);
+    animateValue(document.getElementById('rpt-outreach'), d.outreach_today);
+    const rev = d.revenue_today || 0;
+    document.getElementById('rpt-revenue').textContent = rev >= 1000 ? '₹' + (rev/1000).toFixed(1) + 'k' : '₹' + rev;
+
+    // Pipeline breakdown bars
+    const pipe = d.pipeline || {};
+    const total = Object.values(pipe).reduce((s, v) => s + v, 0) || 1;
+    const pipeColors = { 'New':'#6b7280','Contacted':'#3b82f6','Negotiating':'#f59e0b','Order Placed':'#22c55e' };
+    document.getElementById('rpt-pipeline').innerHTML = Object.entries(pipe).map(([s, v]) => `
+      <div class="course-bar-row">
+        <div class="course-bar-label">
+          <span style="font-size:.79rem">${s}</span>
+          <span style="font-weight:800;color:${pipeColors[s]||'var(--accent)'}">${v}</span>
+        </div>
+        <div class="course-bar-track">
+          <div style="height:100%;background:${pipeColors[s]||'var(--accent)'};border-radius:4px;width:${Math.round(v/total*100)}%;transition:width .8s ease"></div>
+        </div>
+      </div>`).join('');
+
+    // Daily targets with progress bars
+    const targets = [
+      { label:'Leads Added',    val: d.leads_today,    target: DAILY_TARGETS.leads,    color:'#6366f1' },
+      { label:'Orders Placed',  val: d.orders_today,   target: DAILY_TARGETS.orders,   color:'#22c55e' },
+      { label:'Outreach Sent',  val: d.outreach_today, target: DAILY_TARGETS.outreach, color:'#3b82f6' },
+      { label:'Revenue (₹)',    val: d.revenue_today,  target: DAILY_TARGETS.revenue,  color:'#f59e0b' },
+    ];
+    document.getElementById('rpt-targets').innerHTML = targets.map(t => {
+      const pct = Math.min(Math.round((t.val / t.target) * 100), 100);
+      const display = t.label.includes('₹') ? '₹' + Number(t.val).toLocaleString('en-IN') + ' / ₹' + t.target.toLocaleString('en-IN') : `${t.val} / ${t.target}`;
+      return `<div style="margin-bottom:.85rem">
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.3rem">
+          <span>${t.label}</span>
+          <span style="font-weight:700;color:${t.color}">${display} (${pct}%)</span>
+        </div>
+        <div style="background:rgba(0,0,0,.08);border-radius:99px;height:7px;overflow:hidden">
+          <div style="background:${t.color};width:${pct}%;height:100%;border-radius:99px;transition:width .8s ease"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function exportSalesCSV() {
+    const rows = [
+      ['Leads Today', 'Orders Today', 'Outreach Today', 'Revenue Today', 'Total Leads', 'Total Revenue', 'Conversion Rate %'],
+      [salesReport.leads_today||0, salesReport.orders_today||0, salesReport.outreach_today||0,
+       salesReport.revenue_today||0, salesReport.total_leads||0, salesReport.total_revenue||0,
+       salesReport.conversion_rate||0]
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
+      download: 'sales-report-' + new Date().toISOString().slice(0,10) + '.csv'
+    });
+    a.click();
   }
 
   // ── LOGOUT ────────────────────────────────────────────────────

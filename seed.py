@@ -98,6 +98,51 @@ def seed():
         """, (e["full_name"], e["email"], e["phone"], e["course"], e["message"], e["status"]))
         print(f"  [OK] Enquiry    : {e['full_name']}")
 
+    # ── Sales Leads ──────────────────────────────────────────────
+    sales_leads = [
+        {"name": "Arjun Reddy",     "type": "Student", "phone": "9100000001", "email": "arjun.r@gmail.com",   "location": "Hyderabad",   "course_interest": "MPC",      "status": "New"},
+        {"name": "Priya Lakshmi",   "type": "Student", "phone": "9100000002", "email": "priya.l@gmail.com",   "location": "Vijayawada",  "course_interest": "BiPC",     "status": "Contacted"},
+        {"name": "Rohit Kumar",     "type": "Student", "phone": "9100000003", "email": "rohit.k@gmail.com",   "location": "Guntur",      "course_interest": "MPC",      "status": "Negotiating"},
+        {"name": "Sneha Patel",     "type": "Student", "phone": "9100000004", "email": "sneha.p@gmail.com",   "location": "Tirupati",    "course_interest": "Commerce", "status": "Order Placed"},
+        {"name": "Kiran Babu",      "type": "Student", "phone": "9100000005", "email": "kiran.b@gmail.com",   "location": "Warangal",    "course_interest": "BiPC",     "status": "New"},
+        {"name": "Divya Sharma",    "type": "Student", "phone": "9100000006", "email": "divya.s@gmail.com",   "location": "Hyderabad",   "course_interest": "MPC",      "status": "Contacted"},
+        {"name": "Rahul Nair",      "type": "Student", "phone": "9100000007", "email": "rahul.n@gmail.com",   "location": "Vijayawada",  "course_interest": "Commerce", "status": "New"},
+        {"name": "Anita Rao",       "type": "Student", "phone": "9100000008", "email": "anita.r@gmail.com",   "location": "Guntur",      "course_interest": "MPC",      "status": "Negotiating"},
+        {"name": "Vijay Krishna",   "type": "Student", "phone": "9100000009", "email": "vijay.k@gmail.com",   "location": "Tirupati",    "course_interest": "BiPC",     "status": "Contacted"},
+        {"name": "Meera Devi",      "type": "Student", "phone": "9100000010", "email": "meera.d@gmail.com",   "location": "Hyderabad",   "course_interest": "Commerce", "status": "New"},
+        {"name": "Sri Venkateswara Junior College", "type": "College", "phone": "9200000001", "email": "admin@svjc.edu",  "location": "Tirupati",   "course_interest": "MPC",  "status": "Contacted"},
+        {"name": "Nagarjuna Degree College",        "type": "College", "phone": "9200000002", "email": "info@ndc.edu",    "location": "Vijayawada", "course_interest": "BiPC", "status": "Negotiating"},
+        {"name": "Kakatiya Junior College",         "type": "College", "phone": "9200000003", "email": "principal@kjc.edu","location": "Warangal",   "course_interest": "MPC",  "status": "New"},
+    ]
+    lead_ids = []
+    for sl in sales_leads:
+        existing_lead = c.execute("SELECT id FROM sales_leads WHERE phone=?", (sl["phone"],)).fetchone()
+        if existing_lead:
+            lead_ids.append(existing_lead["id"])
+            continue
+        c.execute("""
+            INSERT INTO sales_leads (name, type, phone, email, location, course_interest, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (sl["name"], sl["type"], sl["phone"], sl["email"], sl["location"], sl["course_interest"], sl["status"]))
+        lead_ids.append(c.lastrowid if hasattr(c, 'lastrowid') else c.execute("SELECT last_insert_rowid()").fetchone()[0])
+        print(f"  [OK] SalesLead  : {sl['name']} ({sl['type']}, {sl['location']})")
+
+    # ── Sales Orders (5 samples) ──────────────────────────────────
+    if c.execute("SELECT COUNT(*) FROM sales_orders").fetchone()[0] == 0 and len(lead_ids) >= 4:
+        sample_orders = [
+            {"lead_name": "Sneha Patel",     "course_name": "MPC Foundation Annual",      "amount": 1998, "order_date": "2026-05-01", "status": "Confirmed"},
+            {"lead_name": "Rohit Kumar",     "course_name": "Physics Advanced 6M",         "amount": 999,  "order_date": "2026-05-03", "status": "Pending"},
+            {"lead_name": "Sri Venkateswara Junior College", "course_name": "College MPC Package", "amount": 85000, "order_date": "2026-05-04", "status": "Confirmed"},
+            {"lead_name": "Divya Sharma",    "course_name": "BiPC Crash Course",           "amount": 1499, "order_date": "2026-05-05", "status": "Confirmed"},
+            {"lead_name": "Anita Rao",       "course_name": "Commerce Foundation 9M",      "amount": 1499, "order_date": "2026-05-06", "status": "Pending"},
+        ]
+        for so in sample_orders:
+            c.execute("""
+                INSERT INTO sales_orders (lead_name, course_name, amount, order_date, status)
+                VALUES (?, ?, ?, ?, ?)
+            """, (so["lead_name"], so["course_name"], so["amount"], so["order_date"], so["status"]))
+            print(f"  [OK] SalesOrder : {so['lead_name']} — ₹{so['amount']}")
+
     conn.commit()
     conn.close()
     print("\n[DONE] Database seeded -> laxmi_academy.db\n")

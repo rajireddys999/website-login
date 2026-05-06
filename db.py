@@ -246,11 +246,12 @@ def init_db():
     _migrate_doubts(conn)
     _migrate_discount_codes(conn)
     _migrate_chatbot_knowledge(conn)
+    _migrate_sales_tables(conn)
     _seed_default_admin(conn)
     _sync_payment_status(conn)
     conn.commit()
     conn.close()
-    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing, doubts, discount_codes, chatbot_knowledge")
+    print("  [OK] Tables ready: students, admins, instructors, sessions, lessons, enquiries, password_resets, lesson_progress, course_enrollments, course_pricing, doubts, discount_codes, chatbot_knowledge, sales_leads, sales_orders, sales_outreach")
 
 
 def _migrate_sessions(conn):
@@ -529,6 +530,43 @@ def _migrate_discount_codes(conn):
             created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
         );
         CREATE INDEX IF NOT EXISTS idx_dc_code ON discount_codes(code)
+    """)
+
+
+def _migrate_sales_tables(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS sales_leads (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            name            TEXT    NOT NULL,
+            type            TEXT    NOT NULL DEFAULT 'Student',
+            phone           TEXT    NOT NULL DEFAULT '',
+            email           TEXT    NOT NULL DEFAULT '',
+            location        TEXT    NOT NULL DEFAULT '',
+            course_interest TEXT    NOT NULL DEFAULT '',
+            status          TEXT    NOT NULL DEFAULT 'New',
+            notes           TEXT    NOT NULL DEFAULT '',
+            created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+            updated_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS sales_orders (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            lead_id     INTEGER REFERENCES sales_leads(id) ON DELETE SET NULL,
+            lead_name   TEXT    NOT NULL,
+            course_name TEXT    NOT NULL,
+            amount      REAL    NOT NULL DEFAULT 0,
+            order_date  TEXT    NOT NULL,
+            status      TEXT    NOT NULL DEFAULT 'Pending',
+            notes       TEXT    NOT NULL DEFAULT '',
+            created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS sales_outreach (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            lead_id         INTEGER REFERENCES sales_leads(id) ON DELETE CASCADE,
+            channel         TEXT    NOT NULL DEFAULT 'WhatsApp',
+            message         TEXT    NOT NULL DEFAULT '',
+            delivery_status TEXT    NOT NULL DEFAULT 'Sent',
+            created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+        )
     """)
 
 

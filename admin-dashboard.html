@@ -1296,6 +1296,7 @@
               <option value="">All Locations</option>
               <option>Hyderabad</option><option>Vijayawada</option><option>Guntur</option><option>Tirupati</option><option>Warangal</option>
             </select>
+            <button class="action-btn" style="background:rgba(34,197,94,.1);color:#16a34a;border:1px solid rgba(34,197,94,.2)" onclick="syncEnquiriesManual()" id="sync-enq-btn">⟳ Sync Enquiries</button>
             <button class="action-btn btn-view" style="background:var(--accent);color:#fff" onclick="openLeadModal()">+ Add Lead</button>
           </div>
           <div class="table-wrap">
@@ -1355,7 +1356,12 @@
                 <select class="form-input" id="outreach-channel">
                   <option>WhatsApp</option><option>Email</option><option>SMS</option>
                 </select>
-                <textarea class="form-input" id="outreach-message" rows="3" placeholder="Message content…" style="resize:vertical"></textarea>
+                <div style="position:relative">
+                  <textarea class="form-input" id="outreach-message" rows="4" placeholder="Message content… or click ✨ AI Draft to generate" style="resize:vertical;padding-right:2.5rem"></textarea>
+                  <button onclick="draftAIMessage()" title="Generate with AI"
+                    style="position:absolute;top:.45rem;right:.45rem;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;border-radius:7px;padding:.25rem .5rem;font-size:.72rem;font-weight:800;cursor:pointer;transition:opacity .15s"
+                    id="ai-draft-btn">✨ AI</button>
+                </div>
                 <select class="form-input" id="outreach-delivery">
                   <option>Sent</option><option>Delivered</option><option>Read</option><option>Failed</option>
                 </select>
@@ -2720,17 +2726,40 @@
     }
   }
 
-  function toggleSalesAgent() {
+  async function toggleSalesAgent() {
     agentRunning = !agentRunning;
     localStorage.setItem('sales_agent_running', agentRunning);
     if (agentRunning) {
-      saveAgentCheckpoint({ status:'running', started_at: new Date().toISOString(), last_lead_processed: null, notes:'Agent started from admin UI' });
-      toast('Sales Agent started', 'success');
+      saveAgentCheckpoint({ status:'running', started_at: new Date().toISOString(), notes:'Agent started from admin UI' });
+      syncAgentUI();
+      await runAgentCycle();
     } else {
-      saveAgentCheckpoint({ status:'stopped', stopped_at: new Date().toISOString(), notes:'Agent stopped by admin' });
-      toast('Sales Agent stopped — checkpoint saved', 'success');
+      saveAgentCheckpoint({ status:'stopped', stopped_at: new Date().toISOString(), leads_total: allLeads.length, orders_total: allOrders.length, outreach_total: allOutreach.length });
+      toast('Agent stopped — checkpoint saved', 'success');
+      syncAgentUI();
     }
+  }
+
+  async function runAgentCycle() {
+    const btn = document.getElementById('agent-toggle-btn');
+    btn.textContent = '⟳ Syncing…';
+    btn.disabled = true;
+    const r = await api('/api/admin/sales/sync-enquiries', { method:'POST' });
+    btn.disabled = false;
     syncAgentUI();
+    if (!r.ok) { toast('Sync failed', 'error'); return; }
+    const n = r.data.created_count || 0;
+    if (n > 0) {
+      r.data.created.forEach(lead => allLeads.unshift(lead));
+      document.getElementById('badge-sales').textContent = allLeads.length;
+      filterLeads();
+      populateOutreachLeadSelect();
+      populateOrderLeadSelect();
+      saveAgentCheckpoint({ status:'running', last_sync: new Date().toISOString(), leads_imported: n, leads_total: allLeads.length });
+      toast(`✅ Agent synced ${n} new lead${n>1?'s':''} from enquiries`, 'success');
+    } else {
+      toast('Agent running — no new enquiries to sync', 'success');
+    }
   }
 
   function saveAgentCheckpoint(state) {
@@ -2742,6 +2771,25 @@
       saved_at: new Date().toISOString(),
     };
     localStorage.setItem('sales_agent_checkpoint', JSON.stringify(checkpoint));
+  }
+
+  async function syncEnquiriesManual() {
+    const btn = document.getElementById('sync-enq-btn');
+    if (btn) { btn.textContent = '⟳ Syncing…'; btn.disabled = true; }
+    const r = await api('/api/admin/sales/sync-enquiries', { method:'POST' });
+    if (btn) { btn.textContent = '⟳ Sync Enquiries'; btn.disabled = false; }
+    if (!r.ok) { toast('Sync failed', 'error'); return; }
+    const n = r.data.created_count || 0;
+    if (n > 0) {
+      r.data.created.forEach(lead => allLeads.unshift(lead));
+      document.getElementById('badge-sales').textContent = allLeads.length;
+      filterLeads();
+      populateOutreachLeadSelect();
+      populateOrderLeadSelect();
+      toast(`Imported ${n} new lead${n>1?'s':''} from enquiries`, 'success');
+    } else {
+      toast(`No new enquiries to import (${r.data.skipped} already exist)`, 'success');
+    }
   }
 
   // ── Sub-tab switching ─────────────────────────────────────────
@@ -2971,6 +3019,24 @@
     renderOutreach(allOutreach);
     document.getElementById('outreach-message').value = '';
     toast('Outreach logged', 'success');
+  }
+
+  async function draftAIMessage() {
+    const lid     = document.getElementById('outreach-lead-id').value;
+    const channel = document.getElementById('outreach-channel').value;
+    if (!lid) { toast('Select a lead first', 'error'); return; }
+    const btn = document.getElementById('ai-draft-btn');
+    btn.textContent = '…';
+    btn.disabled = true;
+    const r = await api('/api/admin/sales/draft-message', {
+      method: 'POST',
+      body: JSON.stringify({ lead_id: parseInt(lid), channel })
+    });
+    btn.textContent = '✨ AI';
+    btn.disabled = false;
+    if (!r.ok) { toast(r.data?.error || 'AI draft failed', 'error'); return; }
+    document.getElementById('outreach-message').value = r.data.message;
+    toast('AI message drafted — review and edit before sending', 'success');
   }
 
   // ── ORDERS ────────────────────────────────────────────────────

@@ -2554,6 +2554,111 @@ def sales_outreach_create():
     conn.close()
     return jsonify(row), 201
 
+@app.route('/api/admin/sales/sync-enquiries', methods=['POST'])
+def sales_sync_enquiries():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    conn = get_conn()
+    enquiries = conn.execute(
+        "SELECT * FROM enquiries ORDER BY created_at DESC"
+    ).fetchall()
+    created = []
+    skipped = 0
+    for e in enquiries:
+        phone = (e['phone'] or '').strip()
+        email = (e['email'] or '').strip()
+        if not phone and not email:
+            skipped += 1
+            continue
+        existing = None
+        if phone:
+            existing = conn.execute(
+                "SELECT id FROM sales_leads WHERE phone = ?", (phone,)
+            ).fetchone()
+        if not existing and email:
+            existing = conn.execute(
+                "SELECT id FROM sales_leads WHERE email = ?", (email,)
+            ).fetchone()
+        if existing:
+            skipped += 1
+            continue
+        cur = conn.execute(
+            "INSERT INTO sales_leads (name, type, phone, email, location, course_interest, status, notes) VALUES (?,?,?,?,?,?,?,?)",
+            (e['full_name'], 'Student', phone, email, '', e['course'] or '', 'New', e['message'] or '')
+        )
+        lid = cur.lastrowid
+        conn.commit()
+        row = dict(conn.execute("SELECT * FROM sales_leads WHERE id=?", (lid,)).fetchone())
+        created.append(row)
+    conn.close()
+    return jsonify({'created': created, 'created_count': len(created), 'skipped': skipped})
+
+
+@app.route('/api/admin/sales/draft-message', methods=['POST'])
+def sales_draft_message():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    if not ANTHROPIC_API_KEY:
+        return jsonify({'error': 'ANTHROPIC_API_KEY not set'}), 503
+    d = request.get_json() or {}
+    lead_id = d.get('lead_id')
+    channel = d.get('channel', 'WhatsApp')
+    conn = get_conn()
+    lead = conn.execute("SELECT * FROM sales_leads WHERE id=?", (lead_id,)).fetchone()
+    conn.close()
+    if not lead:
+        return jsonify({'error': 'Lead not found'}), 404
+    lead = dict(lead)
+    first_name = lead['name'].split()[0]
+    channel_style = {
+        'WhatsApp': 'casual and warm WhatsApp message (under 80 words)',
+        'Email':    'professional email (subject line + 3-4 sentences)',
+        'SMS':      'brief SMS (under 40 words, no links)',
+    }.get(channel, 'short message')
+    prompt = f"""You are a sales assistant for NR AI Orbit Learning Portal, a physics coaching academy in Andhra Pradesh/Telangana, India.
+
+Write a {channel_style} to follow up with this lead:
+- Name: {lead['name']} (address as {first_name})
+- Type: {lead['type']}
+- Course Interest: {lead['course_interest'] or 'Physics'}
+- Location: {lead['location'] or 'Andhra Pradesh'}
+- Current Status: {lead['status']}
+- Notes: {lead['notes'] or 'None'}
+
+Guidelines:
+- Warm, friendly, not pushy
+- Mention their specific course interest
+- Offer a free demo class or to answer questions
+- End with a soft call to action (reply / call / WhatsApp)
+- Use Indian English naturally
+- No generic filler phrases like "I hope this message finds you well"
+
+Output only the message text, nothing else."""
+    try:
+        resp = http_requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers={
+                'x-api-key': ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json'
+            },
+            json={
+                'model': 'claude-haiku-4-5-20251001',
+                'max_tokens': 300,
+                'messages': [{'role': 'user', 'content': prompt}]
+            },
+            timeout=30
+        )
+        data = resp.json()
+        if resp.ok:
+            return jsonify({'message': data['content'][0]['text'].strip()})
+        return jsonify({'error': data.get('error', {}).get('message', 'AI request failed')}), 502
+    except Exception as ex:
+        return jsonify({'error': str(ex)}), 503
+
+
 @app.route('/api/admin/sales/report/daily', methods=['GET'])
 def sales_report_daily():
     session, err_resp, err_code = require_role('admin')

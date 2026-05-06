@@ -468,14 +468,14 @@ def _migrate_pricing_v2(conn):
 
 
 def _seed_default_admin(conn):
-    existing = conn.execute("SELECT id FROM admins WHERE email='admin@laxmiacademy.com'").fetchone()
+    existing = conn.execute("SELECT id FROM admins WHERE email='admin@nraiorbit.com'").fetchone()
     if not existing:
         hashed = bcrypt.hashpw(b'Admin@123', bcrypt.gensalt()).decode()
         conn.execute(
-            "INSERT INTO admins (name, email, password) VALUES ('Admin','admin@laxmiacademy.com',?)",
+            "INSERT INTO admins (name, email, password) VALUES ('Admin','admin@nraiorbit.com',?)",
             (hashed,)
         )
-        print("  [OK] Default admin seeded (admin@laxmiacademy.com / Admin@123)")
+        print("  [OK] Default admin seeded (admin@nraiorbit.com / Admin@123)")
 
 
 def _sync_payment_status(conn):

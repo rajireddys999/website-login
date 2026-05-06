@@ -10,13 +10,13 @@ students = [
 ]
 
 admins = [
-    {"name": "Admin",        "email": "admin@laxmiacademy.com",  "password": "admin@123"},
+    {"name": "Admin",        "email": "admin@nraiorbit.com",  "password": "admin@123"},
     {"name": "S. Rajireddy", "email": "rajireddys999@gmail.com", "password": "admin@123"},
 ]
 
 instructors = [
-    {"name": "Dr. Ramesh Kumar",  "email": "ramesh@laxmiacademy.com",  "phone": "9500000001", "password": "teacher@123", "subject": "Physics", "bio": "15 years teaching IIT-JEE Physics"},
-    {"name": "Prof. Anita Verma", "email": "anita@laxmiacademy.com",   "phone": "9500000002", "password": "teacher@123", "subject": "Physics", "bio": "NEET Physics specialist"},
+    {"name": "Dr. Ramesh Kumar",  "email": "ramesh@nraiorbit.com",  "phone": "9500000001", "password": "teacher@123", "subject": "Physics", "bio": "15 years teaching IIT-JEE Physics"},
+    {"name": "Prof. Anita Verma", "email": "anita@nraiorbit.com",   "phone": "9500000002", "password": "teacher@123", "subject": "Physics", "bio": "NEET Physics specialist"},
 ]
 
 enquiries = [

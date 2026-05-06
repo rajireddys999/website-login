@@ -548,7 +548,7 @@ def _migrate_chatbot_knowledge(conn):
     existing = conn.execute("SELECT COUNT(*) FROM chatbot_knowledge").fetchone()[0]
     if existing == 0:
         faqs = [
-            ('courses',    'What courses does Laxmi Academy offer?',
+            ('courses',    'What courses does NR AI Orbit Learning Portal offer?',
              'We offer Physics courses for NEET, JEE Mains, JEE Advanced, EAMCET, Class 11 Physics, Class 12 Physics, and Physics Foundation. Each is tailored to the respective exam syllabus.'),
             ('courses',    'Is there a Physics Foundation course for beginners?',
              'Yes! Our Physics Foundation course is ideal for students who want to build strong conceptual clarity before moving to competitive exam preparation.'),
@@ -561,12 +561,12 @@ def _migrate_chatbot_knowledge(conn):
             ('enrollment', 'How do I enroll in a course?',
              'Click Sign Up, fill in your details, select your course and plan, then complete payment. Your course is instantly activated and you can start watching immediately.'),
             ('enrollment', 'Can I access the course from mobile?',
-             'Yes! You can install Laxmi Academy as an app on your phone (PWA). On Android tap "Add to Home Screen" in Chrome; on iPhone use Safari Share → Add to Home Screen.'),
+             'Yes! You can install NR AI Orbit Learning Portal as an app on your phone (PWA). On Android tap "Add to Home Screen" in Chrome; on iPhone use Safari Share → Add to Home Screen.'),
             ('demo',       'Is there a free demo class?',
              'Yes! You can book a free 45-minute demo class with no payment required. Click "Book Free Demo Class" on the homepage or contact us via WhatsApp at +91 72078 98999.'),
             ('support',    'How quickly are doubts answered?',
              'Our team typically responds to student doubts within 30 minutes during working hours. You can submit doubts directly from your student dashboard after enrolling.'),
-            ('support',    'How do I contact Laxmi Academy?',
+            ('support',    'How do I contact NR AI Orbit Learning Portal?',
              'You can call or WhatsApp us at +91 72078 98999, use the enquiry form on the website, or email us. We are based in Hyderabad, Telangana.'),
         ]
         conn.executemany(

@@ -3198,26 +3198,51 @@ def sales_check_inbox():
                 )
                 conn.commit()
 
+                # Extract plain-text body from the inbound reply
+                student_reply_text = ''
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        if part.get_content_type() == 'text/plain':
+                            student_reply_text = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                            break
+                else:
+                    student_reply_text = msg.get_payload(decode=True).decode('utf-8', errors='replace')
+                # Trim quoted history (lines starting with >) to keep just the new reply
+                student_reply_text = '\n'.join(
+                    l for l in student_reply_text.splitlines() if not l.strip().startswith('>')
+                ).strip()[:600]
+
                 # AI-draft + send follow-up
                 follow_up_sent = False
                 follow_up_error = None
-                if next_status != 'Order Placed' and ANTHROPIC_API_KEY:
+                if ANTHROPIC_API_KEY:
+                    signup_url = f"{APP_BASE_URL}/signup.html"
                     stage_context = {
-                        'Contacted':   'They replied showing interest. Pitch specific course details, pricing, and offer a free demo.',
-                        'Negotiating': 'They are seriously considering. Address objections, offer a discount or payment plan.',
-                    }.get(next_status, 'Continue the conversation warmly.')
+                        'Contacted':    'They replied showing interest. Provide course details, pricing, and the signup link.',
+                        'Negotiating':  'They are seriously considering. Address objections, offer a discount or payment plan, and share the signup link.',
+                        'Order Placed': 'They have enrolled! Welcome them warmly, confirm their enrollment, and remind them to log in.',
+                    }.get(next_status, 'Continue the conversation warmly and share the signup link if they need it.')
                     first_name = lead['name'].split()[0]
                     prompt = f"""You are a sales assistant for NR AI Orbit Learning Portal, a physics coaching academy in Andhra Pradesh/Telangana.
 
-The lead just replied to our email. Their status is now "{next_status}".
+The lead just replied to our outreach email. Their current status is "{next_status}".
 Lead: {lead['name']} (address as {first_name}) | Course: {lead['course_interest'] or 'Physics'} | Location: {lead['location'] or 'AP/TS'}
-Stage context: {stage_context}
 
-Write a short, warm follow-up reply (3-4 sentences). No subject line. Be helpful and specific. Under 100 words. Use Indian English naturally."""
+Their reply: "{student_reply_text}"
+
+Stage context: {stage_context}
+Signup / Registration link: {signup_url}
+Payment / Pricing page: {APP_BASE_URL}/#pricing
+
+Instructions:
+- Directly answer what they asked in their reply.
+- If they asked for a signup or registration link, include it clearly.
+- Keep it short (3-5 sentences), warm, and helpful.
+- No subject line. Use Indian English naturally. Under 120 words."""
                     ai_resp = http_requests.post(
                         'https://api.anthropic.com/v1/messages',
                         headers={'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
-                        json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 200,
+                        json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 250,
                               'messages': [{'role': 'user', 'content': prompt}]},
                         timeout=20
                     )
@@ -3238,6 +3263,8 @@ Write a short, warm follow-up reply (3-4 sentences). No subject line. Be helpful
                     else:
                         follow_up_error = f"AI error {ai_resp.status_code}"
                         app.logger.error("check-inbox: AI draft failed for %s: %s", lead['name'], ai_resp.text[:200])
+                else:
+                    follow_up_error = 'ANTHROPIC_API_KEY not configured'
 
                 processed.append({
                     'lead_id': lead['id'], 'lead_name': lead['name'],

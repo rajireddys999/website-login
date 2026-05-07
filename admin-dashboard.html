@@ -2765,7 +2765,17 @@
       renderLeads(allLeads); filterLeads();
       const outr2 = await api('/api/admin/sales/outreach');
       if (outr2.ok) { allOutreach = outr2.data; renderOutreach(allOutreach); }
-      toast(`📬 ${inbox.data.processed_count} reply${inbox.data.processed_count>1?'s':''} detected — follow-up sent`, 'success');
+      const sentCount   = inbox.data.processed.filter(p => p.follow_up_sent).length;
+      const failedItems = inbox.data.processed.filter(p => !p.follow_up_sent);
+      const countLabel  = inbox.data.processed_count > 1 ? 'replies' : 'reply';
+      if (sentCount === inbox.data.processed_count) {
+        toast(`📬 ${inbox.data.processed_count} ${countLabel} detected — follow-up email sent`, 'success');
+      } else if (sentCount > 0) {
+        toast(`📬 ${inbox.data.processed_count} ${countLabel} detected — ${sentCount} follow-up sent, ${failedItems.length} failed`, 'warning');
+      } else {
+        const reason = failedItems[0]?.follow_up_error || 'unknown error';
+        toast(`📬 ${inbox.data.processed_count} ${countLabel} detected — follow-up failed: ${reason}`, 'error');
+      }
     }
 
     // 1 — sync new enquiries → leads

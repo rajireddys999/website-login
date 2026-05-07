@@ -1,14 +1,16 @@
 services:
+  # ── Production (master branch) ─────────────────────────────────────────────
   - type: web
     name: laxmi-academy-api
     runtime: python
+    branch: master
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT server:app
     healthCheckPath: /health
     plan: starter
     envVars:
       - key: DATABASE_URL
-        sync: false
+        sync: false          # prod Postgres URL — set in Render dashboard
       - key: FLASK_ENV
         value: production
       - key: APP_BASE_URL
@@ -21,12 +23,53 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
+      - key: FROM_EMAIL
+        sync: false
       - key: PHONEPE_BASE_URL
         value: https://api.phonepe.com/apis/hermes
       - key: PHONEPE_MERCHANT_ID
         sync: false
       - key: PHONEPE_SALT_KEY
         sync: false
+      - key: PHONEPE_SALT_INDEX
+        value: "1"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: LINEAR_API_KEY
+        sync: false
+
+  # ── Staging (release branch) ───────────────────────────────────────────────
+  - type: web
+    name: nraiorbit-api-staging
+    runtime: python
+    branch: release
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT server:app
+    healthCheckPath: /health
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # staging Postgres URL — MUST be a separate DB from prod
+      - key: FLASK_ENV
+        value: staging
+      - key: APP_BASE_URL
+        value: https://nraiorbit-api-staging.onrender.com
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: FROM_EMAIL
+        sync: false
+      - key: PHONEPE_BASE_URL
+        value: https://api-preprod.phonepe.com/apis/pg-sandbox
+      - key: PHONEPE_MERCHANT_ID
+        value: PGTESTPAYUAT86
+      - key: PHONEPE_SALT_KEY
+        value: 96434309-7796-489d-8924-ab56988a6076
       - key: PHONEPE_SALT_INDEX
         value: "1"
       - key: ANTHROPIC_API_KEY

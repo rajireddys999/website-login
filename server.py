@@ -3103,7 +3103,9 @@ def sales_check_inbox():
     if not SMTP_USER or not SMTP_PASS:
         return jsonify({'error': 'SMTP credentials not configured', 'processed_count': 0}), 503
 
-    import imaplib, email as _email_lib, re as _re
+    import imaplib
+    import email as _email_lib
+    from email.utils import parseaddr as _parseaddr
     from datetime import datetime as _dt, timedelta as _td
 
     IMAP_HOST = 'imap.gmail.com'
@@ -3114,36 +3116,38 @@ def sales_check_inbox():
         imap.login(SMTP_USER, SMTP_PASS)
         imap.select('INBOX')
     except Exception as ex:
+        app.logger.error("IMAP login failed: %s", ex)
         return jsonify({'error': f'IMAP login failed: {ex}', 'processed_count': 0}), 500
 
-    # Load all active leads that have an email address
     conn = get_conn()
     lead_rows = conn.execute(
-        "SELECT * FROM sales_leads WHERE email != '' AND status NOT IN ('Order Placed')"
+        "SELECT * FROM sales_leads WHERE email != '' AND status != 'Order Placed'"
     ).fetchall()
     lead_by_email = {dict(r)['email'].lower().strip(): dict(r) for r in lead_rows}
 
     processed, errors = [], []
 
     if lead_by_email:
-        _, msg_nums = imap.search(None, f'UNSEEN SINCE {since_date}')
-        for mid in (msg_nums[0].split() if msg_nums[0] else []):
+        _, msg_nums = imap.search(None, 'UNSEEN', f'SINCE {since_date}')
+        msg_ids = msg_nums[0].split() if msg_nums[0] else []
+        app.logger.info("check-inbox: %d unseen emails, %d active leads", len(msg_ids), len(lead_by_email))
+
+        for mid in msg_ids:
             try:
                 _, data = imap.fetch(mid, '(RFC822)')
-                msg = _email_lib.message_from_bytes(data[0][1])
+                raw = data[0][1]
+                msg = _email_lib.message_from_bytes(raw)
 
-                # Extract sender address
-                from_raw = msg.get('From', '')
-                m = _re.search(r'[\w\.\+\-]+@[\w\.\-]+', from_raw)
-                if not m:
-                    continue
-                sender = m.group(0).lower().strip()
-                if sender not in lead_by_email:
+                # Robust sender extraction via parseaddr (handles encoded headers)
+                _, sender_raw = _parseaddr(msg.get('From', ''))
+                sender = sender_raw.lower().strip()
+                if not sender or sender not in lead_by_email:
                     continue
 
                 lead = lead_by_email[sender]
+                app.logger.info("check-inbox: reply from lead %s (%s)", lead['name'], sender)
 
-                # Mark as read so we don't process again
+                # Mark as read immediately so we never double-process
                 imap.store(mid, '+FLAGS', '\\Seen')
 
                 # Advance lead status
@@ -3161,11 +3165,12 @@ def sales_check_inbox():
                 )
                 conn.commit()
 
-                # AI-draft + send follow-up if not at final stage
+                # AI-draft + send follow-up
                 follow_up_sent = False
+                follow_up_error = None
                 if next_status != 'Order Placed' and ANTHROPIC_API_KEY:
                     stage_context = {
-                        'Contacted':   'They replied showing interest. Pitch course details, pricing, and offer a free demo.',
+                        'Contacted':   'They replied showing interest. Pitch specific course details, pricing, and offer a free demo.',
                         'Negotiating': 'They are seriously considering. Address objections, offer a discount or payment plan.',
                     }.get(next_status, 'Continue the conversation warmly.')
                     first_name = lead['name'].split()[0]
@@ -3176,34 +3181,40 @@ Lead: {lead['name']} (address as {first_name}) | Course: {lead['course_interest'
 Stage context: {stage_context}
 
 Write a short, warm follow-up reply (3-4 sentences). No subject line. Be helpful and specific. Under 100 words. Use Indian English naturally."""
-                    try:
-                        ai_resp = http_requests.post(
-                            'https://api.anthropic.com/v1/messages',
-                            headers={'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
-                            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 200,
-                                  'messages': [{'role': 'user', 'content': prompt}]},
-                            timeout=20
+                    ai_resp = http_requests.post(
+                        'https://api.anthropic.com/v1/messages',
+                        headers={'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
+                        json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 200,
+                              'messages': [{'role': 'user', 'content': prompt}]},
+                        timeout=20
+                    )
+                    if ai_resp.ok:
+                        reply_text = ai_resp.json()['content'][0]['text'].strip()
+                        course = lead.get('course_interest') or 'Physics'
+                        follow_up_sent, send_err = _sales_send_email(
+                            lead, f"Re: {course} at NR AI Orbit", reply_text
                         )
-                        if ai_resp.ok:
-                            reply_text = ai_resp.json()['content'][0]['text'].strip()
-                            course = lead.get('course_interest') or 'Physics'
-                            ok, _ = _sales_send_email(lead, f"Re: {course} at NR AI Orbit", reply_text)
-                            follow_up_sent = ok
-                            conn.execute(
-                                "INSERT INTO sales_outreach (lead_id, channel, message, delivery_status) VALUES (?,?,?,?)",
-                                (lead['id'], 'Email', reply_text, 'Sent' if ok else 'Draft')
-                            )
-                            conn.commit()
-                    except Exception:
-                        pass
+                        if not follow_up_sent:
+                            follow_up_error = send_err
+                            app.logger.error("check-inbox: send failed for %s: %s", lead['name'], send_err)
+                        conn.execute(
+                            "INSERT INTO sales_outreach (lead_id, channel, message, delivery_status) VALUES (?,?,?,?)",
+                            (lead['id'], 'Email', reply_text, 'Sent' if follow_up_sent else 'Failed')
+                        )
+                        conn.commit()
+                    else:
+                        follow_up_error = f"AI error {ai_resp.status_code}"
+                        app.logger.error("check-inbox: AI draft failed for %s: %s", lead['name'], ai_resp.text[:200])
 
                 processed.append({
                     'lead_id': lead['id'], 'lead_name': lead['name'],
                     'sender': sender, 'new_status': next_status,
-                    'follow_up_sent': follow_up_sent
+                    'follow_up_sent': follow_up_sent,
+                    'follow_up_error': follow_up_error,
                 })
 
             except Exception as ex:
+                app.logger.error("check-inbox: error processing msg %s: %s", mid, ex)
                 errors.append({'msg_id': str(mid), 'error': str(ex)})
 
     conn.close()

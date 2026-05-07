@@ -2975,6 +2975,28 @@ Output only the email text, nothing else."""
     })
 
 
+@app.route('/api/admin/test-email', methods=['POST'])
+def admin_test_email():
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+    d = request.get_json() or {}
+    to_addr = d.get('to') or (session.get('email') if isinstance(session, dict) else None)
+    if not to_addr:
+        return jsonify({'error': 'No recipient — pass {"to":"your@email.com"}'}), 400
+    config = {
+        'SMTP_HOST': SMTP_HOST, 'SMTP_PORT': SMTP_PORT,
+        'SMTP_USER': SMTP_USER or '(not set)',
+        'SMTP_PASS': '(set)' if SMTP_PASS else '(not set)',
+        'FROM_EMAIL': FROM_EMAIL or '(not set)',
+    }
+    try:
+        send_email(to_addr, 'NR AI Orbit — SMTP test', '<p>SMTP is working correctly.</p>')
+        return jsonify({'ok': True, 'message': f'Test email sent to {to_addr}', 'config': config})
+    except Exception as ex:
+        return jsonify({'ok': False, 'error': str(ex), 'config': config}), 500
+
+
 @app.route('/api/admin/sales/report/daily', methods=['GET'])
 def sales_report_daily():
     session, err_resp, err_code = require_role('admin')

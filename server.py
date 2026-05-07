@@ -28,7 +28,7 @@ except Exception as _init_err:
 # ── Email config ─────────────────────────────────────────────────
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
-SMTP_USER = os.environ.get('SMTP_USER', '')
+SMTP_USER = os.environ.get('SMTP_USER', '') or os.environ.get('SMTP_EMAIL', '')
 SMTP_PASS = os.environ.get('SMTP_PASS', '')
 FROM_EMAIL = os.environ.get('FROM_EMAIL', SMTP_USER)
 

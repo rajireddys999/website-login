@@ -49,6 +49,15 @@ class PGConn:
 
     _SUBS = [
         ('?',                                 '%s'),
+        # Specific datetime offsets must come BEFORE bare datetime('now')
+        # so str.replace() doesn't partially mangle the longer pattern
+        ("datetime('now', '-1 day')",   "(NOW() - INTERVAL '1 day')"),
+        ("datetime('now', '-2 days')",  "(NOW() - INTERVAL '2 days')"),
+        ("datetime('now', '-7 days')",  "(NOW() - INTERVAL '7 days')"),
+        ("datetime('now', '-14 days')", "(NOW() - INTERVAL '14 days')"),
+        ("datetime('now', '-30 days')", "(NOW() - INTERVAL '30 days')"),
+        ("datetime('now', '+1 hour')",  "(NOW() + INTERVAL '1 hour')"),
+        ("datetime('now', '+24 hours')", "(NOW() + INTERVAL '24 hours')"),
         ("datetime('now')",
          "to_char(NOW() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')"),
         ('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY'),

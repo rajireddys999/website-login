@@ -1302,6 +1302,7 @@
               <option>Hyderabad</option><option>Vijayawada</option><option>Guntur</option><option>Tirupati</option><option>Warangal</option>
             </select>
             <button class="action-btn" style="background:rgba(34,197,94,.1);color:#16a34a;border:1px solid rgba(34,197,94,.2)" onclick="syncEnquiriesManual()" id="sync-enq-btn">⟳ Sync Enquiries</button>
+            <button class="action-btn" style="background:rgba(251,146,60,.12);color:#ea580c;border:1px solid rgba(251,146,60,.25)" onclick="runAllNewLeads()" id="run-all-btn">⚡ Run All New Leads</button>
             <button class="action-btn btn-view" style="background:var(--accent);color:#fff" onclick="openLeadModal()">+ Add Lead</button>
           </div>
           <div class="table-wrap">
@@ -2748,61 +2749,99 @@
   async function agentPollCycle() {
     if (!agentRunning) { stopAgentPolling(); return; }
 
+    let totalEmails = 0;
+    let totalLeads  = 0;
+    let staleEmails = 0;
+
     // 1 — sync new enquiries → leads
     const r = await api('/api/admin/sales/sync-enquiries', { method:'POST' });
-    if (!r.ok) return;
+    if (!r.ok) { updateAgentLastSeen(); return; }
     const newLeads = r.data.created || [];
 
-    if (newLeads.length === 0) {
-      updateAgentLastSeen();
-      return;
-    }
+    if (newLeads.length > 0) {
+      // add to local state
+      newLeads.forEach(lead => allLeads.unshift(lead));
+      document.getElementById('badge-sales').textContent = allLeads.length;
+      filterLeads();
+      populateOutreachLeadSelect();
+      populateOrderLeadSelect();
+      totalLeads = newLeads.length;
 
-    // 2 — add to local state
-    newLeads.forEach(lead => allLeads.unshift(lead));
-    document.getElementById('badge-sales').textContent = allLeads.length;
-    filterLeads();
-    populateOutreachLeadSelect();
-    populateOrderLeadSelect();
+      // for each new lead: AI-draft → save outreach → auto-send email if available
+      for (const lead of newLeads) {
+        const channel = lead.email ? 'Email' : 'WhatsApp';
+        const dr = await api('/api/admin/sales/draft-message', {
+          method: 'POST',
+          body: JSON.stringify({ lead_id: lead.id, channel })
+        });
+        if (!dr.ok) continue;
+        const or = await api('/api/admin/sales/outreach', {
+          method: 'POST',
+          body: JSON.stringify({ lead_id: lead.id, channel, message: dr.data.message, delivery_status: 'Draft' })
+        });
+        if (!or.ok) continue;
+        allOutreach.unshift(or.data);
 
-    // 3 — for each new lead: AI-draft → save outreach → auto-send email if available
-    let emailsSent = 0;
-    for (const lead of newLeads) {
-      const channel = lead.email ? 'Email' : 'WhatsApp';
-      const dr = await api('/api/admin/sales/draft-message', {
-        method: 'POST',
-        body: JSON.stringify({ lead_id: lead.id, channel })
-      });
-      if (!dr.ok) continue;
-      const or = await api('/api/admin/sales/outreach', {
-        method: 'POST',
-        body: JSON.stringify({ lead_id: lead.id, channel, message: dr.data.message, delivery_status: 'Draft' })
-      });
-      if (!or.ok) continue;
-      allOutreach.unshift(or.data);
-
-      // auto-send email if lead has an email address
-      if (lead.email) {
-        const sr = await api(`/api/admin/sales/outreach/${or.data.id}/send`, { method:'POST' });
-        if (sr.ok) {
-          // update local state with sent status + new lead status
-          const idx = allOutreach.findIndex(o => o.id === or.data.id);
-          if (idx !== -1) allOutreach[idx] = sr.data.outreach;
-          const li = allLeads.findIndex(l => l.id === lead.id);
-          if (li !== -1) allLeads[li] = sr.data.lead;
-          if (sr.data.email_sent) emailsSent++;
+        if (lead.email) {
+          const sr = await api(`/api/admin/sales/outreach/${or.data.id}/send`, { method:'POST' });
+          if (sr.ok) {
+            const idx = allOutreach.findIndex(o => o.id === or.data.id);
+            if (idx !== -1) allOutreach[idx] = sr.data.outreach;
+            const li = allLeads.findIndex(l => l.id === lead.id);
+            if (li !== -1) allLeads[li] = sr.data.lead;
+            if (sr.data.email_sent) totalEmails++;
+          }
         }
       }
     }
 
+    // 2 — follow up stale leads (Contacted for 2+ days)
+    const sf = await api('/api/admin/sales/follow-up-stale', { method:'POST' });
+    if (sf.ok && sf.data.processed_count > 0) {
+      staleEmails = sf.data.emails_sent || 0;
+      // refresh outreach list to include new follow-ups
+      const outr = await api('/api/admin/sales/outreach');
+      if (outr.ok) { allOutreach = outr.data; renderOutreach(allOutreach); }
+    }
+
+    if (totalLeads > 0 || staleEmails > 0) {
+      renderLeads(allLeads);
+      filterLeads();
+      renderOutreach(allOutreach);
+      const parts = [];
+      if (totalLeads > 0) parts.push(`${totalLeads} new lead${totalLeads>1?'s':''} synced · ${totalEmails} email${totalEmails!==1?'s':''} sent`);
+      if (staleEmails > 0) parts.push(`${staleEmails} stale follow-up${staleEmails!==1?'s':''} sent`);
+      toast(`🤖 Agent: ${parts.join(' · ')}`, 'success');
+    }
+
+    saveAgentCheckpoint({ status:'running', last_sync: new Date().toISOString(), leads_imported: totalLeads });
+    updateAgentLastSeen();
+  }
+
+  async function runAllNewLeads() {
+    const btn = document.getElementById('run-all-btn');
+    if (btn) { btn.textContent = '⚡ Working…'; btn.disabled = true; }
+    const r = await api('/api/admin/sales/run-all-new', { method:'POST' });
+    if (btn) { btn.textContent = '⚡ Run All New Leads'; btn.disabled = false; }
+    if (!r.ok) { toast('Run failed — check server logs', 'error'); return; }
+    const n  = r.data.processed_count || 0;
+    const em = r.data.emails_sent || 0;
+    if (n === 0) { toast('No New leads to process', 'success'); return; }
+
+    // update local lead states
+    (r.data.processed || []).forEach(item => {
+      const li = allLeads.findIndex(l => l.id === item.lead.id);
+      if (li !== -1) allLeads[li] = item.lead; else allLeads.unshift(item.lead);
+    });
     renderLeads(allLeads);
     filterLeads();
-    renderOutreach(allOutreach);
-    saveAgentCheckpoint({ status:'running', last_sync: new Date().toISOString(), leads_imported: newLeads.length });
-    updateAgentLastSeen();
-    const msg = emailsSent > 0
-      ? `🤖 Agent: ${newLeads.length} lead${newLeads.length>1?'s':''} synced · ${emailsSent} email${emailsSent>1?'s':''} sent`
-      : `🤖 Agent: ${newLeads.length} lead${newLeads.length>1?'s':''} synced · messages drafted`;
+    // refresh outreach
+    const outr = await api('/api/admin/sales/outreach');
+    if (outr.ok) { allOutreach = outr.data; renderOutreach(allOutreach); }
+
+    const msg = em > 0
+      ? `⚡ ${n} lead${n>1?'s':''} processed · ${em} email${em>1?'s':''} sent`
+      : `⚡ ${n} lead${n>1?'s':''} processed · no email addresses available`;
     toast(msg, 'success');
   }
 

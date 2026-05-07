@@ -528,6 +528,8 @@
     }
     .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
     .form-input::placeholder { color:var(--muted); }
+    .form-input option, .filter-select option { background:#ffffff; color:#111827; }
+    html.dark .form-input option, html.dark .filter-select option { background:#0a0a12; color:#f0f0f5; }
     html.dark .modal-lg { background:#13131f; border-color:rgba(255,255,255,.1); }
     .btn-primary {
       padding:.62rem 1.3rem; border-radius:10px; font-size:.85rem; font-weight:700;
@@ -2839,10 +2841,14 @@
     const outr = await api('/api/admin/sales/outreach');
     if (outr.ok) { allOutreach = outr.data; renderOutreach(allOutreach); }
 
-    const msg = em > 0
-      ? `⚡ ${n} lead${n>1?'s':''} processed · ${em} email${em>1?'s':''} sent`
-      : `⚡ ${n} lead${n>1?'s':''} processed · no email addresses available`;
-    toast(msg, 'success');
+    const errors = r.data.errors || [];
+    if (em > 0) {
+      toast(`⚡ ${n} lead${n>1?'s':''} processed · ${em} email${em>1?'s':''} sent`, 'success');
+    } else if (errors.length > 0) {
+      toast(`⚡ ${n} processed · emails failed: ${errors[0].error}`, 'error');
+    } else {
+      toast(`⚡ ${n} lead${n>1?'s':''} processed · no email addresses on leads`, 'success');
+    }
   }
 
   function updateAgentLastSeen() {
@@ -3348,10 +3354,11 @@
     window.location.href = 'login.html';
   }
 
-  // ── Auto-refresh every 60 seconds on overview ──────────────
+  // ── Auto-refresh ──────────────────────────────────────────
   setInterval(() => {
-    if (currentPage === 'overview') loadOverview();
-  }, 60000);
+    if (currentPage === 'overview')   loadOverview();
+    if (currentPage === 'enquiries')  loadEnquiries();
+  }, 30000);
 
   // ── Init ──────────────────────────────────────────────────────
   loadOverview();

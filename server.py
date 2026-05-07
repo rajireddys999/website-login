@@ -313,7 +313,10 @@ def resend_verification():
     conn.commit()
     conn.close()
 
-    send_verification_email(email, student['full_name'] if student else '', verify_token)
+    try:
+        send_verification_email(email, student['full_name'] if student else '', verify_token)
+    except Exception as exc:
+        app.logger.error("Verification email failed for %s: %s", email, exc)
     return jsonify({'message': 'If that email is registered, a new verification link has been sent.'})
 
 # ── POST /api/forgot-password ────────────────────────────────────
@@ -360,7 +363,10 @@ def forgot_password():
     <p><a href="{reset_url}" style="background:#6366f1;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Reset Password</a></p>
     <p>This link expires in <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email.</p>
     """
-    send_email(email, "Reset your NR AI Orbit Learning Portal password", body)
+    try:
+        send_email(email, "Reset your NR AI Orbit Learning Portal password", body)
+    except Exception as exc:
+        app.logger.error("Password reset email failed for %s: %s", email, exc)
     return jsonify({'message': generic_msg})
 
 # ── POST /api/reset-password ──────────────────────────────────────

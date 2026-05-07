@@ -34,19 +34,15 @@ FROM_EMAIL = os.environ.get('FROM_EMAIL', SMTP_USER)
 
 def send_email(to_addr, subject, body_html):
     if not SMTP_USER or not SMTP_PASS:
-        app.logger.warning("SMTP not configured — skipping email to %s", to_addr)
-        return
+        raise RuntimeError("SMTP not configured")
     msg = MIMEText(body_html, 'html')
     msg['Subject'] = subject
     msg['From']    = f"NR AI Orbit Learning Portal <{FROM_EMAIL}>"
     msg['To']      = to_addr
-    try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
-            s.starttls()
-            s.login(SMTP_USER, SMTP_PASS)
-            s.sendmail(FROM_EMAIL, [to_addr], msg.as_string())
-    except Exception as exc:
-        app.logger.error("Email send failed to %s: %s", to_addr, exc)
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
+        s.starttls()
+        s.login(SMTP_USER, SMTP_PASS)
+        s.sendmail(FROM_EMAIL, [to_addr], msg.as_string())
 
 def send_verification_email(email, full_name, token):
     verify_url = f"{APP_BASE_URL}/verify-email.html?token={token}"
@@ -2866,7 +2862,7 @@ Output only the message text, nothing else."""
 
         email_sent = False
         if lead.get('email'):
-            email_sent = _sales_send_email(lead, f"Invitation: {lead.get('course_interest','Physics')} at NR AI Orbit", message)
+            email_sent, _ = _sales_send_email(lead, f"Invitation: {lead.get('course_interest','Physics')} at NR AI Orbit", message)
             conn = get_conn()
             conn.execute(
                 "UPDATE sales_outreach SET delivery_status=? WHERE id=?",
@@ -2943,7 +2939,7 @@ Output only the email text, nothing else."""
             errors.append({'lead_id': lead['id'], 'error': 'No email address'})
             continue
 
-        email_sent = _sales_send_email(
+        email_sent, _ = _sales_send_email(
             lead,
             f"Following up: {lead.get('course_interest','Physics')} at NR AI Orbit",
             message

@@ -2755,6 +2755,19 @@
     let totalLeads  = 0;
     let staleEmails = 0;
 
+    // 0 — check Gmail inbox for lead replies
+    const inbox = await api('/api/admin/sales/check-inbox', { method:'POST' });
+    if (inbox.ok && inbox.data.processed_count > 0) {
+      inbox.data.processed.forEach(item => {
+        const li = allLeads.findIndex(l => l.id === item.lead_id);
+        if (li !== -1) allLeads[li].status = item.new_status;
+      });
+      renderLeads(allLeads); filterLeads();
+      const outr2 = await api('/api/admin/sales/outreach');
+      if (outr2.ok) { allOutreach = outr2.data; renderOutreach(allOutreach); }
+      toast(`📬 ${inbox.data.processed_count} reply${inbox.data.processed_count>1?'s':''} detected — follow-up sent`, 'success');
+    }
+
     // 1 — sync new enquiries → leads
     const r = await api('/api/admin/sales/sync-enquiries', { method:'POST' });
     if (!r.ok) { updateAgentLastSeen(); return; }

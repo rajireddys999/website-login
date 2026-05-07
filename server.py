@@ -3093,6 +3093,129 @@ def admin_test_email():
         return jsonify({'ok': False, 'error': str(ex), 'config': config}), 500
 
 
+@app.route('/api/admin/sales/check-inbox', methods=['POST'])
+def sales_check_inbox():
+    """Poll Gmail IMAP for replies from leads; auto-advance status + send AI follow-up."""
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    if not SMTP_USER or not SMTP_PASS:
+        return jsonify({'error': 'SMTP credentials not configured', 'processed_count': 0}), 503
+
+    import imaplib, email as _email_lib, re as _re
+    from datetime import datetime as _dt, timedelta as _td
+
+    IMAP_HOST = 'imap.gmail.com'
+    since_date = (_dt.utcnow() - _td(days=7)).strftime('%d-%b-%Y')
+
+    try:
+        imap = imaplib.IMAP4_SSL(IMAP_HOST, 993)
+        imap.login(SMTP_USER, SMTP_PASS)
+        imap.select('INBOX')
+    except Exception as ex:
+        return jsonify({'error': f'IMAP login failed: {ex}', 'processed_count': 0}), 500
+
+    # Load all active leads that have an email address
+    conn = get_conn()
+    lead_rows = conn.execute(
+        "SELECT * FROM sales_leads WHERE email != '' AND status NOT IN ('Order Placed')"
+    ).fetchall()
+    lead_by_email = {dict(r)['email'].lower().strip(): dict(r) for r in lead_rows}
+
+    processed, errors = [], []
+
+    if lead_by_email:
+        _, msg_nums = imap.search(None, f'UNSEEN SINCE {since_date}')
+        for mid in (msg_nums[0].split() if msg_nums[0] else []):
+            try:
+                _, data = imap.fetch(mid, '(RFC822)')
+                msg = _email_lib.message_from_bytes(data[0][1])
+
+                # Extract sender address
+                from_raw = msg.get('From', '')
+                m = _re.search(r'[\w\.\+\-]+@[\w\.\-]+', from_raw)
+                if not m:
+                    continue
+                sender = m.group(0).lower().strip()
+                if sender not in lead_by_email:
+                    continue
+
+                lead = lead_by_email[sender]
+
+                # Mark as read so we don't process again
+                imap.store(mid, '+FLAGS', '\\Seen')
+
+                # Advance lead status
+                next_status = SALES_STATUS_NEXT.get(lead['status'], lead['status'])
+                conn.execute(
+                    "UPDATE sales_leads SET status=?, updated_at=datetime('now') WHERE id=?",
+                    (next_status, lead['id'])
+                )
+                lead['status'] = next_status
+
+                # Log the inbound reply
+                conn.execute(
+                    "INSERT INTO sales_outreach (lead_id, channel, message, delivery_status) VALUES (?,?,?,?)",
+                    (lead['id'], 'Email', f"[Reply received from {lead['name']}]", 'Read')
+                )
+                conn.commit()
+
+                # AI-draft + send follow-up if not at final stage
+                follow_up_sent = False
+                if next_status != 'Order Placed' and ANTHROPIC_API_KEY:
+                    stage_context = {
+                        'Contacted':   'They replied showing interest. Pitch course details, pricing, and offer a free demo.',
+                        'Negotiating': 'They are seriously considering. Address objections, offer a discount or payment plan.',
+                    }.get(next_status, 'Continue the conversation warmly.')
+                    first_name = lead['name'].split()[0]
+                    prompt = f"""You are a sales assistant for NR AI Orbit Learning Portal, a physics coaching academy in Andhra Pradesh/Telangana.
+
+The lead just replied to our email. Their status is now "{next_status}".
+Lead: {lead['name']} (address as {first_name}) | Course: {lead['course_interest'] or 'Physics'} | Location: {lead['location'] or 'AP/TS'}
+Stage context: {stage_context}
+
+Write a short, warm follow-up reply (3-4 sentences). No subject line. Be helpful and specific. Under 100 words. Use Indian English naturally."""
+                    try:
+                        ai_resp = http_requests.post(
+                            'https://api.anthropic.com/v1/messages',
+                            headers={'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
+                            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 200,
+                                  'messages': [{'role': 'user', 'content': prompt}]},
+                            timeout=20
+                        )
+                        if ai_resp.ok:
+                            reply_text = ai_resp.json()['content'][0]['text'].strip()
+                            course = lead.get('course_interest') or 'Physics'
+                            ok, _ = _sales_send_email(lead, f"Re: {course} at NR AI Orbit", reply_text)
+                            follow_up_sent = ok
+                            conn.execute(
+                                "INSERT INTO sales_outreach (lead_id, channel, message, delivery_status) VALUES (?,?,?,?)",
+                                (lead['id'], 'Email', reply_text, 'Sent' if ok else 'Draft')
+                            )
+                            conn.commit()
+                    except Exception:
+                        pass
+
+                processed.append({
+                    'lead_id': lead['id'], 'lead_name': lead['name'],
+                    'sender': sender, 'new_status': next_status,
+                    'follow_up_sent': follow_up_sent
+                })
+
+            except Exception as ex:
+                errors.append({'msg_id': str(mid), 'error': str(ex)})
+
+    conn.close()
+    try:
+        imap.close()
+        imap.logout()
+    except Exception:
+        pass
+
+    return jsonify({'processed': processed, 'processed_count': len(processed), 'errors': errors})
+
+
 @app.route('/api/admin/sales/report/daily', methods=['GET'])
 def sales_report_daily():
     session, err_resp, err_code = require_role('admin')

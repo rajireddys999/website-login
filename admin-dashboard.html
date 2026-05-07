@@ -2818,6 +2818,16 @@
 
     saveAgentCheckpoint({ status:'running', last_sync: new Date().toISOString(), leads_imported: totalLeads });
     updateAgentLastSeen();
+
+    // Daily report — send once per calendar day
+    const today = new Date().toDateString();
+    if (localStorage.getItem('sales_agent_last_report') !== today) {
+      const rpt = await api('/api/admin/sales/send-daily-report', { method:'POST' });
+      if (rpt.ok) {
+        localStorage.setItem('sales_agent_last_report', today);
+        toast('📊 Daily report emailed to you', 'success');
+      }
+    }
   }
 
   async function runAllNewLeads() {

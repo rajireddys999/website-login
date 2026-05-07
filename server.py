@@ -2898,7 +2898,10 @@ Output only the message text, nothing else."""
 
 @app.route('/api/admin/sales/follow-up-stale', methods=['POST'])
 def sales_follow_up_stale():
-    """Auto-send follow-up reminders to leads stuck in Contacted for 2+ days."""
+    """Auto-send follow-up reminders to leads stuck in Contacted for 2+ days.
+    Guards: skip if already emailed today OR last email was a sent follow-up
+    awaiting response (no duplicate until lead replies).
+    """
     session, err_resp, err_code = require_role('admin')
     if err_resp:
         return err_resp, err_code
@@ -2906,9 +2909,36 @@ def sales_follow_up_stale():
     stale_leads = [dict(r) for r in conn.execute(
         "SELECT * FROM sales_leads WHERE status='Contacted' AND updated_at < datetime('now', '-2 days')"
     ).fetchall()]
-    conn.close()
-    processed, emails_sent, errors = [], 0, []
+
+    processed, emails_sent, errors, skipped_no_reply = [], 0, [], 0
     for lead in stale_leads:
+        # Guard 1 — already emailed this lead today
+        emailed_today = conn.execute(
+            "SELECT id FROM sales_outreach WHERE lead_id=? AND channel='Email' "
+            "AND DATE(created_at)=DATE(datetime('now'))",
+            (lead['id'],)
+        ).fetchone()
+        if emailed_today:
+            skipped_no_reply += 1
+            continue
+
+        # Guard 2 — last email was a sent follow-up with no response since
+        last_outreach = conn.execute(
+            "SELECT * FROM sales_outreach WHERE lead_id=? AND channel='Email' "
+            "ORDER BY created_at DESC LIMIT 1",
+            (lead['id'],)
+        ).fetchone()
+        if last_outreach:
+            last = dict(last_outreach)
+            is_sent_followup = last['delivery_status'] == 'Sent' and not last['message'].startswith('[Response received')
+            if is_sent_followup:
+                skipped_no_reply += 1
+                continue
+
+        if not lead.get('email'):
+            errors.append({'lead_id': lead['id'], 'error': 'No email address'})
+            continue
+
         first_name = lead['name'].split()[0]
         prompt = f"""You are a sales assistant for NR AI Orbit Learning Portal.
 
@@ -2923,11 +2953,7 @@ Output only the email text, nothing else."""
         try:
             resp = http_requests.post(
                 'https://api.anthropic.com/v1/messages',
-                headers={
-                    'x-api-key': ANTHROPIC_API_KEY,
-                    'anthropic-version': '2023-06-01',
-                    'content-type': 'application/json'
-                },
+                headers={'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
                 json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 200,
                       'messages': [{'role': 'user', 'content': prompt}]},
                 timeout=30
@@ -2941,16 +2967,11 @@ Output only the email text, nothing else."""
             errors.append({'lead_id': lead['id'], 'error': str(ex)})
             continue
 
-        if not lead.get('email'):
-            errors.append({'lead_id': lead['id'], 'error': 'No email address'})
-            continue
-
         email_sent, _ = _sales_send_email(
             lead,
             f"Following up: {lead.get('course_interest','Physics')} at NR AI Orbit",
             message
         )
-        conn = get_conn()
         cur = conn.execute(
             "INSERT INTO sales_outreach (lead_id, channel, message, delivery_status) VALUES (?,?,?,?)",
             (lead['id'], 'Email', message, 'Sent' if email_sent else 'Failed')
@@ -2961,18 +2982,93 @@ Output only the email text, nothing else."""
             (lead['id'],)
         )
         conn.commit()
-        conn.close()
 
         if email_sent:
             emails_sent += 1
         processed.append({'lead_id': lead['id'], 'outreach_id': oid, 'email_sent': email_sent})
 
+    conn.close()
     return jsonify({
         'processed': processed,
         'processed_count': len(processed),
         'emails_sent': emails_sent,
+        'skipped_awaiting_reply': skipped_no_reply,
         'errors': errors
     })
+
+
+@app.route('/api/admin/sales/send-daily-report', methods=['POST'])
+def sales_send_daily_report():
+    """Email admin a daily summary of agent activity."""
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    # Get admin email
+    admin_id = session['user_id'] if isinstance(session, dict) else None
+    conn = get_conn()
+    admin = conn.execute("SELECT email, name FROM admins WHERE id=?", (admin_id,)).fetchone() if admin_id else None
+    to_addr = dict(admin)['email'] if admin else FROM_EMAIL
+    if not to_addr:
+        conn.close()
+        return jsonify({'error': 'No admin email found'}), 400
+
+    from datetime import date as _date
+    today = _date.today().isoformat()
+
+    new_leads    = conn.execute("SELECT COUNT(*) FROM sales_leads WHERE DATE(created_at)=?", (today,)).fetchone()[0]
+    emails_sent  = conn.execute("SELECT COUNT(*) FROM sales_outreach WHERE channel='Email' AND delivery_status='Sent' AND DATE(created_at)=?", (today,)).fetchone()[0]
+    orders_today = conn.execute("SELECT COUNT(*) FROM sales_orders WHERE DATE(created_at)=?", (today,)).fetchone()[0]
+    revenue_today = conn.execute("SELECT COALESCE(SUM(amount),0) FROM sales_orders WHERE DATE(created_at)=? AND status!='Cancelled'", (today,)).fetchone()[0]
+
+    pipeline = {}
+    for s in ['New', 'Contacted', 'Negotiating', 'Order Placed']:
+        pipeline[s] = conn.execute("SELECT COUNT(*) FROM sales_leads WHERE status=?", (s,)).fetchone()[0]
+
+    total_leads   = conn.execute("SELECT COUNT(*) FROM sales_leads").fetchone()[0]
+    total_revenue = conn.execute("SELECT COALESCE(SUM(amount),0) FROM sales_orders WHERE status!='Cancelled'").fetchone()[0]
+    conn.close()
+
+    conversion = round((pipeline['Order Placed'] / total_leads * 100) if total_leads else 0, 1)
+
+    body_html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;background:#0a0a12;color:#f0f0f5;border-radius:12px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#FF6600,#FF4400);padding:24px 28px">
+        <h1 style="margin:0;font-size:1.3rem;font-weight:900;color:#fff">🤖 Sales Agent — Daily Report</h1>
+        <p style="margin:4px 0 0;font-size:.85rem;color:rgba(255,255,255,.75)">{today} · NR AI Orbit Learning Portal</p>
+      </div>
+      <div style="padding:24px 28px">
+        <h2 style="font-size:.9rem;font-weight:700;color:#FF8800;text-transform:uppercase;letter-spacing:.06em;margin:0 0 14px">Today's Activity</h2>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:8px 0;color:rgba(255,255,255,.6);font-size:.85rem">New Leads</td><td style="text-align:right;font-weight:800;color:#fff;font-size:1rem">{new_leads}</td></tr>
+          <tr><td style="padding:8px 0;color:rgba(255,255,255,.6);font-size:.85rem">Emails Sent</td><td style="text-align:right;font-weight:800;color:#22c55e;font-size:1rem">{emails_sent}</td></tr>
+          <tr><td style="padding:8px 0;color:rgba(255,255,255,.6);font-size:.85rem">Orders Placed</td><td style="text-align:right;font-weight:800;color:#FF8800;font-size:1rem">{orders_today}</td></tr>
+          <tr><td style="padding:8px 0;color:rgba(255,255,255,.6);font-size:.85rem">Revenue Today</td><td style="text-align:right;font-weight:800;color:#FFAA00;font-size:1rem">₹{float(revenue_today):,.0f}</td></tr>
+        </table>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:18px 0"/>
+        <h2 style="font-size:.9rem;font-weight:700;color:#FF8800;text-transform:uppercase;letter-spacing:.06em;margin:0 0 14px">Pipeline</h2>
+        <table style="width:100%;border-collapse:collapse">
+          {''.join(f'<tr><td style="padding:6px 0;color:rgba(255,255,255,.6);font-size:.85rem">{s}</td><td style="text-align:right;font-weight:700;color:#fff">{pipeline[s]}</td></tr>' for s in ['New','Contacted','Negotiating','Order Placed'])}
+        </table>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:18px 0"/>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="color:rgba(255,255,255,.6);font-size:.85rem">Total Leads</td><td style="text-align:right;color:#fff;font-weight:700">{total_leads}</td></tr>
+          <tr><td style="color:rgba(255,255,255,.6);font-size:.85rem">Conversion Rate</td><td style="text-align:right;color:#FF6600;font-weight:800">{conversion}%</td></tr>
+          <tr><td style="color:rgba(255,255,255,.6);font-size:.85rem">Total Revenue</td><td style="text-align:right;color:#FFAA00;font-weight:800">₹{float(total_revenue):,.0f}</td></tr>
+        </table>
+      </div>
+      <div style="padding:14px 28px;background:rgba(255,255,255,.04);font-size:.75rem;color:rgba(255,255,255,.3)">
+        Sent automatically by Sales Agent · NR AI Orbit Learning Portal
+      </div>
+    </div>"""
+
+    try:
+        send_email(to_addr, f'Sales Agent Daily Report — {today}', body_html)
+        return jsonify({'ok': True, 'sent_to': to_addr, 'date': today,
+                        'new_leads': new_leads, 'emails_sent': emails_sent,
+                        'orders_today': orders_today, 'pipeline': pipeline})
+    except Exception as ex:
+        return jsonify({'ok': False, 'error': str(ex)}), 500
 
 
 @app.route('/api/admin/test-email', methods=['POST'])

@@ -840,6 +840,13 @@
         btn.textContent = 'Submitted! We will call you soon.';
         btn.classList.remove('from-orange-500','to-rose-600');
         btn.classList.add('from-green-500','to-emerald-600');
+        e.target.reset();
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = 'Submit Enquiry';
+          btn.classList.remove('from-green-500','to-emerald-600');
+          btn.classList.add('from-orange-500','to-rose-600');
+        }, 3000);
       } else {
         btn.disabled = false; btn.textContent = 'Submit Enquiry';
       }

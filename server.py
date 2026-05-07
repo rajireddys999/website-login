@@ -32,6 +32,30 @@ SMTP_USER = os.environ.get('SMTP_USER', '') or os.environ.get('SMTP_EMAIL', '')
 SMTP_PASS = os.environ.get('SMTP_PASS', '')
 FROM_EMAIL = os.environ.get('FROM_EMAIL', SMTP_USER)
 
+# ── WhatsApp (CallMeBot) config ────────────────────────────────────
+CALLMEBOT_API_KEY = os.environ.get('CALLMEBOT_API_KEY', '')
+CALLMEBOT_PHONE   = os.environ.get('CALLMEBOT_PHONE', '912175080369')
+
+def send_whatsapp_alert(text):
+    """Send WhatsApp message via CallMeBot. Silently skips if not configured."""
+    if not CALLMEBOT_API_KEY or not CALLMEBOT_PHONE:
+        app.logger.warning("WhatsApp alert skipped — CALLMEBOT_API_KEY or CALLMEBOT_PHONE not set")
+        return False
+    try:
+        resp = http_requests.get(
+            'https://api.callmebot.com/whatsapp.php',
+            params={'phone': CALLMEBOT_PHONE, 'text': text, 'apikey': CALLMEBOT_API_KEY},
+            timeout=10
+        )
+        if resp.status_code == 200:
+            app.logger.info("WhatsApp alert sent: %s", text[:80])
+            return True
+        app.logger.error("WhatsApp alert failed: %s %s", resp.status_code, resp.text[:200])
+        return False
+    except Exception as ex:
+        app.logger.error("WhatsApp alert error: %s", ex)
+        return False
+
 def send_email(to_addr, subject, body_html):
     if not SMTP_USER or not SMTP_PASS:
         raise RuntimeError("SMTP not configured")
@@ -3146,6 +3170,15 @@ def sales_check_inbox():
 
                 lead = lead_by_email[sender]
                 app.logger.info("check-inbox: reply from lead %s (%s)", lead['name'], sender)
+
+                # Real-time WhatsApp alert to admin
+                wa_text = (
+                    f"NR AI Orbit Alert: {lead['name']} replied to your email!\n"
+                    f"Course: {lead.get('course_interest') or 'N/A'} | "
+                    f"Phone: {lead.get('phone') or 'N/A'}\n"
+                    f"Check admin dashboard to review."
+                )
+                send_whatsapp_alert(wa_text)
 
                 # Mark as read immediately so we never double-process
                 imap.store(mid, '+FLAGS', '\\Seen')

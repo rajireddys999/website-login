@@ -2596,12 +2596,47 @@ SALES_STATUS_NEXT = {
     'Order Placed': 'Order Placed',
 }
 
+def _send_order_placed_email(lead_email, lead_name):
+    """Send a thank-you / welcome email when a lead converts to Order Placed."""
+    if not lead_email:
+        return
+    first = lead_name.split()[0] if lead_name else 'there'
+    login_url   = f"{APP_BASE_URL}/login.html"
+    dashboard_url = f"{APP_BASE_URL}/dashboard.html"
+    body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:28px">
+      <h2 style="color:#FF6600;margin-bottom:4px">Welcome to NR AI Orbit, {first}! 🎉</h2>
+      <p style="color:#333;line-height:1.7">
+        Thank you for enrolling — your payment has been confirmed and your account is now fully active.
+      </p>
+      <p style="color:#333;line-height:1.7">
+        You can log in to your student dashboard anytime to access your course videos, track progress, and ask doubts:
+      </p>
+      <p style="margin:20px 0">
+        <a href="{login_url}" style="background:#FF6600;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold">
+          Go to My Dashboard →
+        </a>
+      </p>
+      <p style="color:#555;font-size:13px;line-height:1.6">
+        If you have any questions, just reply to this email — we are here to help.<br/>
+        Wishing you great success in your preparation!
+      </p>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+      <p style="font-size:12px;color:#999">NR AI Orbit Learning Portal &nbsp;·&nbsp; Hyderabad, Telangana</p>
+    </div>"""
+    try:
+        send_email(lead_email, f"Welcome to NR AI Orbit, {first}! Your enrollment is confirmed 🎉", body)
+        app.logger.info("Order Placed welcome email sent to %s", lead_email)
+    except Exception as ex:
+        app.logger.error("Order Placed welcome email failed for %s: %s", lead_email, ex)
+
+
 def _sync_lead_order_placed(email, conn):
     """Mark matching sales_lead as Order Placed when a real payment is confirmed."""
     if not email:
         return
     lead = conn.execute(
-        "SELECT id, status FROM sales_leads WHERE LOWER(email)=LOWER(?)", (email,)
+        "SELECT id, name, status FROM sales_leads WHERE LOWER(email)=LOWER(?)", (email,)
     ).fetchone()
     if lead and lead['status'] != 'Order Placed':
         conn.execute(
@@ -2609,6 +2644,7 @@ def _sync_lead_order_placed(email, conn):
             (lead['id'],)
         )
         app.logger.info("sales_lead %s → Order Placed (payment confirmed for %s)", lead['id'], email)
+        _send_order_placed_email(email, lead['name'])
 
 def _sales_send_email(lead, subject, message_text):
     """Send a plain outreach email to a sales lead using existing SMTP."""
@@ -3046,37 +3082,66 @@ Output only the email text, nothing else."""
 
 @app.route('/api/admin/sales/sync-paid-students', methods=['POST'])
 def sales_sync_paid_students():
-    """Scan students with payment_status=paid and mark matching sales_leads as Order Placed."""
+    """Scan paid students → update or create matching sales_lead as Order Placed."""
     session, err_resp, err_code = require_role('admin')
     if err_resp:
         return err_resp, err_code
 
     conn = get_conn()
-    # All paid students
     paid_students = conn.execute(
-        "SELECT id, email, full_name FROM students WHERE payment_status='paid'"
+        "SELECT id, email, full_name, phone, course, plan FROM students WHERE payment_status='paid'"
     ).fetchall()
 
     updated = []
-    for s in paid_students:
-        s = dict(s)
+    created = []
+    for s in [dict(r) for r in paid_students]:
+        # 1 — try matching by email
         lead = conn.execute(
             "SELECT id, name, status FROM sales_leads WHERE LOWER(email)=LOWER(?)",
             (s['email'],)
         ).fetchone()
-        if lead and lead['status'] != 'Order Placed':
-            conn.execute(
-                "UPDATE sales_leads SET status='Order Placed', updated_at=datetime('now') WHERE id=?",
-                (lead['id'],)
-            )
-            updated.append({'lead_id': lead['id'], 'lead_name': lead['name'],
-                            'student_email': s['email'], 'prev_status': lead['status']})
-            app.logger.info("sync-paid: lead %s → Order Placed (student %s paid)", lead['id'], s['email'])
 
-    if updated:
-        conn.commit()
+        # 2 — fallback: match by phone
+        if not lead and s.get('phone'):
+            lead = conn.execute(
+                "SELECT id, name, status FROM sales_leads WHERE phone=?",
+                (s['phone'],)
+            ).fetchone()
+
+        if lead:
+            lead = dict(lead)
+            if lead['status'] != 'Order Placed':
+                conn.execute(
+                    "UPDATE sales_leads SET status='Order Placed', updated_at=datetime('now') WHERE id=?",
+                    (lead['id'],)
+                )
+                conn.commit()
+                row = dict(conn.execute("SELECT * FROM sales_leads WHERE id=?", (lead['id'],)).fetchone())
+                updated.append(row)
+                app.logger.info("sync-paid: lead %s → Order Placed (%s)", lead['id'], s['email'])
+                _send_order_placed_email(s['email'], s['full_name'])
+        else:
+            # 3 — no lead at all (direct sign-up): create one as Order Placed
+            already = conn.execute(
+                "SELECT id FROM sales_leads WHERE LOWER(email)=LOWER(?) OR phone=?",
+                (s['email'], s.get('phone', ''))
+            ).fetchone()
+            if not already:
+                cur = conn.execute(
+                    "INSERT INTO sales_leads (name, type, phone, email, course_interest, status, notes) "
+                    "VALUES (?,?,?,?,?,'Order Placed','Auto-created: student signed up and paid')",
+                    (s['full_name'], 'Student', s.get('phone',''), s['email'], s.get('course',''))
+                )
+                conn.commit()
+                row = dict(conn.execute("SELECT * FROM sales_leads WHERE id=?", (cur.lastrowid,)).fetchone())
+                created.append(row)
+                app.logger.info("sync-paid: created Order Placed lead for direct signup %s", s['email'])
+                _send_order_placed_email(s['email'], s['full_name'])
+
     conn.close()
-    return jsonify({'synced': updated, 'synced_count': len(updated)})
+    all_synced = updated + created
+    return jsonify({'synced': all_synced, 'synced_count': len(all_synced),
+                    'updated': updated, 'created': created})
 
 
 @app.route('/api/admin/sales/send-daily-report', methods=['POST'])

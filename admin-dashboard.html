@@ -2762,7 +2762,25 @@
   }
 
   async function liveLeadsRefresh() {
-    // Always-on lightweight poller: syncs enquiries → leads and updates UI immediately
+    // Always-on lightweight poller: syncs enquiries + paid students, updates UI immediately
+
+    // a) Paid students → Order Placed (runs always-on, not just when agent is on)
+    const paid = await api('/api/admin/sales/sync-paid-students', { method: 'POST' });
+    if (paid.ok && paid.data.synced_count > 0) {
+      paid.data.synced.forEach(item => {
+        const li = allLeads.findIndex(l => l.id === item.id);
+        if (li !== -1) allLeads[li] = item; else allLeads.unshift(item);
+      });
+      document.getElementById('badge-sales').textContent = allLeads.length;
+      renderLeads(allLeads); filterLeads();
+      populateOutreachLeadSelect(); populateOrderLeadSelect();
+      const outrR = await api('/api/admin/sales/outreach');
+      if (outrR.ok) { allOutreach = outrR.data; renderOutreach(allOutreach); }
+      const names = paid.data.synced.map(i => i.name || i.lead_name).join(', ');
+      toast(`🎉 ${paid.data.synced_count} student${paid.data.synced_count>1?'s':''} paid → Order Placed: ${names}`, 'success');
+    }
+
+    // b) New enquiries → leads
     const r = await api('/api/admin/sales/sync-enquiries', { method: 'POST' });
     if (!r.ok) return;
     const created = r.data.created || [];
@@ -2840,12 +2858,17 @@
     const paid = await api('/api/admin/sales/sync-paid-students', { method:'POST' });
     if (paid.ok && paid.data.synced_count > 0) {
       paid.data.synced.forEach(item => {
-        const li = allLeads.findIndex(l => l.id === item.lead_id);
-        if (li !== -1) allLeads[li].status = 'Order Placed';
+        const li = allLeads.findIndex(l => l.id === item.id);
+        if (li !== -1) allLeads[li] = item;
+        else allLeads.unshift(item);
       });
+      document.getElementById('badge-sales').textContent = allLeads.length;
       renderLeads(allLeads); filterLeads();
-      const names = paid.data.synced.map(i => i.lead_name).join(', ');
-      toast(`🎉 ${paid.data.synced_count} lead${paid.data.synced_count>1?'s':''} converted to Order Placed: ${names}`, 'success');
+      populateOutreachLeadSelect(); populateOrderLeadSelect();
+      const outrR = await api('/api/admin/sales/outreach');
+      if (outrR.ok) { allOutreach = outrR.data; renderOutreach(allOutreach); }
+      const names = paid.data.synced.map(i => i.name || i.lead_name).join(', ');
+      toast(`🎉 ${paid.data.synced_count} lead${paid.data.synced_count>1?'s':''} → Order Placed: ${names}`, 'success');
     }
 
     // 1 — sync new enquiries → leads

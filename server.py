@@ -1103,6 +1103,9 @@ def payment_callback(txn_id):
                 "UPDATE students SET is_active = 1, payment_status = 'paid' WHERE id = ?",
                 (payment['student_id'],)
             )
+            student = conn.execute("SELECT email FROM students WHERE id=?", (payment['student_id'],)).fetchone()
+            if student:
+                _sync_lead_order_placed(student['email'], conn)
         conn.commit()
 
     conn.close()
@@ -1149,6 +1152,9 @@ def payment_webhook():
                     "UPDATE students SET is_active = 1, payment_status = 'paid' WHERE id = ?",
                     (payment['student_id'],)
                 )
+                student = conn.execute("SELECT email FROM students WHERE id=?", (payment['student_id'],)).fetchone()
+                if student:
+                    _sync_lead_order_placed(student['email'], conn)
             conn.commit()
         conn.close()
 
@@ -1233,6 +1239,9 @@ def admin_payment_status(pid):
             "UPDATE students SET is_active = 1, payment_status = 'paid' WHERE id = ?",
             (payment['student_id'],)
         )
+        student = conn.execute("SELECT email FROM students WHERE id=?", (payment['student_id'],)).fetchone()
+        if student:
+            _sync_lead_order_placed(student['email'], conn)
 
     conn.commit()
     updated = conn.execute("SELECT * FROM payments WHERE id = ?", (pid,)).fetchone()
@@ -2583,9 +2592,23 @@ def sales_outreach_create():
 SALES_STATUS_NEXT = {
     'New':          'Contacted',
     'Contacted':    'Negotiating',
-    'Negotiating':  'Order Placed',
+    'Negotiating':  'Negotiating',   # stays here until real payment confirms Order Placed
     'Order Placed': 'Order Placed',
 }
+
+def _sync_lead_order_placed(email, conn):
+    """Mark matching sales_lead as Order Placed when a real payment is confirmed."""
+    if not email:
+        return
+    lead = conn.execute(
+        "SELECT id, status FROM sales_leads WHERE LOWER(email)=LOWER(?)", (email,)
+    ).fetchone()
+    if lead and lead['status'] != 'Order Placed':
+        conn.execute(
+            "UPDATE sales_leads SET status='Order Placed', updated_at=datetime('now') WHERE id=?",
+            (lead['id'],)
+        )
+        app.logger.info("sales_lead %s → Order Placed (payment confirmed for %s)", lead['id'], email)
 
 def _sales_send_email(lead, subject, message_text):
     """Send a plain outreach email to a sales lead using existing SMTP."""

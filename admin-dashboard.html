@@ -2778,6 +2778,18 @@
       }
     }
 
+    // 0b — sync paid students → Order Placed on matching leads
+    const paid = await api('/api/admin/sales/sync-paid-students', { method:'POST' });
+    if (paid.ok && paid.data.synced_count > 0) {
+      paid.data.synced.forEach(item => {
+        const li = allLeads.findIndex(l => l.id === item.lead_id);
+        if (li !== -1) allLeads[li].status = 'Order Placed';
+      });
+      renderLeads(allLeads); filterLeads();
+      const names = paid.data.synced.map(i => i.lead_name).join(', ');
+      toast(`🎉 ${paid.data.synced_count} lead${paid.data.synced_count>1?'s':''} converted to Order Placed: ${names}`, 'success');
+    }
+
     // 1 — sync new enquiries → leads
     const r = await api('/api/admin/sales/sync-enquiries', { method:'POST' });
     if (!r.ok) { updateAgentLastSeen(); return; }

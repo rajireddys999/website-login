@@ -3044,6 +3044,41 @@ Output only the email text, nothing else."""
     })
 
 
+@app.route('/api/admin/sales/sync-paid-students', methods=['POST'])
+def sales_sync_paid_students():
+    """Scan students with payment_status=paid and mark matching sales_leads as Order Placed."""
+    session, err_resp, err_code = require_role('admin')
+    if err_resp:
+        return err_resp, err_code
+
+    conn = get_conn()
+    # All paid students
+    paid_students = conn.execute(
+        "SELECT id, email, full_name FROM students WHERE payment_status='paid'"
+    ).fetchall()
+
+    updated = []
+    for s in paid_students:
+        s = dict(s)
+        lead = conn.execute(
+            "SELECT id, name, status FROM sales_leads WHERE LOWER(email)=LOWER(?)",
+            (s['email'],)
+        ).fetchone()
+        if lead and lead['status'] != 'Order Placed':
+            conn.execute(
+                "UPDATE sales_leads SET status='Order Placed', updated_at=datetime('now') WHERE id=?",
+                (lead['id'],)
+            )
+            updated.append({'lead_id': lead['id'], 'lead_name': lead['name'],
+                            'student_email': s['email'], 'prev_status': lead['status']})
+            app.logger.info("sync-paid: lead %s → Order Placed (student %s paid)", lead['id'], s['email'])
+
+    if updated:
+        conn.commit()
+    conn.close()
+    return jsonify({'synced': updated, 'synced_count': len(updated)})
+
+
 @app.route('/api/admin/sales/send-daily-report', methods=['POST'])
 def sales_send_daily_report():
     """Email admin a daily summary of agent activity."""

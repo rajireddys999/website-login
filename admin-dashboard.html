@@ -1515,6 +1515,7 @@
   function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
   function showPage(name) {
+    if (name !== 'sales') stopLiveRefresh();   // stop lead watcher when leaving sales
     currentPage = name;
     const _sp = new URLSearchParams(window.location.search);
     _sp.set('page', name);
@@ -2708,9 +2709,11 @@
   const DAILY_TARGETS = { leads: 5, orders: 2, outreach: 10, revenue: 5000 };
 
   // ── Agent Start / Stop + Auto-Poll ───────────────────────────
-  let agentRunning    = localStorage.getItem('sales_agent_running') === 'true';
-  let agentPollTimer  = null;
-  const AGENT_POLL_MS = 20000; // poll every 20 seconds
+  let agentRunning      = localStorage.getItem('sales_agent_running') === 'true';
+  let agentPollTimer    = null;
+  let liveLeadsTimer    = null;
+  const AGENT_POLL_MS   = 20000; // agent full cycle every 20 s
+  const LIVE_REFRESH_MS = 10000; // lightweight lead sync every 10 s (always-on)
 
   function syncAgentUI() {
     const dot   = document.getElementById('agent-status-dot');
@@ -2746,6 +2749,61 @@
 
   function stopAgentPolling() {
     if (agentPollTimer) { clearInterval(agentPollTimer); agentPollTimer = null; }
+  }
+
+  function startLiveRefresh() {
+    stopLiveRefresh();
+    liveLeadsRefresh();                                        // run immediately
+    liveLeadsTimer = setInterval(liveLeadsRefresh, LIVE_REFRESH_MS);
+  }
+
+  function stopLiveRefresh() {
+    if (liveLeadsTimer) { clearInterval(liveLeadsTimer); liveLeadsTimer = null; }
+  }
+
+  async function liveLeadsRefresh() {
+    // Always-on lightweight poller: syncs enquiries → leads and updates UI immediately
+    const r = await api('/api/admin/sales/sync-enquiries', { method: 'POST' });
+    if (!r.ok) return;
+    const created = r.data.created || [];
+    if (created.length === 0) return;
+
+    // New leads — update local state and re-render right away
+    created.forEach(lead => {
+      if (!allLeads.find(l => l.id === lead.id)) allLeads.unshift(lead);
+    });
+    document.getElementById('badge-sales').textContent = allLeads.length;
+    renderLeads(allLeads);
+    filterLeads();
+    populateOutreachLeadSelect();
+    populateOrderLeadSelect();
+
+    if (agentRunning) {
+      // Immediately draft + send email for each new lead (don't wait for next 20s tick)
+      const rn = await api('/api/admin/sales/run-all-new', { method: 'POST' });
+      if (rn.ok) {
+        const em = rn.data.emails_sent || 0;
+        const n  = rn.data.processed_count || 0;
+        (rn.data.processed || []).forEach(item => {
+          const li = allLeads.findIndex(l => l.id === item.lead.id);
+          if (li !== -1) allLeads[li] = item.lead; else allLeads.unshift(item.lead);
+        });
+        renderLeads(allLeads); filterLeads();
+        const outrR = await api('/api/admin/sales/outreach');
+        if (outrR.ok) { allOutreach = outrR.data; renderOutreach(allOutreach); }
+        const errList = rn.data.errors || [];
+        if (errList.length) {
+          toast(`🤖 ${n} new lead${n>1?'s':''} — emails failed: ${errList[0].error}`, 'error');
+        } else {
+          toast(`🤖 ${n} new lead${n>1?'s':''} — ${em} email${em!==1?'s':''} sent immediately`, 'success');
+        }
+      }
+      // Reset the 20s agent timer so next full cycle (stale follow-ups etc.) runs fresh
+      stopAgentPolling();
+      agentPollTimer = setInterval(agentPollCycle, AGENT_POLL_MS);
+    } else {
+      toast(`🔔 ${created.length} new lead${created.length>1?'s':''} arrived — start the agent to auto-process`, 'warning');
+    }
   }
 
   async function agentPollCycle() {
@@ -2970,7 +3028,8 @@
     populateOutreachLeadSelect();
     populateOrderLeadSelect();
     syncAgentUI();
-    if (agentRunning) startAgentPolling();  // resume polling if was running
+    if (agentRunning) startAgentPolling();  // resume agent if was running
+    startLiveRefresh();                     // always-on: real-time lead sync
   }
 
   // ── LEADS ─────────────────────────────────────────────────────

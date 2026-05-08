@@ -3144,8 +3144,9 @@ def sales_check_inbox():
         return jsonify({'error': f'IMAP login failed: {ex}', 'processed_count': 0}), 500
 
     conn = get_conn()
+    # Include ALL leads with an email — even "Order Placed" ones may still ask questions
     lead_rows = conn.execute(
-        "SELECT * FROM sales_leads WHERE email != '' AND status != 'Order Placed'"
+        "SELECT * FROM sales_leads WHERE email != ''"
     ).fetchall()
     lead_by_email = {dict(r)['email'].lower().strip(): dict(r) for r in lead_rows}
 
@@ -3217,27 +3218,32 @@ def sales_check_inbox():
                 follow_up_error = None
                 if ANTHROPIC_API_KEY:
                     signup_url = f"{APP_BASE_URL}/signup.html"
+                    login_url  = f"{APP_BASE_URL}/login.html"
                     stage_context = {
-                        'Contacted':    'They replied showing interest. Provide course details, pricing, and the signup link.',
-                        'Negotiating':  'They are seriously considering. Address objections, offer a discount or payment plan, and share the signup link.',
-                        'Order Placed': 'They have enrolled! Welcome them warmly, confirm their enrollment, and remind them to log in.',
-                    }.get(next_status, 'Continue the conversation warmly and share the signup link if they need it.')
+                        'New':          'Initial contact. Introduce NR AI Orbit, share course details and the signup link.',
+                        'Contacted':    'They replied showing interest. Provide more course details, pricing, and the signup link.',
+                        'Negotiating':  'They are seriously considering. Address objections, offer a discount or payment plan, share the signup link.',
+                        'Order Placed': f'They have enrolled. Answer their question helpfully. If they need to log in, share: {login_url}',
+                    }.get(lead['status'], 'Answer their question helpfully. Share the signup link if needed.')
                     first_name = lead['name'].split()[0]
-                    prompt = f"""You are a sales assistant for NR AI Orbit Learning Portal, a physics coaching academy in Andhra Pradesh/Telangana.
+                    prompt = f"""You are a helpful assistant for NR AI Orbit Learning Portal, a physics coaching academy in Andhra Pradesh/Telangana.
 
-The lead just replied to our outreach email. Their current status is "{next_status}".
+A lead has replied to our email. Keep the conversation going — answer whatever they ask.
 Lead: {lead['name']} (address as {first_name}) | Course: {lead['course_interest'] or 'Physics'} | Location: {lead['location'] or 'AP/TS'}
+Current stage: {stage_context}
 
-Their reply: "{student_reply_text}"
+Their latest reply:
+"{student_reply_text}"
 
-Stage context: {stage_context}
-Signup / Registration link: {signup_url}
-Payment / Pricing page: {APP_BASE_URL}/#pricing
+Useful links to share when relevant:
+- Signup / Registration: {signup_url}
+- Pricing: {APP_BASE_URL}/#pricing
+- Login: {APP_BASE_URL}/login.html
 
 Instructions:
-- Directly answer what they asked in their reply.
-- If they asked for a signup or registration link, include it clearly.
-- Keep it short (3-5 sentences), warm, and helpful.
+- Directly answer what they asked — do not ignore their question.
+- If they asked for a link (signup, login, pricing), include the exact URL above.
+- Keep it short (3-5 sentences), warm, specific.
 - No subject line. Use Indian English naturally. Under 120 words."""
                     ai_resp = http_requests.post(
                         'https://api.anthropic.com/v1/messages',

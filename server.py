@@ -9,6 +9,14 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from db import get_conn, init_db
 from werkzeug.utils import secure_filename
+import boto3
+from botocore.exceptions import ClientError
+
+S3_BUCKET_VIDEOS = os.environ.get('S3_BUCKET_VIDEOS', '')
+AWS_REGION = os.environ.get('AWS_DEFAULT_REGION', 'ap-south-1')
+
+def _s3_client():
+    return boto3.client('s3', region_name=AWS_REGION)
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
@@ -163,6 +171,16 @@ def index():
 
 @app.route('/uploads/videos/<path:filename>')
 def serve_video(filename):
+    if S3_BUCKET_VIDEOS:
+        try:
+            url = _s3_client().generate_presigned_url(
+                'get_object',
+                Params={'Bucket': S3_BUCKET_VIDEOS, 'Key': f'videos/{filename}'},
+                ExpiresIn=3600
+            )
+            return redirect(url, code=302)
+        except ClientError:
+            return jsonify({'error': 'Video not found'}), 404
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 @app.route('/<path:filename>')
@@ -625,9 +643,14 @@ def instructor_upload_video():
     if not course or course not in VALID_COURSES:
         return jsonify({'error': f'course must be one of: {", ".join(VALID_COURSES)}'}), 400
 
-    filename  = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
-    filepath  = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(filepath)
+    filename = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
+    if S3_BUCKET_VIDEOS:
+        _s3_client().upload_fileobj(
+            file, S3_BUCKET_VIDEOS, f'videos/{filename}',
+            ExtraArgs={'ContentType': file.content_type or 'video/mp4'}
+        )
+    else:
+        file.save(os.path.join(UPLOAD_FOLDER, filename))
 
     video_url = f'/uploads/videos/{filename}'
 
@@ -694,9 +717,16 @@ def instructor_delete_lesson(lid):
 
     # Delete uploaded file if applicable
     if lesson['video_type'] == 'upload' and lesson['video_url'].startswith('/uploads/'):
-        filepath = os.path.join(os.path.dirname(__file__), lesson['video_url'].lstrip('/'))
-        if os.path.exists(filepath):
-            os.remove(filepath)
+        vid_filename = lesson['video_url'].split('/')[-1]
+        if S3_BUCKET_VIDEOS:
+            try:
+                _s3_client().delete_object(Bucket=S3_BUCKET_VIDEOS, Key=f'videos/{vid_filename}')
+            except ClientError:
+                pass
+        else:
+            filepath = os.path.join(os.path.dirname(__file__), lesson['video_url'].lstrip('/'))
+            if os.path.exists(filepath):
+                os.remove(filepath)
 
     conn.execute("DELETE FROM lessons WHERE id = ?", (lid,))
     conn.commit(); conn.close()

@@ -1,0 +1,96 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [release]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: nraiorbit/backend
+  # Set these after creating staging App Runner and CloudFront in Phase 5/6:
+  APP_RUNNER_SERVICE_ARN: ""
+  S3_FRONTEND_BUCKET: nraiorbit-frontend-staging
+  CLOUDFRONT_DISTRIBUTION_ID: ""
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: staging-${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:staging
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:staging
+
+      - name: Deploy to App Runner (Staging)
+        if: env.APP_RUNNER_SERVICE_ARN != ''
+        run: |
+          aws apprunner start-deployment \
+            --service-arn ${{ env.APP_RUNNER_SERVICE_ARN }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Sync frontend to S3 (Staging)
+        run: |
+          aws s3 sync . s3://${{ env.S3_FRONTEND_BUCKET }}/ \
+            --exclude "*.py" \
+            --exclude "__pycache__/*" \
+            --exclude "*.db" \
+            --exclude "requirements.txt" \
+            --exclude "render.yaml" \
+            --exclude "netlify.toml" \
+            --exclude "Dockerfile" \
+            --exclude ".dockerignore" \
+            --exclude "staging_schema.sql" \
+            --exclude "uploads/*" \
+            --exclude ".git/*" \
+            --exclude "docs/*" \
+            --exclude "README.md" \
+            --exclude "bridge_*" \
+            --exclude "seed.py" \
+            --exclude "clone_prod_to_staging.py" \
+            --exclude "run_bridge.py" \
+            --exclude "slack_bridge.py" \
+            --exclude ".github/*" \
+            --exclude "*.html" \
+            --cache-control "max-age=3600" \
+            --delete
+
+          aws s3 sync . s3://${{ env.S3_FRONTEND_BUCKET }}/ \
+            --exclude "*" \
+            --include "*.html" \
+            --cache-control "no-cache" \
+            --delete
+
+      - name: Invalidate CloudFront cache (Staging)
+        if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Health check (Staging)
+        if: env.APP_RUNNER_SERVICE_ARN != ''
+        run: |
+          sleep 15
+          curl --fail --retry 5 --retry-delay 5 https://staging.nraiorbit.com/health
